@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Enrollment Requests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f9ff;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #1f3c88;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+  font-size: 14px;
+}
+
+th {
+  background: #1f3c88;
+  color: #fff;
+}
+
+tr:nth-child(even) {
+  background: #f2f6ff;
+}
+
+.footer {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Study ZONE – Enrollment Requests</h1>
+
+<table id="dataTable">
+  <thead>
+    <tr id="tableHeader"></tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<div class="footer">
+  Auto-loaded from Google Sheets
+</div>
+
+<script>
+/* 🔴 PASTE YOUR CSV LINK BELOW */
+const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSu-dFnVlhnff2sfyiJO8QYvczlD-lxuCqsaFQ3D4HEe7z-zkO2NH1t7qkNQWh__PNS1dobIYLscUp/pub?output=csv";
+
+fetch(csvUrl)
+  .then(response => response.text())
+  .then(csv => {
+    const rows = csv.split("\n").map(row => row.split(","));
+    const headerRow = rows[0];
+    const dataRows = rows.slice(1).reverse(); // Latest first
+
+    // Create table headers
+    headerRow.forEach(header => {
+      const th = document.createElement("th");
+      th.textContent = header;
+      document.getElementById("tableHeader").appendChild(th);
+    });
+
+    // Create table rows
+    dataRows.forEach(row => {
+      if (row.length > 1) {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        document.getElementById("tableBody").appendChild(tr);
+      }
+    });
+  })
+  .catch(error => {
+    alert("Unable to load enrollment data");
+    console.error(error);
+  });
+</script>
+
+</body>
+</html>
