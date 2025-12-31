@@ -5,7 +5,6 @@
 <title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse CSV Parser -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -19,7 +18,6 @@ body {
 h1 {
   text-align: center;
   color: #1f3c88;
-  margin-bottom: 6px;
 }
 
 .subtext {
@@ -40,7 +38,7 @@ th, td {
   padding: 10px;
   font-size: 14px;
   vertical-align: top;
-  white-space: pre-wrap; /* ✅ multi-line safe */
+  white-space: pre-wrap;
 }
 
 th {
@@ -48,45 +46,22 @@ th {
   color: #fff;
   position: sticky;
   top: 0;
-  z-index: 2;
 }
 
 tr:nth-child(even) {
   background: #f2f6ff;
 }
 
-/* ✅ Address column safety */
-td.address {
-  line-height: 1.4;
-}
+/* Status styles */
+.status-pending { background:#fff8cc; font-weight:600; }
+.status-contacted { background:#e6f7e6; font-weight:600; }
+.status-converted { background:#e6f0ff; font-weight:600; }
+.status-closed { background:#ffe6e6; font-weight:600; }
 
-/* ✅ Status highlighting */
-.status-pending {
-  background-color: #fff8cc;
-  font-weight: 600;
-}
-
-.status-contacted {
-  background-color: #e6f7e6;
-  font-weight: 600;
-}
-
-/* Future-ready */
-.status-converted {
-  background-color: #e6f0ff;
-  font-weight: 600;
-}
-
-.status-closed {
-  background-color: #ffe6e6;
-  font-weight: 600;
-}
-
-.footer {
-  margin-top: 15px;
-  text-align: center;
-  font-size: 12px;
-  color: #555;
+select {
+  width: 100%;
+  padding: 4px;
+  font-size: 13px;
 }
 </style>
 </head>
@@ -94,23 +69,19 @@ td.address {
 <body>
 
 <h1>Study ZONE – Enrollment Requests</h1>
-<div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
+<div class="subtext">Live Admin View (Status Editable)</div>
 
 <table>
-  <thead>
-    <tr id="tableHeader"></tr>
-  </thead>
+  <thead><tr id="tableHeader"></tr></thead>
   <tbody id="tableBody"></tbody>
 </table>
 
-<div class="footer">
-  For internal admin use only
-</div>
-
 <script>
-/* 🔴 YOUR PUBLISHED CSV LINK */
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
+
+/* 🔴 PASTE YOUR APPS SCRIPT WEB APP URL */
+const writeBackUrl = "https://script.google.com/macros/s/AKfycbxiKaOnBVXs1B2kdU28QfpPoOPt2gUIQyMqa80tTezAF3L09b6bbIXE6LNPoYr8YozU1A/exec";
 
 Papa.parse(csvUrl, {
   download: true,
@@ -118,54 +89,43 @@ Papa.parse(csvUrl, {
   complete: function(results) {
 
     const data = results.data;
-    if (!data || data.length === 0) {
-      alert("No enrollment data found");
-      return;
-    }
-
-    const headerRow = data[0];
-    const dataRows = data.slice(1).reverse(); // Latest first
+    const headers = data[0];
+    const rows = data.slice(1).reverse();
 
     const headerEl = document.getElementById("tableHeader");
     const bodyEl = document.getElementById("tableBody");
 
-    let statusColIndex = -1;
-    let addressColIndex = -1;
+    let statusIndex = -1;
 
-    /* Create headers + detect column indexes */
-    headerRow.forEach((header, index) => {
+    headers.forEach((h, i) => {
+      if (h.toLowerCase().includes("status")) statusIndex = i;
       const th = document.createElement("th");
-      th.textContent = header;
+      th.textContent = h;
       headerEl.appendChild(th);
-
-      const h = header.toLowerCase();
-      if (h.includes("status")) statusColIndex = index;
-      if (h.includes("address")) addressColIndex = index;
     });
 
-    /* Create rows */
-    dataRows.forEach(row => {
-      if (!row || row.length === 0) return;
-
+    rows.forEach((row, idx) => {
       const tr = document.createElement("tr");
+      const sheetRow = data.length - idx;
 
-      row.forEach((cell, index) => {
+      row.forEach((cell, i) => {
         const td = document.createElement("td");
-        td.textContent = cell || "";
 
-        /* Address column */
-        if (index === addressColIndex) {
-          td.classList.add("address");
-        }
+        if (i === statusIndex) {
+          const select = document.createElement("select");
+          ["Pending","Contacted","Converted","Closed"].forEach(opt => {
+            const o = document.createElement("option");
+            o.value = opt;
+            o.textContent = opt;
+            if ((cell || "Pending") === opt) o.selected = true;
+            select.appendChild(o);
+          });
 
-        /* Status column */
-        if (index === statusColIndex) {
-          const status = (cell || "Pending").trim().toLowerCase();
-
-          if (status === "pending") td.classList.add("status-pending");
-          else if (status === "contacted") td.classList.add("status-contacted");
-          else if (status === "converted") td.classList.add("status-converted");
-          else if (status === "closed") td.classList.add("status-closed");
+          select.onchange = () => updateStatus(sheetRow, select.value, td);
+          td.appendChild(select);
+          applyStatusColor(td, cell || "Pending");
+        } else {
+          td.textContent = cell || "";
         }
 
         tr.appendChild(td);
@@ -173,12 +133,21 @@ Papa.parse(csvUrl, {
 
       bodyEl.appendChild(tr);
     });
-  },
-  error: function(error) {
-    alert("Unable to load enrollment data");
-    console.error(error);
   }
 });
+
+function applyStatusColor(td, status) {
+  td.className = "";
+  td.classList.add("status-" + status.toLowerCase());
+}
+
+function updateStatus(row, status, td) {
+  fetch(writeBackUrl, {
+    method: "POST",
+    body: JSON.stringify({ row, status })
+  });
+  applyStatusColor(td, status);
+}
 </script>
 
 </body>
