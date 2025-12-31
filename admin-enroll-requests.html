@@ -80,8 +80,9 @@ select {
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
-/* 🔴 PASTE YOUR APPS SCRIPT WEB APP URL */
-const writeBackUrl = "https://script.google.com/macros/s/AKfycbxiKaOnBVXs1B2kdU28QfpPoOPt2gUIQyMqa80tTezAF3L09b6bbIXE6LNPoYr8YozU1A/exec";
+/* ✅ Your deployed Apps Script Web App */
+const writeBackUrl =
+"https://script.google.com/macros/s/AKfycbxiKaOnBVXs1B2kdU28QfpPoOPt2gUIQyMqa80tTezAF3L09b6bbIXE6LNPoYr8YozU1A/exec";
 
 Papa.parse(csvUrl, {
   download: true,
@@ -89,8 +90,10 @@ Papa.parse(csvUrl, {
   complete: function(results) {
 
     const data = results.data;
+    if (!data || data.length < 2) return;
+
     const headers = data[0];
-    const rows = data.slice(1).reverse();
+    const dataRows = data.slice(1); // keep original order
 
     const headerEl = document.getElementById("tableHeader");
     const bodyEl = document.getElementById("tableBody");
@@ -104,26 +107,33 @@ Papa.parse(csvUrl, {
       headerEl.appendChild(th);
     });
 
-    rows.forEach((row, idx) => {
+    /* Render latest first (but preserve row index) */
+    dataRows.slice().reverse().forEach((row, displayIndex) => {
+      const actualSheetRow = dataRows.length - displayIndex + 1; // +1 for header
+
       const tr = document.createElement("tr");
-      const sheetRow = data.length - idx;
 
       row.forEach((cell, i) => {
         const td = document.createElement("td");
 
         if (i === statusIndex) {
           const select = document.createElement("select");
+          const currentStatus = cell || "Pending";
+
           ["Pending","Contacted","Converted","Closed"].forEach(opt => {
             const o = document.createElement("option");
             o.value = opt;
             o.textContent = opt;
-            if ((cell || "Pending") === opt) o.selected = true;
+            if (currentStatus === opt) o.selected = true;
             select.appendChild(o);
           });
 
-          select.onchange = () => updateStatus(sheetRow, select.value, td);
+          select.onchange = () =>
+            updateStatus(actualSheetRow, select.value, td);
+
           td.appendChild(select);
-          applyStatusColor(td, cell || "Pending");
+          applyStatusColor(td, currentStatus);
+
         } else {
           td.textContent = cell || "";
         }
@@ -144,7 +154,12 @@ function applyStatusColor(td, status) {
 function updateStatus(row, status, td) {
   fetch(writeBackUrl, {
     method: "POST",
-    body: JSON.stringify({ row, status })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "updateStatus",
+      row: row,
+      status: status
+    })
   });
   applyStatusColor(td, status);
 }
