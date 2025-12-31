@@ -1,86 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Study ZONE | Enrollment Requests</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-<style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f5f9ff;
-  margin: 0;
-  padding: 20px;
-}
-
-h1 {
-  text-align: center;
-  color: #1f3c88;
-}
-
-.subtext {
-  text-align: center;
-  font-size: 13px;
-  color: #555;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  margin-top: 20px;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  font-size: 14px;
-  vertical-align: top;
-  white-space: pre-wrap;
-}
-
-th {
-  background: #1f3c88;
-  color: #fff;
-  position: sticky;
-  top: 0;
-}
-
-tr:nth-child(even) {
-  background: #f2f6ff;
-}
-
-/* Status styles */
-.status-pending { background:#fff8cc; font-weight:600; }
-.status-contacted { background:#e6f7e6; font-weight:600; }
-.status-converted { background:#e6f0ff; font-weight:600; }
-.status-closed { background:#ffe6e6; font-weight:600; }
-
-select {
-  width: 100%;
-  padding: 4px;
-  font-size: 13px;
-}
-</style>
-</head>
-
-<body>
-
-<h1>Study ZONE – Enrollment Requests</h1>
-<div class="subtext">Live Admin View (Status Editable)</div>
-
-<table>
-  <thead><tr id="tableHeader"></tr></thead>
-  <tbody id="tableBody"></tbody>
-</table>
-
 <script>
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
-/* ✅ Your deployed Apps Script Web App */
 const writeBackUrl =
 "https://script.google.com/macros/s/AKfycbxiKaOnBVXs1B2kdU28QfpPoOPt2gUIQyMqa80tTezAF3L09b6bbIXE6LNPoYr8YozU1A/exec";
 
@@ -93,7 +14,7 @@ Papa.parse(csvUrl, {
     if (!data || data.length < 2) return;
 
     const headers = data[0];
-    const dataRows = data.slice(1); // keep original order
+    const dataRows = data.slice(1);
 
     const headerEl = document.getElementById("tableHeader");
     const bodyEl = document.getElementById("tableBody");
@@ -107,9 +28,9 @@ Papa.parse(csvUrl, {
       headerEl.appendChild(th);
     });
 
-    /* Render latest first (but preserve row index) */
+    /* Latest first, correct row mapping */
     dataRows.slice().reverse().forEach((row, displayIndex) => {
-      const actualSheetRow = dataRows.length - displayIndex + 1; // +1 for header
+      const actualSheetRow = dataRows.length - displayIndex + 2; // ✅ FIXED
 
       const tr = document.createElement("tr");
 
@@ -133,7 +54,6 @@ Papa.parse(csvUrl, {
 
           td.appendChild(select);
           applyStatusColor(td, currentStatus);
-
         } else {
           td.textContent = cell || "";
         }
@@ -160,10 +80,11 @@ function updateStatus(row, status, td) {
       row: row,
       status: status
     })
-  });
+  })
+  .then(res => res.json())
+  .then(r => console.log("Status updated:", r))
+  .catch(err => console.error("Update failed:", err));
+
   applyStatusColor(td, status);
 }
 </script>
-
-</body>
-</html>
