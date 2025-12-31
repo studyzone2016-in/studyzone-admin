@@ -5,7 +5,7 @@
 <title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse CSV Parser (handles multi-line & commas) -->
+<!-- PapaParse CSV Parser -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -19,7 +19,7 @@ body {
 h1 {
   text-align: center;
   color: #1f3c88;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .subtext {
@@ -38,10 +38,9 @@ table {
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
-  text-align: left;
   font-size: 14px;
   vertical-align: top;
-  white-space: pre-wrap; /* 🔑 keeps multi-line text */
+  white-space: pre-wrap; /* ✅ multi-line safe */
 }
 
 th {
@@ -49,10 +48,38 @@ th {
   color: #fff;
   position: sticky;
   top: 0;
+  z-index: 2;
 }
 
 tr:nth-child(even) {
   background: #f2f6ff;
+}
+
+/* ✅ Address column safety */
+td.address {
+  line-height: 1.4;
+}
+
+/* ✅ Status highlighting */
+.status-pending {
+  background-color: #fff8cc;
+  font-weight: 600;
+}
+
+.status-contacted {
+  background-color: #e6f7e6;
+  font-weight: 600;
+}
+
+/* Future-ready */
+.status-converted {
+  background-color: #e6f0ff;
+  font-weight: 600;
+}
+
+.status-closed {
+  background-color: #ffe6e6;
+  font-weight: 600;
 }
 
 .footer {
@@ -99,26 +126,52 @@ Papa.parse(csvUrl, {
     const headerRow = data[0];
     const dataRows = data.slice(1).reverse(); // Latest first
 
-    // Create headers
-    headerRow.forEach(header => {
+    const headerEl = document.getElementById("tableHeader");
+    const bodyEl = document.getElementById("tableBody");
+
+    let statusColIndex = -1;
+    let addressColIndex = -1;
+
+    /* Create headers + detect column indexes */
+    headerRow.forEach((header, index) => {
       const th = document.createElement("th");
       th.textContent = header;
-      document.getElementById("tableHeader").appendChild(th);
+      headerEl.appendChild(th);
+
+      const h = header.toLowerCase();
+      if (h.includes("status")) statusColIndex = index;
+      if (h.includes("address")) addressColIndex = index;
     });
 
-    // Create rows
+    /* Create rows */
     dataRows.forEach(row => {
-      if (row.length === 0) return;
+      if (!row || row.length === 0) return;
 
       const tr = document.createElement("tr");
 
-      row.forEach(cell => {
+      row.forEach((cell, index) => {
         const td = document.createElement("td");
         td.textContent = cell || "";
+
+        /* Address column */
+        if (index === addressColIndex) {
+          td.classList.add("address");
+        }
+
+        /* Status column */
+        if (index === statusColIndex) {
+          const status = (cell || "Pending").trim().toLowerCase();
+
+          if (status === "pending") td.classList.add("status-pending");
+          else if (status === "contacted") td.classList.add("status-contacted");
+          else if (status === "converted") td.classList.add("status-converted");
+          else if (status === "closed") td.classList.add("status-closed");
+        }
+
         tr.appendChild(td);
       });
 
-      document.getElementById("tableBody").appendChild(tr);
+      bodyEl.appendChild(tr);
     });
   },
   error: function(error) {
