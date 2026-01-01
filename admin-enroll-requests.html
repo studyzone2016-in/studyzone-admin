@@ -5,7 +5,7 @@
 <title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse CSV Parser (handles multi-line & commas) -->
+<!-- PapaParse CSV Parser -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -41,7 +41,7 @@ th, td {
   text-align: left;
   font-size: 14px;
   vertical-align: top;
-  white-space: pre-wrap; /* 🔑 keeps multi-line text */
+  white-space: pre-wrap;
 }
 
 th {
@@ -64,7 +64,7 @@ tr:nth-child(even) {
 </style>
 </head>
 
-<body>
+<body style="display:none">
 
 <h1>Study ZONE – Enrollment Requests</h1>
 <div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
@@ -81,7 +81,26 @@ tr:nth-child(even) {
 </div>
 
 <script>
-/* 🔴 YOUR PUBLISHED CSV LINK */
+/* ===============================
+   BASIC ACCESS CONTROL
+   =============================== */
+(function () {
+  const username = prompt("Enter Admin Username:");
+  const password = prompt("Enter Admin Password:");
+
+  if (username !== "admin" || password !== "Chinu") {
+    alert("Access Denied");
+    document.body.innerHTML = "<h2 style='text-align:center;color:red'>Unauthorized Access</h2>";
+    throw new Error("Unauthorized");
+  }
+
+  // Show page only after successful login
+  document.body.style.display = "block";
+})();
+
+/* ===============================
+   CSV LOADING LOGIC (UNCHANGED)
+   =============================== */
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
@@ -97,16 +116,14 @@ Papa.parse(csvUrl, {
     }
 
     const headerRow = data[0];
-    const dataRows = data.slice(1).reverse(); // Latest first
+    const dataRows = data.slice(1).reverse();
 
-    // Create headers
     headerRow.forEach(header => {
       const th = document.createElement("th");
       th.textContent = header;
       document.getElementById("tableHeader").appendChild(th);
     });
 
-    // Create rows
     dataRows.forEach(row => {
       if (row.length === 0) return;
 
