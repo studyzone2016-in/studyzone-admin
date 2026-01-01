@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Study ZONE | Admin Dashboard</title>
+<title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PapaParse CSV Parser (handles multi-line & commas) -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -12,56 +13,19 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f5f9ff;
   margin: 0;
-}
-
-/* ---------- LOGIN ---------- */
-#loginBox {
-  max-width: 360px;
-  margin: 120px auto;
-  background: #fff;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.15);
-  text-align: center;
-}
-
-#loginBox h2 {
-  color: #1f3c88;
-}
-
-#loginBox input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 15px;
-  font-size: 14px;
-}
-
-#loginBox button {
-  margin-top: 20px;
-  width: 100%;
-  padding: 10px;
-  background: #1f3c88;
-  color: #fff;
-  border: none;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-#errorMsg {
-  color: red;
-  font-size: 13px;
-  margin-top: 10px;
-}
-
-/* ---------- DASHBOARD ---------- */
-#dashboard {
-  display: none;
   padding: 20px;
 }
 
 h1 {
   text-align: center;
   color: #1f3c88;
+  margin-bottom: 10px;
+}
+
+.subtext {
+  text-align: center;
+  font-size: 13px;
+  color: #555;
 }
 
 table {
@@ -74,8 +38,10 @@ table {
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
+  text-align: left;
   font-size: 14px;
-  white-space: pre-wrap;
+  vertical-align: top;
+  white-space: pre-wrap; /* 🔑 keeps multi-line text */
 }
 
 th {
@@ -85,149 +51,81 @@ th {
   top: 0;
 }
 
-/* Status colors */
-.status-pending { background:#fff8cc; font-weight:600; }
-.status-contacted { background:#e6f7e6; font-weight:600; }
-.status-converted { background:#e6f0ff; font-weight:600; }
-.status-closed { background:#ffe6e6; font-weight:600; }
+tr:nth-child(even) {
+  background: #f2f6ff;
+}
 
-select { width:100%; }
-
-/* Logout */
-.logout {
-  float: right;
-  font-size: 13px;
-  cursor: pointer;
-  color: #1f3c88;
-  text-decoration: underline;
+.footer {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-  <h2>Study ZONE Admin</h2>
-  <input type="password" id="adminPass" placeholder="Enter Admin Password">
-  <button onclick="login()">Login</button>
-  <div id="errorMsg"></div>
-</div>
+<h1>Study ZONE – Enrollment Requests</h1>
+<div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
 
-<!-- DASHBOARD -->
-<div id="dashboard">
-  <div class="logout" onclick="logout()">Logout</div>
-  <h1>Enrollment Requests</h1>
+<table>
+  <thead>
+    <tr id="tableHeader"></tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
 
-  <table>
-    <thead><tr id="tableHeader"></tr></thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+<div class="footer">
+  For internal admin use only
 </div>
 
 <script>
-/* ================= ACCESS CONTROL ================= */
-
-const ADMIN_PASSWORD = "Chinu"; // 🔐 CHANGE THIS
-
-if (sessionStorage.getItem("sz_admin") === "true") {
-  showDashboard();
-}
-
-function login() {
-  const pass = document.getElementById("adminPass").value;
-  if (pass === ADMIN_PASSWORD) {
-    sessionStorage.setItem("sz_admin", "true");
-    showDashboard();
-  } else {
-    document.getElementById("errorMsg").textContent = "Invalid password";
-  }
-}
-
-function logout() {
-  sessionStorage.removeItem("sz_admin");
-  location.reload();
-}
-
-function showDashboard() {
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
-  loadData();
-}
-
-/* ================= DATA LOADING ================= */
-
+/* 🔴 YOUR PUBLISHED CSV LINK */
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
-const writeBackUrl =
-"https://script.google.com/macros/s/AKfycbxiKaOnBVXs1B2kdU28QfpPoOPt2gUIQyMqa80tTezAF3L09b6bbIXE6LNPoYr8YozU1A/exec";
-
-function loadData() {
 Papa.parse(csvUrl, {
   download: true,
   skipEmptyLines: true,
   complete: function(results) {
 
     const data = results.data;
-    const headers = data[0];
-    const rows = data.slice(1);
+    if (!data || data.length === 0) {
+      alert("No enrollment data found");
+      return;
+    }
 
-    const hEl = document.getElementById("tableHeader");
-    const bEl = document.getElementById("tableBody");
-    hEl.innerHTML = "";
-    bEl.innerHTML = "";
+    const headerRow = data[0];
+    const dataRows = data.slice(1).reverse(); // Latest first
 
-    let statusIndex = headers.indexOf("Status");
-
-    headers.forEach(h => {
+    // Create headers
+    headerRow.forEach(header => {
       const th = document.createElement("th");
-      th.textContent = h;
-      hEl.appendChild(th);
+      th.textContent = header;
+      document.getElementById("tableHeader").appendChild(th);
     });
 
-    rows.slice().reverse().forEach((row, idx) => {
-      const sheetRow = rows.length - idx + 2;
+    // Create rows
+    dataRows.forEach(row => {
+      if (row.length === 0) return;
+
       const tr = document.createElement("tr");
 
-      headers.forEach((_, i) => {
+      row.forEach(cell => {
         const td = document.createElement("td");
-        const cell = row[i] || "";
-
-        if (i === statusIndex) {
-          const s = document.createElement("select");
-          ["Pending","Contacted","Converted","Closed"].forEach(v=>{
-            const o=document.createElement("option");
-            o.value=o.textContent=v;
-            if (cell===v) o.selected=true;
-            s.appendChild(o);
-          });
-          s.onchange=()=>updateStatus(sheetRow,s.value,td);
-          td.appendChild(s);
-          applyStatusColor(td,cell||"Pending");
-        } else td.textContent = cell;
-
+        td.textContent = cell || "";
         tr.appendChild(td);
       });
 
-      bEl.appendChild(tr);
+      document.getElementById("tableBody").appendChild(tr);
     });
+  },
+  error: function(error) {
+    alert("Unable to load enrollment data");
+    console.error(error);
   }
 });
-}
-
-function applyStatusColor(td, s) {
-  td.className="status-"+s.toLowerCase();
-}
-
-function updateStatus(row,status,td){
- fetch(writeBackUrl,{
-  method:"POST",
-  headers:{ "Content-Type":"application/json"},
-  body:JSON.stringify({ action:"updateStatus", row, status })
- });
- applyStatusColor(td,status);
-}
 </script>
 
 </body>
