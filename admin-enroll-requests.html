@@ -12,12 +12,35 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f5f9ff;
   margin: 0;
-  padding: 20px;
+  padding: 15px;
+}
+
+/* Top bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.back-btn {
+  background: #1f3c88;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: #162d63;
 }
 
 h1 {
   text-align: center;
   color: #1f3c88;
+  font-size: 22px;
+  margin: 10px 0 5px;
 }
 
 .subtext {
@@ -26,16 +49,23 @@ h1 {
   color: #555;
 }
 
+/* Table wrapper for mobile scroll */
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+/* Table styling */
 table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  margin-top: 20px;
+  min-width: 700px; /* ensures horizontal scroll on mobile */
 }
 
 th, td {
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 8px;
   font-size: 14px;
   vertical-align: top;
   white-space: pre-wrap;
@@ -46,6 +76,7 @@ th {
   color: #fff;
   position: sticky;
   top: 0;
+  z-index: 1;
 }
 
 tr:nth-child(even) {
@@ -58,20 +89,48 @@ tr:nth-child(even) {
   font-size: 12px;
   color: #555;
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 18px;
+  }
+
+  .subtext {
+    font-size: 12px;
+  }
+
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .back-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
 </style>
 </head>
 
 <body>
 
+<!-- Top Back Button -->
+<div class="top-bar">
+  <button class="back-btn" onclick="goBack()">← Back</button>
+</div>
+
 <h1>Study ZONE – Enrollment Requests</h1>
 <div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
 
-<table>
-  <thead>
-    <tr id="tableHeader"></tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
 
 <div class="footer">For internal admin use only</div>
 
@@ -79,6 +138,11 @@ tr:nth-child(even) {
 /* Session check */
 if (sessionStorage.getItem("adminAuth") !== "true") {
   alert("Unauthorized Access");
+  window.location.href = "index.html";
+}
+
+/* Back navigation */
+function goBack() {
   window.location.href = "index.html";
 }
 
