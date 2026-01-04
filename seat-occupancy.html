@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Seat Occupancy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f9ff;
+  margin: 0;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  color: #1f3c88;
+}
+
+table {
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  border-collapse: collapse;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: #1f3c88;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.center {
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Seat Occupancy Data</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Branch</th>
+      <th>Slot</th>
+      <th class="center">Active Count Today</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  window.location.href = "index.html";
+}
+
+const csvUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
+
+Papa.parse(csvUrl, {
+  download: true,
+  header: true,
+  complete: function(results) {
+    results.data.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.Branch || ""}</td>
+        <td>${r.Slot || ""}</td>
+        <td class="center">${r["Active Count Today"] || 0}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+});
+</script>
+
+</body>
+</html>

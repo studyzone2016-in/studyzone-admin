@@ -5,7 +5,6 @@
 <title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse CSV Parser -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -19,7 +18,6 @@ body {
 h1 {
   text-align: center;
   color: #1f3c88;
-  margin-bottom: 10px;
 }
 
 .subtext {
@@ -38,7 +36,6 @@ table {
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
-  text-align: left;
   font-size: 14px;
   vertical-align: top;
   white-space: pre-wrap;
@@ -64,7 +61,7 @@ tr:nth-child(even) {
 </style>
 </head>
 
-<body style="display:none">
+<body>
 
 <h1>Study ZONE – Enrollment Requests</h1>
 <div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
@@ -76,31 +73,16 @@ tr:nth-child(even) {
   <tbody id="tableBody"></tbody>
 </table>
 
-<div class="footer">
-  For internal admin use only
-</div>
+<div class="footer">For internal admin use only</div>
 
 <script>
-/* ===============================
-   BASIC ACCESS CONTROL
-   =============================== */
-(function () {
-  const username = prompt("Enter Admin Username:");
-  const password = prompt("Enter Admin Password:");
+/* Session check */
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  window.location.href = "index.html";
+}
 
-  if (username !== "admin" || password !== "Chinu") {
-    alert("Access Denied");
-    document.body.innerHTML = "<h2 style='text-align:center;color:red'>Unauthorized Access</h2>";
-    throw new Error("Unauthorized");
-  }
-
-  // Show page only after successful login
-  document.body.style.display = "block";
-})();
-
-/* ===============================
-   CSV LOADING LOGIC (UNCHANGED)
-   =============================== */
+/* CSV Load */
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
@@ -108,39 +90,25 @@ Papa.parse(csvUrl, {
   download: true,
   skipEmptyLines: true,
   complete: function(results) {
-
     const data = results.data;
-    if (!data || data.length === 0) {
-      alert("No enrollment data found");
-      return;
-    }
-
     const headerRow = data[0];
-    const dataRows = data.slice(1).reverse();
+    const rows = data.slice(1).reverse();
 
-    headerRow.forEach(header => {
+    headerRow.forEach(h => {
       const th = document.createElement("th");
-      th.textContent = header;
-      document.getElementById("tableHeader").appendChild(th);
+      th.textContent = h;
+      tableHeader.appendChild(th);
     });
 
-    dataRows.forEach(row => {
-      if (row.length === 0) return;
-
+    rows.forEach(r => {
       const tr = document.createElement("tr");
-
-      row.forEach(cell => {
+      r.forEach(c => {
         const td = document.createElement("td");
-        td.textContent = cell || "";
+        td.textContent = c || "";
         tr.appendChild(td);
       });
-
-      document.getElementById("tableBody").appendChild(tr);
+      tableBody.appendChild(tr);
     });
-  },
-  error: function(error) {
-    alert("Unable to load enrollment data");
-    console.error(error);
   }
 });
 </script>
