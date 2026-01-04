@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Seat Occupancy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f9ff;
+  margin: 0;
+  padding: 15px;
+}
+
+.top-bar { margin-bottom: 12px; }
+
+.back-btn {
+  background: #1f3c88;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+
+h1 {
+  text-align: center;
+  color: #1f3c88;
+}
+
+.table-wrapper { overflow-x: auto; }
+
+table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #1f3c88;
+  color: #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+  <button class="back-btn" onclick="location.href='index.html'">← Back</button>
+</div>
+
+<h1>Seat Occupancy</h1>
+
+<div class="table-wrapper">
+<table>
+<thead><tr id="tableHeader"></tr></thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<script>
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  location.href = "index.html";
+}
+
+Papa.parse(
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
+{
+  download: true,
+  complete: res => {
+    const [header, ...rows] = res.data;
+    header.forEach(h => tableHeader.innerHTML += `<th>${h}</th>`);
+    rows.reverse().forEach(r => {
+      tableBody.innerHTML += `<tr>${r.map(c=>`<td>${c||""}</td>`).join("")}</tr>`;
+    });
+  }
+});
+</script>
+
+</body>
+</html>
