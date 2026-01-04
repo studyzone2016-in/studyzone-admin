@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Upcoming Expiry Subscriptions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- PapaParse -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 16px;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .back-btn {
+        background: #0d6efd;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .back-btn:hover {
+        background: #084298;
+    }
+
+    h2 {
+        margin: 16px 0;
+        color: #333;
+        font-size: 20px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+    }
+
+    thead {
+        background: #1f2937;
+        color: #fff;
+    }
+
+    th, td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    th {
+        font-weight: 600;
+    }
+
+    tr:hover {
+        background: #f9fafb;
+    }
+
+    .expiry {
+        font-weight: 600;
+        color: #dc2626;
+    }
+
+    @media (max-width: 600px) {
+        h2 {
+            font-size: 18px;
+        }
+        th, td {
+            font-size: 13px;
+            padding: 8px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+    <button class="back-btn" onclick="window.location.href='index.html'">
+        ⬅ Back
+    </button>
+</div>
+
+<h2>Upcoming Expiry Subscriptions</h2>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Access Expiry</th>
+                <th>Center</th>
+                <th>Full Name</th>
+                <th>Plan</th>
+                <th>Phone</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr>
+                <td colspan="5">Loading data...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+/* 🔁 REPLACE WITH YOUR PUBLISHED GOOGLE SHEET CSV URL */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=2082915008&single=true&output=csv";
+
+const tableBody = document.getElementById("tableBody");
+
+Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+        tableBody.innerHTML = "";
+
+        let lastExpiry = "";
+        let lastCenter = "";
+
+        results.data.forEach(row => {
+            const expiry = row["Access Expiry (DD-MM-YY)"] || lastExpiry;
+            const center = row["Center"] || lastCenter;
+
+            if (row["Access Expiry (DD-MM-YY)"]) lastExpiry = expiry;
+            if (row["Center"]) lastCenter = center;
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td class="expiry">${expiry || "--"}</td>
+                <td>${center || "--"}</td>
+                <td>${row["Full Name"] || "--"}</td>
+                <td>${row["Plan"] || "--"}</td>
+                <td>${row["Phone"] || "--"}</td>
+            `;
+
+            tableBody.appendChild(tr);
+        });
+
+        if (results.data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5">No data available</td></tr>`;
+        }
+    },
+    error: function() {
+        tableBody.innerHTML = `<tr><td colspan="5">Failed to load data</td></tr>`;
+    }
+});
+</script>
+
+</body>
+</html>
