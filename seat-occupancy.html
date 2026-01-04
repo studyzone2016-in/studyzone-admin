@@ -5,85 +5,206 @@
 <title>Study ZONE | Seat Occupancy</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PapaParse -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f5f9ff;
-  margin: 0;
-  padding: 20px;
-}
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 24px;
+    color: #2c3e50;
+  }
 
-h2 {
-  text-align: center;
-  color: #1f3c88;
-}
+  /* Header */
+  .page-header {
+    max-width: 900px;
+    margin: 0 auto 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-table {
-  width: 100%;
-  max-width: 700px;
-  margin: auto;
-  border-collapse: collapse;
-  background: #ffffff;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
 
-th, td {
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-}
+  .back-btn {
+    background: #ffffff;
+    border: 1px solid #dcdfe6;
+    color: #1f4fd8;
+    padding: 6px 14px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 
-th {
-  background: #1f3c88;
-  color: #ffffff;
-  font-size: 13px;
-}
+  .back-btn:hover {
+    background: #1f4fd8;
+    color: #ffffff;
+  }
 
-.center {
-  text-align: center;
-}
+  /* Card */
+  .card {
+    max-width: 900px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    padding: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #1f4fd8;
+    color: #ffffff;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 12px;
+    text-align: left;
+  }
+
+  tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #e6e9ef;
+  }
+
+  tbody tr:hover {
+    background: #f5f8ff;
+  }
+
+  /* Columns */
+  .col-branch { width: 40%; font-weight: 500; }
+  .col-slot { width: 30%; }
+  .col-count {
+    width: 30%;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  /* Highlight when > 50 */
+  .high-occupancy {
+    color: #c0392b;
+    background: #fdecea;
+  }
+
+  /* Branch subtotal row */
+  .subtotal-row {
+    background: #f0f3ff;
+    font-weight: 700;
+  }
+
+  .subtotal-row td {
+    border-top: 2px solid #1f4fd8;
+  }
+
+  /* Footer note */
+  .note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #7f8c8d;
+    text-align: right;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>Seat Occupancy Data</h2>
+<div class="page-header">
+  <h2>Seat Occupancy Data</h2>
+  <button class="back-btn" onclick="window.location.href='index.html'">
+    ← Back
+  </button>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Branch</th>
-      <th>Slot</th>
-      <th class="center">Active Count Today</th>
-    </tr>
-  </thead>
-  <tbody id="tbody"></tbody>
-</table>
+<div class="card">
+  <table id="occupancyTable">
+    <thead>
+      <tr>
+        <th>Branch</th>
+        <th>Slot</th>
+        <th style="text-align:right;">Active Count Today</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data loads here -->
+    </tbody>
+  </table>
+
+  <div class="note">
+    🔴 Highlighted rows indicate high occupancy (&gt; 50)
+  </div>
+</div>
 
 <script>
-if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Unauthorized Access");
-  window.location.href = "index.html";
-}
+  const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
 
-const csvUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
+  Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
 
-Papa.parse(csvUrl, {
-  download: true,
-  header: true,
-  complete: function(results) {
-    results.data.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.Branch || ""}</td>
-        <td>${r.Slot || ""}</td>
-        <td class="center">${r["Active Count Today"] || 0}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-});
+      const tbody = document.querySelector("#occupancyTable tbody");
+      tbody.innerHTML = "";
+
+      let currentBranch = "";
+      let branchTotal = 0;
+
+      results.data.forEach((row, index) => {
+        const branch = row["Branch"] || "";
+        const slot = row["Slot"] || "";
+        const count = parseInt(row["Active Count Today"] || 0);
+
+        if (currentBranch && branch !== currentBranch) {
+          addSubtotalRow(currentBranch, branchTotal);
+          branchTotal = 0;
+        }
+
+        currentBranch = branch;
+        branchTotal += count;
+
+        const tr = document.createElement("tr");
+        if (count > 50) tr.classList.add("high-occupancy");
+
+        tr.innerHTML = `
+          <td class="col-branch">${branch}</td>
+          <td class="col-slot">${slot}</td>
+          <td class="col-count">${count}</td>
+        `;
+        tbody.appendChild(tr);
+
+        if (index === results.data.length - 1) {
+          addSubtotalRow(currentBranch, branchTotal);
+        }
+      });
+
+      function addSubtotalRow(branch, total) {
+        const subtotalTr = document.createElement("tr");
+        subtotalTr.classList.add("subtotal-row");
+        subtotalTr.innerHTML = `
+          <td colspan="2">${branch} – Total</td>
+          <td class="col-count">${total}</td>
+        `;
+        tbody.appendChild(subtotalTr);
+      }
+    },
+    error: function(err) {
+      alert("Error loading seat occupancy data");
+      console.error(err);
+    }
+  });
 </script>
 
 </body>
