@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f4f6fb;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #1f3c88;
+  margin-bottom: 10px;
+}
+
+.sub-title {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.container {
+  max-width: 420px;
+  margin: 25px auto;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+label {
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: #1f3c88;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #162d66;
+}
+
+.links {
+  display: none;
+}
+
+.links a {
+  display: block;
+  text-decoration: none;
+  background: #eef3ff;
+  color: #1f3c88;
+  padding: 14px;
+  border-radius: 6px;
+  margin-top: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.logout {
+  background: #dc3545;
+  margin-top: 18px;
+}
+
+.logout:hover {
+  background: #b02a37;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Study ZONE</h1>
+<div class="sub-title">Administrative Dashboard</div>
+
+<div class="container">
+
+  <!-- Login Card -->
+  <div class="card" id="loginCard">
+    <label><strong>Admin Password</strong></label>
+    <input type="password" id="password" placeholder="Enter password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Navigation Card -->
+  <div class="card links" id="linksCard">
+    <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
+    <a href="seat-occupancy.html">💺 Seat Occupancy</a>
+    <a href="upcoming-expiry-subscriptions.html">⏰ Upcoming Expiry Subscriptions</a>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+
+<script>
+/* Elements */
+const loginCard = document.getElementById("loginCard");
+const linksCard = document.getElementById("linksCard");
+const passwordInput = document.getElementById("password");
+
+/* Login */
+function login() {
+  if (passwordInput.value === "Chinu") {
+    sessionStorage.setItem("adminAuth", "true");
+    loginCard.style.display = "none";
+    linksCard.style.display = "block";
+  } else {
+    alert("Incorrect Password");
+  }
+}
+
+/* Logout */
+function logout() {
+  sessionStorage.removeItem("adminAuth");
+  linksCard.style.display = "none";
+  loginCard.style.display = "block";
+  passwordInput.value = "";
+}
+
+/* Auto-login if session exists */
+if (sessionStorage.getItem("adminAuth") === "true") {
+  loginCard.style.display = "none";
+  linksCard.style.display = "block";
+}
+</script>
+
+</body>
+</html>

@@ -4,17 +4,23 @@
 <meta charset="UTF-8">
 <title>Study ZONE | Upcoming Expiry Subscriptions</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   background: #f5f7fa;
   margin: 0;
   padding: 16px;
 }
 
-.top-bar { margin-bottom: 16px; }
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
 .back-btn {
   background: #0d6efd;
@@ -22,14 +28,33 @@ body {
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
+  cursor: pointer;
 }
 
-h2 { color: #333; }
+h2 {
+  margin: 12px 0;
+  color: #333;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
 
 .table-container {
   overflow-x: auto;
   background: #fff;
   border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 table {
@@ -38,24 +63,45 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
 thead {
   background: #1f2937;
   color: #fff;
+}
+
+th, td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+tr:hover {
+  background: #f9fafb;
 }
 
 .expiry {
   color: #dc2626;
   font-weight: 600;
 }
+
+@media (max-width: 600px) {
+  th, td {
+    font-size: 13px;
+    padding: 8px;
+  }
+}
 </style>
 </head>
 
 <body>
+
+<!-- Session Check -->
+<script>
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  window.location.href = "index.html";
+}
+</script>
 
 <div class="top-bar">
   <button class="back-btn" onclick="location.href='index.html'">← Back</button>
@@ -63,48 +109,120 @@ thead {
 
 <h2>Upcoming Expiry Subscriptions</h2>
 
+<!-- Filters -->
+<div class="filters">
+  <select id="dateFilter">
+    <option value="">All Dates</option>
+  </select>
+
+  <select id="centerFilter">
+    <option value="">All Centers</option>
+  </select>
+</div>
+
 <div class="table-container">
-<table>
-<thead>
-<tr>
-<th>Access Expiry</th>
-<th>Center</th>
-<th>Full Name</th>
-<th>Plan</th>
-<th>Phone</th>
-</tr>
-</thead>
-<tbody id="tableBody">
-<tr><td colspan="5">Loading...</td></tr>
-</tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>Access Expiry</th>
+        <th>Center</th>
+        <th>Full Name</th>
+        <th>Plan</th>
+        <th>Phone</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="5">Loading data...</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <script>
-if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Unauthorized Access");
-  location.href = "index.html";
-}
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=2082915008&single=true&output=csv";
 
-Papa.parse(
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=2082915008&single=true&output=csv",
-{
+const tableBody = document.getElementById("tableBody");
+const dateFilter = document.getElementById("dateFilter");
+const centerFilter = document.getElementById("centerFilter");
+
+let fullData = [];
+
+Papa.parse(CSV_URL, {
   download: true,
   header: true,
-  complete: res => {
-    tableBody.innerHTML = "";
-    res.data.forEach(r => {
-      tableBody.innerHTML += `
-        <tr>
-          <td class="expiry">${r["Access Expiry (DD-MM-YY)"]||"--"}</td>
-          <td>${r["Center"]||"--"}</td>
-          <td>${r["Full Name"]||"--"}</td>
-          <td>${r["Plan"]||"--"}</td>
-          <td>${r["Phone"]||"--"}</td>
-        </tr>`;
-    });
+  skipEmptyLines: true,
+  complete: function(results) {
+    fullData = results.data;
+
+    populateFilters(fullData);
+    renderTable(fullData);
+  },
+  error: function() {
+    tableBody.innerHTML =
+      `<tr><td colspan="5">Failed to load data</td></tr>`;
   }
 });
+
+/* Populate dropdowns */
+function populateFilters(data) {
+  const dates = new Set();
+  const centers = new Set();
+
+  data.forEach(row => {
+    if (row["Access Expiry (DD-MM-YY)"])
+      dates.add(row["Access Expiry (DD-MM-YY)"]);
+    if (row["Center"])
+      centers.add(row["Center"]);
+  });
+
+  [...dates].sort().forEach(d => {
+    dateFilter.innerHTML += `<option value="${d}">${d}</option>`;
+  });
+
+  [...centers].sort().forEach(c => {
+    centerFilter.innerHTML += `<option value="${c}">${c}</option>`;
+  });
+}
+
+/* Filter logic */
+dateFilter.addEventListener("change", applyFilters);
+centerFilter.addEventListener("change", applyFilters);
+
+function applyFilters() {
+  const selectedDate = dateFilter.value;
+  const selectedCenter = centerFilter.value;
+
+  const filtered = fullData.filter(row => {
+    return (
+      (!selectedDate || row["Access Expiry (DD-MM-YY)"] === selectedDate) &&
+      (!selectedCenter || row["Center"] === selectedCenter)
+    );
+  });
+
+  renderTable(filtered);
+}
+
+/* Render table */
+function renderTable(data) {
+  tableBody.innerHTML = "";
+
+  if (data.length === 0) {
+    tableBody.innerHTML =
+      `<tr><td colspan="5">No matching records</td></tr>`;
+    return;
+  }
+
+  data.forEach(row => {
+    tableBody.innerHTML += `
+      <tr>
+        <td class="expiry">${row["Access Expiry (DD-MM-YY)"] || "--"}</td>
+        <td>${row["Center"] || "--"}</td>
+        <td>${row["Full Name"] || "--"}</td>
+        <td>${row["Plan"] || "--"}</td>
+        <td>${row["Phone"] || "--"}</td>
+      </tr>`;
+  });
+}
 </script>
 
 </body>
