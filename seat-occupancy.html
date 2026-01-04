@@ -5,7 +5,6 @@
 <title>Study ZONE | Seat Occupancy</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -17,13 +16,12 @@
     color: #2c3e50;
   }
 
-  /* Header bar */
   .page-header {
     max-width: 900px;
     margin: 0 auto 16px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
   }
 
   h2 {
@@ -32,7 +30,6 @@
     font-weight: 600;
   }
 
-  /* Back button */
   .back-btn {
     background: #ffffff;
     border: 1px solid #dcdfe6;
@@ -41,7 +38,6 @@
     font-size: 14px;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
   }
 
   .back-btn:hover {
@@ -49,7 +45,6 @@
     color: #ffffff;
   }
 
-  /* Card container */
   .card {
     max-width: 900px;
     margin: auto;
@@ -66,42 +61,59 @@
   }
 
   thead th {
+    position: sticky;
+    top: 0;
     background: #1f4fd8;
     color: #ffffff;
     text-transform: uppercase;
     font-size: 12px;
-    letter-spacing: 0.5px;
     padding: 12px;
     text-align: left;
+    z-index: 10;
   }
 
   tbody td {
     padding: 12px;
     border-bottom: 1px solid #e6e9ef;
-    vertical-align: middle;
   }
 
-  tbody tr:hover {
-    background: #f5f8ff;
+  /* Branch header */
+  .branch-row td {
+    background: #eef2ff;
+    font-weight: 700;
+    color: #1f4fd8;
+    border-top: 2px solid #1f4fd8;
   }
 
-  /* Column alignment */
-  .col-branch {
-    width: 40%;
-    font-weight: 500;
+  .slot-cell {
+    padding-left: 28px;
   }
 
-  .col-slot {
-    width: 30%;
-  }
-
-  .col-count {
-    width: 30%;
+  .count-cell {
     text-align: right;
     font-weight: 600;
   }
 
-  /* Footer note (optional) */
+  /* High occupancy */
+  .high {
+    color: #c0392b;
+    background: #fdecea;
+  }
+
+  /* Totals */
+  .total-row td {
+    background: #f0f3ff;
+    font-weight: 700;
+    border-top: 2px solid #1f4fd8;
+  }
+
+  .grand-total td {
+    background: #e8ecff;
+    font-weight: 800;
+    font-size: 15px;
+    border-top: 3px solid #1f4fd8;
+  }
+
   .note {
     margin-top: 10px;
     font-size: 12px;
@@ -115,9 +127,7 @@
 
 <div class="page-header">
   <h2>Seat Occupancy Data</h2>
-  <button class="back-btn" onclick="window.location.href='index.html'">
-    ← Back
-  </button>
+  <button class="back-btn" onclick="location.href='index.html'">← Back</button>
 </div>
 
 <div class="card">
@@ -129,44 +139,87 @@
         <th style="text-align:right;">Active Count Today</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- Data will load here -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
   <div class="note">
-    Data Source: Google Sheet (Live)
+    🔴 Highlighted values indicate occupancy above 50
   </div>
 </div>
 
 <script>
-  const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
+const csvUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
 
-  Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      const tableBody = document.querySelector("#occupancyTable tbody");
-      tableBody.innerHTML = "";
+Papa.parse(csvUrl, {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function (results) {
 
-      results.data.forEach(row => {
-        const tr = document.createElement("tr");
+    const tbody = document.querySelector("#occupancyTable tbody");
+    tbody.innerHTML = "";
 
-        tr.innerHTML = `
-          <td class="col-branch">${row["Branch"] || ""}</td>
-          <td class="col-slot">${row["Slot"] || ""}</td>
-          <td class="col-count">${row["Active Count Today"] || 0}</td>
-        `;
+    let currentBranch = "";
+    let branchTotal = 0;
+    let grandTotal = 0;
 
-        tableBody.appendChild(tr);
-      });
-    },
-    error: function(err) {
-      alert("Error loading data from Google Sheet");
-      console.error(err);
+    results.data.forEach((row, index) => {
+
+      let branch = (row["Branch"] || "").trim();
+      let slot = (row["Slot"] || "").trim();
+      let count = parseInt(row["Active Count Today"] || 0);
+
+      // Ignore junk rows
+      if (!slot || isNaN(count)) return;
+
+      // New branch starts
+      if (branch) {
+        if (currentBranch) addBranchTotal();
+
+        currentBranch = branch;
+        branchTotal = 0;
+
+        const br = document.createElement("tr");
+        br.className = "branch-row";
+        br.innerHTML = `<td colspan="3">${currentBranch}</td>`;
+        tbody.appendChild(br);
+      }
+
+      branchTotal += count;
+      grandTotal += count;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td></td>
+        <td class="slot-cell">${slot}</td>
+        <td class="count-cell ${count > 50 ? "high" : ""}">${count}</td>
+      `;
+      tbody.appendChild(tr);
+
+      if (index === results.data.length - 1) addBranchTotal();
+    });
+
+    function addBranchTotal() {
+      const totalRow = document.createElement("tr");
+      totalRow.className = "total-row";
+      totalRow.innerHTML = `
+        <td></td>
+        <td>${currentBranch} Total</td>
+        <td class="count-cell">${branchTotal}</td>
+      `;
+      tbody.appendChild(totalRow);
     }
-  });
+
+    const grandRow = document.createElement("tr");
+    grandRow.className = "grand-total";
+    grandRow.innerHTML = `
+      <td colspan="2">Grand Total (East + West)</td>
+      <td class="count-cell">${grandTotal}</td>
+    `;
+    tbody.appendChild(grandRow);
+  }
+});
 </script>
 
 </body>
