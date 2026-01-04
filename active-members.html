@@ -2,191 +2,193 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Study ZONE | Active Members</title>
+<title>Study ZONE | Center & Plan Viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- PapaParse -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-  body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: #f4f7fb;
-    margin: 0;
-    padding: 16px;
-  }
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f4f6fb;
+  margin: 0;
+  padding: 15px;
+}
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
+h2 {
+  text-align: center;
+  color: #1f3c88;
+}
 
-  .back-btn {
-    text-decoration: none;
-    background: #2563eb;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-  }
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
 
-  .back-btn:hover {
-    background: #1e4fd6;
-  }
+label {
+  font-weight: 600;
+  display: block;
+  margin-top: 15px;
+}
 
-  h1 {
-    font-size: 20px;
-    color: #1f2937;
-    margin: 0;
-  }
+select {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
 
-  .controls {
-    margin: 12px 0;
-  }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 13px;
+}
 
-  .controls input {
-    width: 100%;
-    max-width: 320px;
-    padding: 8px 10px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-  }
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
 
-  .table-container {
-    overflow-x: auto;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
+th {
+  background: #1f3c88;
+  color: white;
+}
 
+.status-paid {
+  color: green;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: red;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
   table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 600px;
+    font-size: 12px;
   }
-
-  thead th {
-    position: sticky;
-    top: 0;
-    background: #2563eb;
-    color: #fff;
-    font-weight: 600;
-    font-size: 14px;
-    padding: 10px;
-    text-align: left;
-  }
-
-  tbody td {
-    padding: 9px 10px;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 14px;
-    color: #374151;
-  }
-
-  tbody tr:hover {
-    background: #f1f5f9;
-  }
-
-  .no-data {
-    text-align: center;
-    padding: 16px;
-    color: #6b7280;
-  }
-
-  @media (max-width: 600px) {
-    h1 {
-      font-size: 18px;
-    }
-    .back-btn {
-      font-size: 13px;
-      padding: 7px 12px;
-    }
-  }
+}
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <a href="index.html" class="back-btn">⬅ Back</a>
-  <h1>Active Members List</h1>
-</div>
+<h2>Center → Plan → Member Details</h2>
 
-<div class="controls">
-  <input type="text" id="searchInput" placeholder="Search member...">
-</div>
+<div class="container">
 
-<div class="table-container">
-  <table id="membersTable">
-    <thead id="tableHead"></thead>
-    <tbody id="tableBody"></tbody>
+  <label>Select Center</label>
+  <select id="centerSelect">
+    <option value="">-- Select Center --</option>
+  </select>
+
+  <label>Select Plan</label>
+  <select id="planSelect" disabled>
+    <option value="">-- Select Plan --</option>
+  </select>
+
+  <table id="dataTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Full Name</th>
+        <th>Phone</th>
+        <th>Joining Date</th>
+        <th>Fees Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
   </table>
-  <div id="noData" class="no-data" style="display:none;">No records found</div>
+
 </div>
 
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1262676184&single=true&output=csv";
-
-let tableData = [];
+let rawData = [];
 
 Papa.parse(sheetURL, {
   download: true,
   header: true,
-  skipEmptyLines: true,
   complete: function(results) {
-    tableData = results.data;
-    renderTable(tableData);
+    rawData = results.data.filter(r =>
+      r.Center &&
+      r.Plan &&
+      !r.Center.toLowerCase().includes("total")
+    );
+    loadCenters();
   }
 });
 
-function renderTable(data) {
-  const head = document.getElementById("tableHead");
-  const body = document.getElementById("tableBody");
-  const noData = document.getElementById("noData");
+function loadCenters() {
+  const centers = [...new Set(rawData.map(r => r.Center))];
+  const centerSelect = document.getElementById("centerSelect");
 
-  head.innerHTML = "";
-  body.innerHTML = "";
-
-  if (!data.length) {
-    noData.style.display = "block";
-    return;
-  } else {
-    noData.style.display = "none";
-  }
-
-  // Create header
-  const headerRow = document.createElement("tr");
-  Object.keys(data[0]).forEach(col => {
-    const th = document.createElement("th");
-    th.textContent = col;
-    headerRow.appendChild(th);
-  });
-  head.appendChild(headerRow);
-
-  // Create rows
-  data.forEach(row => {
-    const tr = document.createElement("tr");
-    Object.values(row).forEach(val => {
-      const td = document.createElement("td");
-      td.textContent = val || "-";
-      tr.appendChild(td);
-    });
-    body.appendChild(tr);
+  centers.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    centerSelect.appendChild(opt);
   });
 }
 
-// Search functionality
-document.getElementById("searchInput").addEventListener("input", function () {
-  const search = this.value.toLowerCase();
-  const filtered = tableData.filter(row =>
-    Object.values(row).some(val =>
-      val && val.toString().toLowerCase().includes(search)
-    )
+document.getElementById("centerSelect").addEventListener("change", function() {
+  const center = this.value;
+  const planSelect = document.getElementById("planSelect");
+
+  planSelect.innerHTML = `<option value="">-- Select Plan --</option>`;
+  planSelect.disabled = true;
+  document.getElementById("dataTable").style.display = "none";
+
+  if (!center) return;
+
+  const plans = [...new Set(
+    rawData.filter(r => r.Center === center).map(r => r.Plan)
+  )];
+
+  plans.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    planSelect.appendChild(opt);
+  });
+
+  planSelect.disabled = false;
+});
+
+document.getElementById("planSelect").addEventListener("change", function() {
+  const center = document.getElementById("centerSelect").value;
+  const plan = this.value;
+  const tbody = document.querySelector("#dataTable tbody");
+
+  tbody.innerHTML = "";
+
+  const filtered = rawData.filter(r =>
+    r.Center === center && r.Plan === plan
   );
-  renderTable(filtered);
+
+  filtered.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r["Full Name"]}</td>
+      <td>${r["Phone"]}</td>
+      <td>${r["Joining Date (DD-MM-YY)"]}</td>
+      <td class="${r["Fees Status"].toLowerCase().includes("paid") ? "status-paid" : "status-pending"}">
+        ${r["Fees Status"]}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("dataTable").style.display = filtered.length ? "table" : "none";
 });
 </script>
 
