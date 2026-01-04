@@ -1,46 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Enrollment Requests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f9ff;
+  margin: 0;
+  padding: 15px;
+}
+
+/* Top bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.back-btn {
+  background: #1f3c88;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: #162d63;
+}
+
+h1 {
+  text-align: center;
+  color: #1f3c88;
+  font-size: 22px;
+  margin: 10px 0 5px;
+}
+
+.subtext {
+  text-align: center;
+  font-size: 13px;
+  color: #555;
+}
+
+/* Table wrapper for mobile scroll */
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  min-width: 700px; /* ensures horizontal scroll on mobile */
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 14px;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+
+th {
+  background: #1f3c88;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tr:nth-child(even) {
+  background: #f2f6ff;
+}
+
+.footer {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 18px;
+  }
+
+  .subtext {
+    font-size: 12px;
+  }
+
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .back-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Top Back Button -->
+<div class="top-bar">
+  <button class="back-btn" onclick="goBack()">← Back</button>
+</div>
+
+<h1>Study ZONE – Enrollment Requests</h1>
+<div class="subtext">Auto-loaded from Google Sheets (Read Only)</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="footer">For internal admin use only</div>
+
 <script>
+/* Session check */
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  window.location.href = "index.html";
+}
+
+/* Back navigation */
+function goBack() {
+  window.location.href = "index.html";
+}
+
+/* CSV Load */
 const csvUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
 Papa.parse(csvUrl, {
   download: true,
-  header: true,
   skipEmptyLines: true,
-  complete: function (results) {
+  complete: function(results) {
+    const data = results.data;
+    const headerRow = data[0];
+    const rows = data.slice(1).reverse();
 
-    const tbody = document.querySelector("#occupancyTable tbody");
-    tbody.innerHTML = "";
+    headerRow.forEach(h => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      tableHeader.appendChild(th);
+    });
 
-    let currentBranch = "";
-
-    results.data.forEach((row) => {
-
-      let branch = (row["Branch"] || "").trim();
-      let slot = (row["Slot"] || "").trim();
-      let count = parseInt(row["Active Count Today"] || 0);
-
-      // Ignore invalid rows
-      if (!slot || isNaN(count)) return;
-
-      // New branch header
-      if (branch) {
-        currentBranch = branch;
-
-        const br = document.createElement("tr");
-        br.className = "branch-row";
-        br.innerHTML = `<td colspan="3">${currentBranch}</td>`;
-        tbody.appendChild(br);
-      }
-
-      // Slot row
+    rows.forEach(r => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td></td>
-        <td class="slot-cell">${slot}</td>
-        <td class="count-cell ${count > 50 ? "high" : ""}">${count}</td>
-      `;
-      tbody.appendChild(tr);
+      r.forEach(c => {
+        const td = document.createElement("td");
+        td.textContent = c || "";
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
     });
   }
 });
 </script>
+
+</body>
+</html>
