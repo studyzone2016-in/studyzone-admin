@@ -4,99 +4,164 @@
 <meta charset="UTF-8">
 <title>Study ZONE | Enrollment Requests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f5f9ff;
-  margin: 0;
-  padding: 15px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f5f9ff;
+    margin: 0;
+    padding: 15px;
 }
 
 .top-bar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .back-btn {
-  background: #1f3c88;
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
+    background: #1f3c88;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 h1 {
-  text-align: center;
-  color: #1f3c88;
+    text-align: center;
+    color: #1f3c88;
+    margin: 10px 0;
 }
 
 .table-wrapper {
-  overflow-x: auto;
-  margin-top: 15px;
+    overflow-x: auto;
+    margin-top: 15px;
 }
 
 table {
-  width: 100%;
-  min-width: 700px;
-  border-collapse: collapse;
-  background: #fff;
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    background: #fff;
 }
 
 th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  font-size: 14px;
+    border: 1px solid #e0e0e0;
+    padding: 10px 8px;
+    font-size: 14px;
+    height: 48px;               /* uniform row height */
+    vertical-align: middle;
+    white-space: nowrap;
 }
 
 th {
-  background: #1f3c88;
-  color: #fff;
+    background: #1f3c88;
+    color: #fff;
+    font-weight: 600;
 }
 
 tr:nth-child(even) {
-  background: #f2f6ff;
+    background: #f2f6ff;
+}
+
+/* Phone UI */
+.phone-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.phone-number {
+    font-weight: 500;
+}
+
+.phone-actions a {
+    color: #1f3c88;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.phone-actions a.whatsapp {
+    color: #25D366;
+}
+
+.phone-actions a:hover {
+    opacity: 0.75;
 }
 </style>
 </head>
 
 <body>
-
 <div class="top-bar">
-  <button class="back-btn" onclick="location.href='index.html'">← Back</button>
+    <button class="back-btn" onclick="location.href='index.html'">← Back</button>
 </div>
 
 <h1>Enrollment Requests</h1>
 
 <div class="table-wrapper">
-<table>
-<thead><tr id="tableHeader"></tr></thead>
-<tbody id="tableBody"></tbody>
-</table>
+    <table>
+        <thead>
+            <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 </div>
 
 <script>
 if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Unauthorized Access");
-  location.href = "index.html";
+    alert("Unauthorized Access");
+    location.href = "index.html";
 }
 
 Papa.parse(
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
-  download: true,
-  complete: res => {
-    const [header, ...rows] = res.data;
-    header.forEach(h => tableHeader.innerHTML += `<th>${h}</th>`);
-    rows.reverse().forEach(r => {
-      tableBody.innerHTML += `<tr>${r.map(c=>`<td>${c||""}</td>`).join("")}</tr>`;
-    });
-  }
+    download: true,
+    complete: res => {
+        const [header, ...rows] = res.data;
+
+        header.forEach(h => {
+            tableHeader.innerHTML += `<th>${h}</th>`;
+        });
+
+        rows.reverse().forEach(r => {
+            const rowHtml = r.map((cell, idx) => {
+                const headerName = header[idx].toLowerCase();
+
+                /* Phone column enhancement only */
+                if (headerName.includes("phone")) {
+                    const phone = (cell || "").replace(/\D/g, "");
+                    return `
+                        <td>
+                            <div class="phone-cell">
+                                <span class="phone-number">${cell || ""}</span>
+                                ${phone ? `
+                                <span class="phone-actions">
+                                    <a href="tel:${phone}" title="Call">
+                                        <i class="fa-solid fa-phone"></i>
+                                    </a>
+                                    <a class="whatsapp"
+                                       href="https://wa.me/${phone}"
+                                       target="_blank"
+                                       title="WhatsApp">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </a>
+                                </span>` : ""}
+                            </div>
+                        </td>`;
+                }
+
+                return `<td>${cell || ""}</td>`;
+            }).join("");
+
+            tableBody.innerHTML += `<tr>${rowHtml}</tr>`;
+        });
+    }
 });
 </script>
-
 </body>
 </html>
