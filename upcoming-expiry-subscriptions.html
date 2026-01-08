@@ -38,7 +38,6 @@
   th {
     background: #007bff;
     color: #fff;
-    text-align: left;
   }
   tr:nth-child(even) {
     background: #f9f9f9;
@@ -75,26 +74,34 @@
 const csvUrl =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-/* ---------- CSV PARSER (safe) ---------- */
+/* ---------- CSV SAFE PARSER ---------- */
 function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
+  const out = [];
+  let cur = '';
+  let q = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
+  for (let c of line) {
+    if (c === '"') q = !q;
+    else if (c === ',' && !q) {
+      out.push(cur);
+      cur = '';
+    } else cur += c;
   }
-  result.push(current);
-  return result.map(v => v.replace(/^"|"$/g, '').trim());
+  out.push(cur);
+  return out.map(v => v.replace(/^"|"$/g, '').trim());
+}
+
+/* ---------- DATE PARSER (DD-MM-YY / DD-MM-YYYY) ---------- */
+function parseExpiryDate(val) {
+  if (!val) return null;
+  const p = val.split('-');
+  if (p.length !== 3) return null;
+
+  let [d, m, y] = p.map(n => parseInt(n, 10));
+  if (y < 100) y += 2000; // handle YY
+
+  const date = new Date(y, m - 1, d);
+  return isNaN(date) ? null : date;
 }
 
 fetch(csvUrl)
@@ -103,11 +110,8 @@ fetch(csvUrl)
     const lines = csv.trim().split('\n');
     const headers = parseCSVLine(lines[0]);
 
-    /* ---------- FLEXIBLE HEADER MATCH ---------- */
     const findCol = key =>
-      headers.findIndex(h =>
-        h.toLowerCase().includes(key)
-      );
+      headers.findIndex(h => h.toLowerCase().includes(key));
 
     const col = {
       expiry: findCol('expiry'),
@@ -117,43 +121,49 @@ fetch(csvUrl)
       phone: findCol('phone')
     };
 
-    const tbody = document.querySelector('#subscriptionTable tbody');
+    const rows = [];
 
     lines.slice(1).forEach(line => {
-      const cols = parseCSVLine(line);
+      const c = parseCSVLine(line);
+      const expiryRaw = c[col.expiry];
+      const expiryDate = parseExpiryDate(expiryRaw);
 
-      if (!cols[col.name]) return;
+      // ❌ eliminate empty / invalid expiry
+      if (!expiryDate) return;
 
-      const expiry = cols[col.expiry] || '';
-      let phone = cols[col.phone] || '';
-
-      phone = phone.replace(/\D/g, ''); // digits only
-
+      let phone = (c[col.phone] || '').replace(/\D/g, '');
       let phoneHTML = '';
+
       if (phone.length >= 10) {
         const msg = encodeURIComponent(
-          `🔔 Renewal Alert: Access Ends on ${expiry} - after 10:00 PM`
+          `🔔 Renewal Alert: Access Ends on ${expiryRaw} - after 10:00 PM`
         );
         phoneHTML = `
           <a class="whatsapp-link"
              href="https://wa.me/${phone}?text=${msg}"
-             target="_blank">
-             ${phone}
-          </a>`;
+             target="_blank">${phone}</a>`;
       }
 
-      tbody.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td>${expiry}</td>
-          <td>${cols[col.center] || ''}</td>
-          <td>${cols[col.name] || ''}</td>
-          <td>${cols[col.plan] || ''}</td>
-          <td>${phoneHTML}</td>
-        </tr>
-      `);
+      rows.push({
+        date: expiryDate,
+        html: `
+          <tr>
+            <td>${expiryRaw}</td>
+            <td>${c[col.center] || ''}</td>
+            <td>${c[col.name] || ''}</td>
+            <td>${c[col.plan] || ''}</td>
+            <td>${phoneHTML}</td>
+          </tr>`
+      });
     });
+
+    /* ---------- SORT: LATEST ON TOP ---------- */
+    rows.sort((a, b) => b.date - a.date);
+
+    const tbody = document.querySelector('#subscriptionTable tbody');
+    rows.forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
   })
-  .catch(err => console.error('Load error:', err));
+  .catch(e => console.error('CSV error:', e));
 </script>
 
 </body>
