@@ -6,46 +6,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { font-family: Arial, sans-serif; margin: 10px; }
+body {
+  font-family: Arial, sans-serif;
+  margin: 10px;
+}
 
 .top-bar {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
-.back-btn { padding: 6px 10px; cursor: pointer; }
+.back-btn {
+  padding: 6px 10px;
+  cursor: pointer;
+}
 
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin: 12px 0;
 }
 
-.filter-box {
-  border: 1px solid #ccc;
+select, input {
   padding: 6px;
-  max-height: 160px;
-  overflow-y: auto;
-  min-width: 160px;
+  font-size: 14px;
 }
 
-.filter-box b { display: block; margin-bottom: 4px; }
-
-input[type="text"] { padding: 6px; font-size: 14px; }
-
-.table-wrapper {
-  overflow: auto;
-  max-height: 75vh;
+.table-wrap {
+  overflow-x: auto;
   border: 1px solid #ccc;
 }
 
 table {
   border-collapse: collapse;
-  min-width: 900px;
   width: 100%;
+  min-width: 900px;
 }
 
 th, td {
@@ -58,20 +55,18 @@ th, td {
 
 th {
   background: #f2f2f2;
-  position: sticky;
-  top: 0;
 }
 
-button.call {
+.call-btn {
   background: #4CAF50;
-  color: #fff;
+  color: white;
   border: none;
   padding: 5px 8px;
 }
 
-button.whatsapp {
+.wa-btn {
   background: #25D366;
-  color: #fff;
+  color: white;
   border: none;
   padding: 5px 8px;
 }
@@ -81,17 +76,23 @@ button.whatsapp {
 <body>
 
 <div class="top-bar">
-  <button class="back-btn" onclick="location.href='index.html'">⬅ Back</button>
+  <button class="back-btn" onclick="history.back()">⬅ Back</button>
   <h3>Active Members</h3>
 </div>
 
 <div class="filters">
-  <div class="filter-box" id="centerFilter"><b>Center</b></div>
-  <div class="filter-box" id="planFilter"><b>Plan</b></div>
+  <select id="centerFilter">
+    <option value="">All Centers</option>
+  </select>
+
+  <select id="planFilter">
+    <option value="">All Plans</option>
+  </select>
+
   <input type="text" id="nameSearch" placeholder="Search Full Name">
 </div>
 
-<div class="table-wrapper">
+<div class="table-wrap">
 <table>
 <thead>
 <tr>
@@ -109,114 +110,102 @@ button.whatsapp {
 </div>
 
 <script>
-const CSV_URL =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+/* 🔴 UPDATE THESE TWO VALUES ONLY */
+const SHEET_ID = "PUT_YOUR_SHEET_ID_HERE";
+const GID = "0";
 
-let allRows = [];
-let selectedCenters = new Set();
-let selectedPlans = new Set();
+const URL =
+`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json`;
 
-/* ---------- Robust CSV Parser ---------- */
-function parseCSV(text) {
-  const rows = [];
-  let row = [], val = "", inQuotes = false;
+let allData = [];
 
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], n = text[i + 1];
-    if (c === '"' && inQuotes && n === '"') { val += '"'; i++; }
-    else if (c === '"') inQuotes = !inQuotes;
-    else if (c === "," && !inQuotes) { row.push(val); val = ""; }
-    else if ((c === "\n" || c === "\r") && !inQuotes) {
-      if (val || row.length) row.push(val);
-      if (row.length) rows.push(row);
-      row = []; val = "";
-    } else val += c;
-  }
-  if (val || row.length) { row.push(val); rows.push(row); }
-  return rows;
-}
-
-function parseDMY(v) {
-  const p = v.split("-");
-  if (p.length !== 3) return null;
-  return new Date(p[2], p[1] - 1, p[0]);
-}
-
-fetch(CSV_URL)
+fetch(URL)
   .then(r => r.text())
-  .then(csv => {
-    const data = parseCSV(csv);
-    const headers = data.shift().map(h => h.trim());
+  .then(text => {
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const headers = json.table.cols.map(c => c.label);
+    const rows = json.table.rows;
 
-    const idx = {
-      center: headers.findIndex(h => h.startsWith("Center")),
-      plan: headers.findIndex(h => h.startsWith("Plan")),
-      name: headers.findIndex(h => h.startsWith("Full Name")),
-      phone: headers.findIndex(h => h.startsWith("Phone")),
-      join: headers.findIndex(h => h.startsWith("Joining")),
-      expiry: headers.findIndex(h => h.startsWith("Access Expiry")),
-      fees: headers.findIndex(h => h.startsWith("Fees"))
-    };
+    const col = h => headers.indexOf(h);
 
-    const today = new Date(); today.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0,0,0,0);
 
-    allRows = data.filter(r => {
-      if (!r[idx.expiry]) return false;
-      const d = parseDMY(r[idx.expiry]);
-      return d && d >= today;
+    allData = rows.map(r => ({
+      center: r.c[col("Center")]?.v || "",
+      plan: r.c[col("Plan")]?.v || "",
+      name: r.c[col("Full Name")]?.v || "",
+      phone: r.c[col("Phone")]?.v || "",
+      join: r.c[col("Joining Date (DD-MM-YY)")]?.v || "",
+      expiry: r.c[col("Access Expiry (DD-MM-YY)")]?.v || "",
+      fees: r.c[col("Fees Status")]?.v || ""
+    })).filter(r => {
+      if (!r.expiry) return false;
+      const [dd, mm, yy] = r.expiry.split("-");
+      const d = new Date(`20${yy}`, mm - 1, dd);
+      return d >= today;
     });
 
-    initFilters(idx);
-    renderTable(idx);
+    buildFilters();
+    renderTable();
   });
 
-function initFilters(idx) {
-  buildFilter("centerFilter", idx.center, selectedCenters, idx);
-  buildFilter("planFilter", idx.plan, selectedPlans, idx);
-  document.getElementById("nameSearch").oninput = () => renderTable(idx);
-}
+function buildFilters() {
+  const centerSet = new Set();
+  const planSet = new Set();
 
-function buildFilter(divId, col, set, idx) {
-  const div = document.getElementById(divId);
-  [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
-    const l = document.createElement("label");
-    l.style.display = "block";
-    l.innerHTML = `<input type="checkbox"> ${v}`;
-    l.querySelector("input").onchange = e => {
-      e.target.checked ? set.add(v) : set.delete(v);
-      renderTable(idx);
-    };
-    div.appendChild(l);
+  allData.forEach(r => {
+    centerSet.add(r.center);
+    planSet.add(r.plan);
   });
+
+  centerSet.forEach(c =>
+    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
+  );
+  planSet.forEach(p =>
+    planFilter.innerHTML += `<option value="${p}">${p}</option>`
+  );
+
+  centerFilter.onchange = renderTable;
+  planFilter.onchange = renderTable;
+  nameSearch.oninput = renderTable;
 }
 
-function renderTable(idx) {
-  const body = document.getElementById("tableBody");
-  body.innerHTML = "";
+function renderTable() {
+  tableBody.innerHTML = "";
 
-  const q = document.getElementById("nameSearch").value.toLowerCase();
+  const cVal = centerFilter.value;
+  const pVal = planFilter.value;
+  const q = nameSearch.value.toLowerCase();
 
-  allRows.filter(r => {
-    if (selectedCenters.size && !selectedCenters.has(r[idx.center])) return false;
-    if (selectedPlans.size && !selectedPlans.has(r[idx.plan])) return false;
-    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
+  allData.filter(r => {
+    if (cVal && r.center !== cVal) return false;
+    if (pVal && r.plan !== pVal) return false;
+    if (q && !r.name.toLowerCase().includes(q)) return false;
     return true;
   }).forEach(r => {
-    const phone = r[idx.phone].replace(/\D/g, "");
+    const phoneClean = r.phone.replace(/\D/g,"");
     const msg = encodeURIComponent(
-      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
+      `🔔 Renewal Alert: Access Ends on ${r.expiry} - after 10:00 PM`
     );
 
-    body.innerHTML += `
+    tableBody.innerHTML += `
       <tr>
-        <td>${r[idx.name]}</td>
-        <td>${r[idx.phone]}</td>
-        <td>${r[idx.join]}</td>
-        <td>${r[idx.expiry]}</td>
-        <td>${r[idx.fees]}</td>
-        <td><button class="call" onclick="location.href='tel:${phone}'">Call</button></td>
-        <td><button class="whatsapp"
-          onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
+        <td>${r.name}</td>
+        <td>${r.phone}</td>
+        <td>${r.join}</td>
+        <td>${r.expiry}</td>
+        <td>${r.fees}</td>
+        <td>
+          <button class="call-btn"
+            onclick="location.href='tel:${phoneClean}'">Call</button>
+        </td>
+        <td>
+          <button class="wa-btn"
+            onclick="location.href='https://wa.me/91${phoneClean}?text=${msg}'">
+            WhatsApp
+          </button>
+        </td>
       </tr>`;
   });
 }
