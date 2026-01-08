@@ -61,7 +61,6 @@ th, td {
 th {
     background: #1f3c88;
     color: #fff;
-    font-weight: 600;
 }
 
 tr:nth-child(even) {
@@ -76,19 +75,14 @@ tr:nth-child(even) {
 }
 
 .phone-link {
-    font-weight: 500;
     color: #1f3c88;
-    text-decoration: none;
-}
-
-.phone-link:hover {
-    text-decoration: underline;
+    font-weight: 600;
+    text-decoration: underline; /* force visible hyperlink */
 }
 
 .phone-actions a {
-    text-decoration: none;
     font-size: 16px;
-    margin-left: 6px;
+    text-decoration: none;
 }
 
 .phone-actions .call {
@@ -102,6 +96,7 @@ tr:nth-child(even) {
 </head>
 
 <body>
+
 <div class="top-bar">
     <button class="back-btn" onclick="location.href='index.html'">← Back</button>
 </div>
@@ -109,12 +104,12 @@ tr:nth-child(even) {
 <h1>Enrollment Requests</h1>
 
 <div class="table-wrapper">
-    <table>
-        <thead>
-            <tr id="tableHeader"></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+<table>
+    <thead>
+        <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
 </div>
 
 <script>
@@ -124,51 +119,55 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 }
 
 Papa.parse(
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
     download: true,
     complete: res => {
         const [header, ...rows] = res.data;
 
-        header.forEach(h => {
-            tableHeader.innerHTML += `<th>${h}</th>`;
-        });
+        header.forEach(h => tableHeader.innerHTML += `<th>${h}</th>`);
 
         rows.reverse().forEach(r => {
-            const rowHtml = r.map((cell, idx) => {
-                const headerName = header[idx].toLowerCase();
+            const cells = r.map((cell, idx) => {
+                const col = header[idx].toLowerCase();
 
-                if (headerName.includes("phone")) {
-                    const phone = (cell || "").replace(/\D/g, "");
+                if (col.includes("phone")) {
+                    let phone = (cell || "").replace(/\D/g, "");
+
+                    // normalize Indian numbers
+                    if (phone.length === 10) phone = "91" + phone;
+                    if (phone.length !== 12) phone = "";
+
                     return `
-                        <td>
-                            <div class="phone-cell">
-                                <a class="phone-link" href="tel:${phone}">
-                                    ${cell || ""}
+                    <td>
+                        <div class="phone-cell">
+                            ${phone ? `
+                            <a class="phone-link" href="tel:+${phone}">
+                                ${cell}
+                            </a>
+                            <span class="phone-actions">
+                                <a class="call" href="tel:+${phone}" title="Call">
+                                    <i class="fa-solid fa-phone"></i>
                                 </a>
-                                ${phone ? `
-                                <span class="phone-actions">
-                                    <a class="call" href="tel:${phone}" title="Call">
-                                        <i class="fa-solid fa-phone"></i>
-                                    </a>
-                                    <a class="whatsapp"
-                                       href="https://wa.me/${phone}"
-                                       target="_blank"
-                                       title="WhatsApp">
-                                        <i class="fa-brands fa-whatsapp"></i>
-                                    </a>
-                                </span>` : ""}
-                            </div>
-                        </td>`;
+                                <a class="whatsapp"
+                                   href="https://wa.me/${phone}"
+                                   target="_blank"
+                                   title="WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                </a>
+                            </span>` : cell}
+                        </div>
+                    </td>`;
                 }
 
                 return `<td>${cell || ""}</td>`;
             }).join("");
 
-            tableBody.innerHTML += `<tr>${rowHtml}</tr>`;
+            tableBody.innerHTML += `<tr>${cells}</tr>`;
         });
     }
 });
 </script>
+
 </body>
 </html>
