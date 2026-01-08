@@ -12,6 +12,17 @@
     padding: 10px;
   }
 
+  .back-btn {
+    display: inline-block;
+    margin-bottom: 8px;
+    background: #333;
+    color: #fff;
+    padding: 6px 10px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
   .controls {
     background: #fff;
     padding: 10px;
@@ -22,7 +33,7 @@
   }
 
   .controls div {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   label {
@@ -33,17 +44,6 @@
   select {
     padding: 6px;
     font-size: 14px;
-  }
-
-  .back-btn {
-    display: inline-block;
-    margin-bottom: 8px;
-    background: #333;
-    color: #fff;
-    padding: 6px 10px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 13px;
   }
 
   .table-wrap {
@@ -95,12 +95,10 @@
 
 <a href="index.html" class="back-btn">← Back</a>
 
+<!-- FILTERS -->
 <div class="controls">
-  <div>
-    <strong>Centers:</strong><br>
-    <span id="centerFilter"></span>
-  </div>
 
+  <!-- 1. Expiry -->
   <div>
     <strong>Expiry Date:</strong>
     <select id="expiryFilter">
@@ -108,6 +106,13 @@
     </select>
   </div>
 
+  <!-- 2. Center -->
+  <div>
+    <strong>Center:</strong><br>
+    <span id="centerFilter"></span>
+  </div>
+
+  <!-- 3. Plan toggle -->
   <div>
     <strong>Show Plan Column:</strong>
     <select id="planToggle">
@@ -115,14 +120,16 @@
       <option value="YES">Yes</option>
     </select>
   </div>
+
 </div>
 
+<!-- TABLE -->
 <div class="table-wrap">
 <table>
   <thead>
     <tr>
       <th>Subscriber Name</th>
-      <th class="plan-col" style="display:none;">Plan</th>
+      <th id="planHeader" style="display:none;">Plan</th>
       <th>Phone</th>
       <th>Call</th>
       <th>WhatsApp</th>
@@ -159,8 +166,9 @@ const tbody=document.getElementById('tbody');
 const centerBox=document.getElementById('centerFilter');
 const expiryFilter=document.getElementById('expiryFilter');
 const planToggle=document.getElementById('planToggle');
+const planHeader=document.getElementById('planHeader');
 
-let data=[],centers=new Set(),expiries=new Set();
+let data=[], centers=new Set(), expiries=new Set();
 
 fetch(csvUrl).then(r=>r.text()).then(csv=>{
   const lines=csv.trim().split('\n');
@@ -197,12 +205,6 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
 
   data.sort((a,b)=>a.date-b.date);
 
-  [...centers].sort().forEach(c=>{
-    centerBox.insertAdjacentHTML('beforeend',
-      `<label><input type="checkbox" value="${c}"> ${c}</label>`
-    );
-  });
-
   [...expiries].sort((a,b)=>parseDate(a)-parseDate(b))
     .forEach(e=>{
       expiryFilter.insertAdjacentHTML('beforeend',
@@ -210,9 +212,16 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
       );
     });
 
-  centerBox.addEventListener('change',render);
+  [...centers].sort().forEach(c=>{
+    centerBox.insertAdjacentHTML('beforeend',
+      `<label><input type="checkbox" value="${c}"> ${c}</label>`
+    );
+  });
+
   expiryFilter.addEventListener('change',render);
+  centerBox.addEventListener('change',render);
   planToggle.addEventListener('change',render);
+
   render();
 });
 
@@ -220,6 +229,9 @@ function render(){
   const selCenters=[...centerBox.querySelectorAll('input:checked')]
     .map(x=>x.value);
   const selExpiry=expiryFilter.value;
+
+  const showPlan = planToggle.value === 'YES';
+  planHeader.style.display = showPlan ? 'table-cell' : 'none';
 
   tbody.innerHTML='';
   data.filter(r=>
@@ -229,7 +241,7 @@ function render(){
     tbody.insertAdjacentHTML('beforeend',`
       <tr>
         <td>${r.name}</td>
-        <td class="plan-col" style="display:${planToggle.value==='YES'?'table-cell':'none'}">${r.plan}</td>
+        <td style="display:${showPlan?'table-cell':'none'}">${r.plan}</td>
         <td>${r.phone}</td>
         <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
         <td><a class="wa-btn" target="_blank"
