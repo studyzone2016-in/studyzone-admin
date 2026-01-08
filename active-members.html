@@ -12,9 +12,7 @@
     padding: 12px;
   }
 
-  h2 {
-    margin-top: 0;
-  }
+  h2 { margin-top: 0; }
 
   .back-btn {
     display: inline-block;
@@ -27,6 +25,26 @@
     font-size: 13px;
   }
 
+  .filters {
+    background: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .filters div {
+    margin-bottom: 8px;
+  }
+
+  select, input[type="text"] {
+    padding: 6px;
+    font-size: 14px;
+    width: 220px;
+    max-width: 100%;
+  }
+
   .table-wrap {
     overflow: auto;
     max-height: 75vh;
@@ -36,7 +54,7 @@
 
   table {
     border-collapse: collapse;
-    min-width: 850px;
+    min-width: 900px;
     width: 100%;
     font-size: 14px;
   }
@@ -55,9 +73,7 @@
     z-index: 2;
   }
 
-  tr:nth-child(even) {
-    background: #f9f9f9;
-  }
+  tr:nth-child(even) { background: #f9f9f9; }
 
   .phone a {
     display: inline-block;
@@ -66,18 +82,8 @@
     font-weight: bold;
   }
 
-  .call {
-    color: #007bff;
-  }
-
-  .wa {
-    color: #25D366;
-  }
-
-  .status-active {
-    color: #2e7d32;
-    font-weight: bold;
-  }
+  .call { color: #007bff; }
+  .wa { color: #25D366; }
 </style>
 </head>
 
@@ -86,6 +92,29 @@
 <a href="index.html" class="back-btn">← Back</a>
 <h2>Active Members</h2>
 
+<!-- FILTERS -->
+<div class="filters">
+  <div>
+    <strong>Center:</strong><br>
+    <select id="centerFilter">
+      <option value="ALL">All</option>
+    </select>
+  </div>
+
+  <div>
+    <strong>Plan:</strong><br>
+    <select id="planFilter">
+      <option value="ALL">All</option>
+    </select>
+  </div>
+
+  <div>
+    <strong>Search by Name:</strong><br>
+    <input type="text" id="nameSearch" placeholder="Type full name...">
+  </div>
+</div>
+
+<!-- TABLE -->
 <div class="table-wrap">
 <table>
   <thead>
@@ -125,6 +154,11 @@ function parseDate(v){
 }
 
 const tbody = document.getElementById('tbody');
+const centerFilter = document.getElementById('centerFilter');
+const planFilter = document.getElementById('planFilter');
+const nameSearch = document.getElementById('nameSearch');
+
+let data = [];
 const today = new Date();
 today.setHours(0,0,0,0);
 
@@ -139,50 +173,82 @@ fetch(csvUrl)
       phone: h.findIndex(x=>x.toLowerCase().includes('phone')),
       join: h.findIndex(x=>x.toLowerCase().includes('joining')),
       expiry: h.findIndex(x=>x.toLowerCase().includes('expiry')),
-      fees: h.findIndex(x=>x.toLowerCase().includes('fees'))
+      fees: h.findIndex(x=>x.toLowerCase().includes('fees')),
+      center: h.findIndex(x=>x.toLowerCase().includes('center')),
+      plan: h.findIndex(x=>x.toLowerCase().includes('plan'))
     };
 
-    const rows = [];
+    const centers = new Set();
+    const plans = new Set();
 
     lines.slice(1).forEach(l=>{
       const c = parseCSV(l);
       const expiryDate = parseDate(c[idx.expiry]);
-      if(!expiryDate || expiryDate < today) return; // ACTIVE ONLY
+      if(!expiryDate || expiryDate < today) return;
 
-      rows.push({
+      const phone = (c[idx.phone]||'').replace(/\D/g,'');
+      if(phone.length < 10) return;
+
+      centers.add(c[idx.center]);
+      plans.add(c[idx.plan]);
+
+      data.push({
         name: c[idx.name] || '',
-        phone: (c[idx.phone]||'').replace(/\D/g,''),
+        phone,
         join: c[idx.join] || '',
         expiry: c[idx.expiry] || '',
         fees: c[idx.fees] || '',
+        center: c[idx.center] || '',
+        plan: c[idx.plan] || '',
         date: expiryDate
       });
     });
 
-    // Sort by nearest expiry
-    rows.sort((a,b)=>a.date-b.date);
+    data.sort((a,b)=>a.date-b.date);
 
-    rows.forEach(r=>{
-      const msg = encodeURIComponent(
-        `🔔 Access valid till ${r.expiry}`
-      );
-      tbody.insertAdjacentHTML('beforeend',`
-        <tr>
-          <td>${r.name}</td>
-          <td class="phone">
-            ${r.phone}
-            <br>
-            <a class="call" href="tel:${r.phone}">📞 Call</a>
-            <a class="wa" target="_blank"
-               href="https://wa.me/${r.phone}?text=${msg}">💬 WhatsApp</a>
-          </td>
-          <td>${r.join}</td>
-          <td>${r.expiry}</td>
-          <td class="status-active">${r.fees}</td>
-        </tr>
-      `);
-    });
+    [...centers].sort().forEach(c =>
+      centerFilter.insertAdjacentHTML('beforeend',
+        `<option value="${c}">${c}</option>`));
+
+    [...plans].sort().forEach(p =>
+      planFilter.insertAdjacentHTML('beforeend',
+        `<option value="${p}">${p}</option>`));
+
+    centerFilter.addEventListener('change', render);
+    planFilter.addEventListener('change', render);
+    nameSearch.addEventListener('input', render);
+
+    render();
   });
+
+function render(){
+  const cVal = centerFilter.value;
+  const pVal = planFilter.value;
+  const search = nameSearch.value.toLowerCase();
+
+  tbody.innerHTML = '';
+  data.filter(r =>
+    (cVal === 'ALL' || r.center === cVal) &&
+    (pVal === 'ALL' || r.plan === pVal) &&
+    r.name.toLowerCase().includes(search)
+  ).forEach(r=>{
+    const msg = encodeURIComponent(`🔔 Access valid till ${r.expiry}`);
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${r.name}</td>
+        <td class="phone">
+          ${r.phone}<br>
+          <a class="call" href="tel:${r.phone}">📞 Call</a>
+          <a class="wa" target="_blank"
+             href="https://wa.me/${r.phone}?text=${msg}">💬 WhatsApp</a>
+        </td>
+        <td>${r.join}</td>
+        <td>${r.expiry}</td>
+        <td>${r.fees}</td>
+      </tr>
+    `);
+  });
+}
 </script>
 
 </body>
