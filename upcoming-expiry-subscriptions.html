@@ -9,29 +9,30 @@
   body {
     font-family: Arial, sans-serif;
     background: #f4f6fb;
-    padding: 12px;
+    padding: 10px;
   }
 
-  .top-controls {
+  .controls {
     background: #fff;
     padding: 10px;
     border-radius: 6px;
     border: 1px solid #ddd;
     margin-bottom: 10px;
-  }
-
-  .top-controls > div {
-    margin-bottom: 8px;
     font-size: 14px;
   }
 
-  .top-controls label {
+  .controls div {
+    margin-bottom: 8px;
+  }
+
+  label {
     margin-right: 12px;
     white-space: nowrap;
   }
 
   select {
-    padding: 5px;
+    padding: 6px;
+    font-size: 14px;
   }
 
   .back-btn {
@@ -45,8 +46,7 @@
     font-size: 13px;
   }
 
-  /* Scroll container */
-  .table-container {
+  .table-wrap {
     overflow: auto;
     max-height: 70vh;
     border: 1px solid #ccc;
@@ -55,7 +55,7 @@
 
   table {
     border-collapse: collapse;
-    min-width: 1000px;
+    min-width: 900px;
     font-size: 14px;
   }
 
@@ -65,40 +65,16 @@
     white-space: nowrap;
   }
 
-  /* Sticky header */
   th {
     background: #007bff;
     color: #fff;
     position: sticky;
     top: 0;
-    z-index: 3;
+    z-index: 2;
   }
 
   tr:nth-child(even) {
     background: #f9f9f9;
-  }
-
-  /* ===== FREEZE FIRST 2 COLUMNS ===== */
-
-  .sticky-col-1 {
-    position: sticky;
-    left: 0;
-    background: #fff;
-    z-index: 2;
-  }
-
-  .sticky-col-2 {
-    position: sticky;
-    left: 130px; /* width of column 1 */
-    background: #fff;
-    z-index: 2;
-  }
-
-  /* Header for sticky columns */
-  th.sticky-col-1,
-  th.sticky-col-2 {
-    background: #007bff;
-    z-index: 4;
   }
 
   .call-btn {
@@ -119,10 +95,17 @@
 
 <a href="index.html" class="back-btn">← Back</a>
 
-<div class="top-controls">
-  <div id="centerFilter">
+<div class="controls">
+  <div>
     <strong>Centers:</strong><br>
-    <label><input type="checkbox" value="ALL" checked> All</label>
+    <span id="centerFilter"></span>
+  </div>
+
+  <div>
+    <strong>Expiry Date:</strong>
+    <select id="expiryFilter">
+      <option value="ALL">All</option>
+    </select>
   </div>
 
   <div>
@@ -134,19 +117,18 @@
   </div>
 </div>
 
-<div class="table-container">
-<table id="subscriptionTable">
+<div class="table-wrap">
+<table>
   <thead>
     <tr>
-      <th class="sticky-col-1" style="width:130px;">Expiry Date</th>
-      <th class="sticky-col-2" style="width:220px;">Subscriber Name</th>
+      <th>Subscriber Name</th>
       <th class="plan-col" style="display:none;">Plan</th>
-      <th>Contact</th>
+      <th>Phone</th>
       <th>Call</th>
       <th>WhatsApp</th>
     </tr>
   </thead>
-  <tbody></tbody>
+  <tbody id="tbody"></tbody>
 </table>
 </div>
 
@@ -154,15 +136,15 @@
 const csvUrl =
 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-function parseCSVLine(line){
-  const r=[], q=false; let c='',qt=false;
-  for(let ch of line){
+function parseCSV(line){
+  const out=[], q=false; let cur='',qt=false;
+  for(const ch of line){
     if(ch=='"') qt=!qt;
-    else if(ch==','&&!qt){r.push(c);c='';}
-    else c+=ch;
+    else if(ch==','&&!qt){out.push(cur);cur='';}
+    else cur+=ch;
   }
-  r.push(c);
-  return r.map(v=>v.replace(/^"|"$/g,'').trim());
+  out.push(cur);
+  return out.map(v=>v.replace(/^"|"$/g,'').trim());
 }
 
 function parseDate(v){
@@ -173,15 +155,17 @@ function parseDate(v){
   return isNaN(dt)?null:dt;
 }
 
-const tbody=document.querySelector('tbody');
+const tbody=document.getElementById('tbody');
 const centerBox=document.getElementById('centerFilter');
+const expiryFilter=document.getElementById('expiryFilter');
 const planToggle=document.getElementById('planToggle');
 
-let rows=[],centers=[];
+let data=[],centers=new Set(),expiries=new Set();
 
 fetch(csvUrl).then(r=>r.text()).then(csv=>{
-  const l=csv.trim().split('\n');
-  const h=parseCSVLine(l[0]);
+  const lines=csv.trim().split('\n');
+  const h=parseCSV(lines[0]);
+
   const idx={
     expiry:h.findIndex(x=>x.toLowerCase().includes('expiry')),
     center:h.findIndex(x=>x.toLowerCase().includes('center')),
@@ -190,51 +174,61 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
     phone:h.findIndex(x=>x.toLowerCase().includes('phone'))
   };
 
-  const cs=new Set();
-  l.slice(1).forEach(x=>{
-    const c=parseCSVLine(x);
+  lines.slice(1).forEach(l=>{
+    const c=parseCSV(l);
     const d=parseDate(c[idx.expiry]);
     if(!d) return;
-    const p=(c[idx.phone]||'').replace(/\D/g,'');
-    if(p.length<10) return;
 
-    cs.add(c[idx.center]||'');
-    rows.push({
+    const phone=(c[idx.phone]||'').replace(/\D/g,'');
+    if(phone.length<10) return;
+
+    centers.add(c[idx.center]);
+    expiries.add(c[idx.expiry]);
+
+    data.push({
       center:c[idx.center],
       expiry:c[idx.expiry],
       date:d,
       name:c[idx.name]||'',
       plan:c[idx.plan]||'',
-      phone:p
+      phone
     });
   });
 
-  rows.sort((a,b)=>a.date-b.date);
-  centers=[...cs].sort();
+  data.sort((a,b)=>a.date-b.date);
 
-  centers.forEach(c=>{
+  [...centers].sort().forEach(c=>{
     centerBox.insertAdjacentHTML('beforeend',
       `<label><input type="checkbox" value="${c}"> ${c}</label>`
     );
   });
 
+  [...expiries].sort((a,b)=>parseDate(a)-parseDate(b))
+    .forEach(e=>{
+      expiryFilter.insertAdjacentHTML('beforeend',
+        `<option value="${e}">${e}</option>`
+      );
+    });
+
   centerBox.addEventListener('change',render);
+  expiryFilter.addEventListener('change',render);
   planToggle.addEventListener('change',render);
   render();
 });
 
 function render(){
-  const sel=[...centerBox.querySelectorAll('input')]
-    .filter(x=>x.checked && x.value!=='ALL')
+  const selCenters=[...centerBox.querySelectorAll('input:checked')]
     .map(x=>x.value);
+  const selExpiry=expiryFilter.value;
 
   tbody.innerHTML='';
-  rows.filter(r=>sel.length===0||sel.includes(r.center))
-  .forEach(r=>{
+  data.filter(r=>
+    (selCenters.length===0||selCenters.includes(r.center)) &&
+    (selExpiry==='ALL'||r.expiry===selExpiry)
+  ).forEach(r=>{
     tbody.insertAdjacentHTML('beforeend',`
       <tr>
-        <td class="sticky-col-1">${r.expiry}</td>
-        <td class="sticky-col-2">${r.name}</td>
+        <td>${r.name}</td>
         <td class="plan-col" style="display:${planToggle.value==='YES'?'table-cell':'none'}">${r.plan}</td>
         <td>${r.phone}</td>
         <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
