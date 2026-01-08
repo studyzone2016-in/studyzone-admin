@@ -6,98 +6,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 10px;
-}
+body { font-family: Arial, sans-serif; margin: 10px; }
 
 .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.dropdown {
-    position: relative;
-}
+.dropdown { position: relative; }
 
 .dropdown button {
-    padding: 6px 10px;
-    font-size: 14px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .dropdown-content {
-    display: none;
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 10;
-    padding: 5px;
+  display: none;
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+  min-width: 160px;
 }
 
 .dropdown-content label {
-    display: block;
-    font-size: 13px;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
+  display: block;
+  font-size: 13px;
 }
 
 .count-box {
-    font-size: 13px;
-    margin-left: 5px;
-    color: #555;
+  font-size: 13px;
+  margin-left: 4px;
+  color: #555;
 }
 
 input[type="text"] {
-    padding: 6px;
-    font-size: 14px;
+  padding: 6px;
+  font-size: 14px;
 }
 
 .table-wrapper {
-    overflow: auto;
-    max-height: 75vh;
-    border: 1px solid #ccc;
+  overflow: auto;
+  max-height: 75vh;
+  border: 1px solid #ccc;
 }
 
 table {
-    border-collapse: collapse;
-    min-width: 900px;
-    width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  width: 100%;
 }
 
 th, td {
-    border: 1px solid #ddd;
-    padding: 6px;
-    font-size: 13px;
-    text-align: center;
-    white-space: nowrap;
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 th {
-    background: #f2f2f2;
-    position: sticky;
-    top: 0;
+  background: #f2f2f2;
+  position: sticky;
+  top: 0;
 }
 
 button.call {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 5px 8px;
-    cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 8px;
 }
 
 button.whatsapp {
-    background: #25D366;
-    color: white;
-    border: none;
-    padding: 5px 8px;
-    cursor: pointer;
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 5px 8px;
 }
 </style>
 </head>
@@ -107,133 +98,165 @@ button.whatsapp {
 <h3>Active Members</h3>
 
 <div class="filters">
-    <div class="dropdown">
-        <button>Center</button>
-        <span class="count-box" id="centerCount">(0)</span>
-        <div class="dropdown-content" id="centerFilter"></div>
-    </div>
+  <div class="dropdown">
+    <button onclick="toggleDropdown('centerFilter')">Center</button>
+    <span class="count-box" id="centerCount">(0)</span>
+    <div class="dropdown-content" id="centerFilter"></div>
+  </div>
 
-    <div class="dropdown">
-        <button>Plan</button>
-        <span class="count-box" id="planCount">(0)</span>
-        <div class="dropdown-content" id="planFilter"></div>
-    </div>
+  <div class="dropdown">
+    <button onclick="toggleDropdown('planFilter')">Plan</button>
+    <span class="count-box" id="planCount">(0)</span>
+    <div class="dropdown-content" id="planFilter"></div>
+  </div>
 
-    <input type="text" id="nameSearch" placeholder="Search Full Name">
+  <input type="text" id="nameSearch" placeholder="Search Full Name">
 </div>
 
 <div class="table-wrapper">
 <table>
-    <thead>
-        <tr>
-            <th>Full Name</th>
-            <th>Phone</th>
-            <th>Joining Date</th>
-            <th>Access Expiry</th>
-            <th>Fees Status</th>
-            <th>Call</th>
-            <th>WhatsApp</th>
-        </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
+<thead>
+<tr>
+  <th>Full Name</th>
+  <th>Phone</th>
+  <th>Joining Date</th>
+  <th>Access Expiry</th>
+  <th>Fees Status</th>
+  <th>Call</th>
+  <th>WhatsApp</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
 </table>
 </div>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:csv";
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:csv";
 
 let allRows = [];
 let selectedCenters = new Set();
 let selectedPlans = new Set();
 
 fetch(SHEET_URL)
-.then(res => res.text())
-.then(csv => {
-    const rows = csv.split("\n").map(r => r.split(","));
-    const headers = rows.shift();
+  .then(r => r.text())
+  .then(parseCSV)
+  .then(data => {
+    const headers = data.shift();
 
     const idx = {
-        center: headers.indexOf("Center"),
-        plan: headers.indexOf("Plan"),
-        name: headers.indexOf("Full Name"),
-        phone: headers.indexOf("Phone"),
-        join: headers.indexOf("Joining Date"),
-        expiry: headers.indexOf("Access Expiry"),
-        fees: headers.indexOf("Fees Status")
+      center: headers.indexOf("Center"),
+      plan: headers.indexOf("Plan"),
+      name: headers.indexOf("Full Name"),
+      phone: headers.indexOf("Phone"),
+      join: headers.indexOf("Joining Date"),
+      expiry: headers.indexOf("Access Expiry"),
+      fees: headers.indexOf("Fees Status")
     };
 
     const today = new Date();
+    today.setHours(0,0,0,0);
 
-    allRows = rows.filter(r => {
-        if (!r[idx.expiry]) return false;
-        const exp = new Date(r[idx.expiry].split("-").reverse().join("-"));
-        return exp >= today;
+    allRows = data.filter(r => {
+      if (!r[idx.expiry]) return false;
+      const d = parseDMY(r[idx.expiry]);
+      return d && d >= today;
     });
 
     initFilters(idx);
     renderTable(idx);
-});
+  });
+
+/* ---------- helpers ---------- */
+
+function parseDMY(v) {
+  const p = v.split("-");
+  if (p.length !== 3) return null;
+  return new Date(p[2], p[1]-1, p[0]);
+}
+
+/* Proper CSV parser (fixes commas issue) */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], val = "", inQuotes = false;
+
+  for (let i=0;i<text.length;i++) {
+    const c = text[i], n = text[i+1];
+    if (c === '"' && inQuotes && n === '"') { val += '"'; i++; }
+    else if (c === '"') inQuotes = !inQuotes;
+    else if (c === "," && !inQuotes) { row.push(val); val=""; }
+    else if ((c === "\n" || c === "\r") && !inQuotes) {
+      if (val || row.length) row.push(val);
+      if (row.length) rows.push(row);
+      row=[]; val="";
+    } else val += c;
+  }
+  if (val || row.length) { row.push(val); rows.push(row); }
+  return rows;
+}
+
+function toggleDropdown(id) {
+  document.querySelectorAll(".dropdown-content").forEach(d => {
+    if (d.id !== id) d.style.display = "none";
+  });
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
 
 function initFilters(idx) {
-    const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
-    const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
+  buildCheckboxFilter("centerFilter", idx.center, selectedCenters, idx);
+  buildCheckboxFilter("planFilter", idx.plan, selectedPlans, idx);
+  document.getElementById("nameSearch").oninput = () => renderTable(idx);
+}
 
-    const centerDiv = document.getElementById("centerFilter");
-    centers.forEach(c => {
-        const l = document.createElement("label");
-        l.innerHTML = `<input type="checkbox" value="${c}"> ${c}`;
-        l.querySelector("input").onchange = e => {
-            e.target.checked ? selectedCenters.add(c) : selectedCenters.delete(c);
-            renderTable(idx);
-        };
-        centerDiv.appendChild(l);
-    });
-
-    const planDiv = document.getElementById("planFilter");
-    plans.forEach(p => {
-        const l = document.createElement("label");
-        l.innerHTML = `<input type="checkbox" value="${p}"> ${p}`;
-        l.querySelector("input").onchange = e => {
-            e.target.checked ? selectedPlans.add(p) : selectedPlans.delete(p);
-            renderTable(idx);
-        };
-        planDiv.appendChild(l);
-    });
-
-    document.getElementById("nameSearch").oninput = () => renderTable(idx);
+function buildCheckboxFilter(divId, col, set, idx) {
+  const div = document.getElementById(divId);
+  [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
+    const l = document.createElement("label");
+    l.innerHTML = `<input type="checkbox"> ${v}`;
+    l.querySelector("input").onchange = e => {
+      e.target.checked ? set.add(v) : set.delete(v);
+      renderTable(idx);
+    };
+    div.appendChild(l);
+  });
 }
 
 function renderTable(idx) {
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
 
-    const nameText = document.getElementById("nameSearch").value.toLowerCase();
+  const q = document.getElementById("nameSearch").value.toLowerCase();
 
-    let filtered = allRows.filter(r => {
-        if (selectedCenters.size && !selectedCenters.has(r[idx.center])) return false;
-        if (selectedPlans.size && !selectedPlans.has(r[idx.plan])) return false;
-        if (nameText && !r[idx.name].toLowerCase().includes(nameText)) return false;
-        return true;
-    });
+  const rows = allRows.filter(r => {
+    if (selectedCenters.size && !selectedCenters.has(r[idx.center])) return false;
+    if (selectedPlans.size && !selectedPlans.has(r[idx.plan])) return false;
+    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
+    return true;
+  });
 
-    document.getElementById("centerCount").innerText = `(${filtered.length})`;
-    document.getElementById("planCount").innerText = `(${filtered.length})`;
+  document.getElementById("centerCount").textContent = `(${rows.length})`;
+  document.getElementById("planCount").textContent = `(${rows.length})`;
 
-    filtered.forEach(r => {
-        const phone = r[idx.phone].replace(/\D/g, "");
-        const msg = encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`);
+  rows.forEach(r => {
+    const phone = r[idx.phone].replace(/\D/g,"");
+    const msg = encodeURIComponent(
+      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
+    );
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${r[idx.name]}</td>
-            <td>${r[idx.phone]}</td>
-            <td>${r[idx.join]}</td>
-            <td>${r[idx.expiry]}</td>
-            <td>${r[idx.fees]}</td>
-            <td><button class="call" onclick="location.href='tel:${phone}'">Call</button></td>
-            <td><button class="whatsapp" onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
-        </tr>`;
-    });
+    body.innerHTML += `
+      <tr>
+        <td>${r[idx.name]}</td>
+        <td>${r[idx.phone]}</td>
+        <td>${r[idx.join]}</td>
+        <td>${r[idx.expiry]}</td>
+        <td>${r[idx.fees]}</td>
+        <td><button class="call" onclick="location.href='tel:${phone}'">Call</button></td>
+        <td><button class="whatsapp"
+          onclick="location.href='https://wa.me/91${phone}?text=${msg}'">
+          WhatsApp</button></td>
+      </tr>`;
+  });
 }
 </script>
 
