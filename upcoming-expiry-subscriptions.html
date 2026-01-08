@@ -89,10 +89,10 @@ tr:hover {
 }
 </style>
 </head>
-
 <body>
 
 <script>
+// Simple auth check
 if (sessionStorage.getItem("adminAuth") !== "true") {
   alert("Unauthorized Access");
   window.location.href = "index.html";
@@ -133,18 +133,23 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
+const dateFilter = document.getElementById("dateFilter");
+const centerFilter = document.getElementById("centerFilter");
+const tableBody = document.getElementById("tableBody");
+
 let rawData = [];
 
+// Fetch and parse CSV
 Papa.parse(CSV_URL, {
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
-    rawData = results.data.filter(r =>
-      r.Active_Status === "Active" &&
-      r.Expiry_Clean &&
-      !isNaN(parseInt(r.Days_To_Expiry)) &&
-      parseInt(r.Days_To_Expiry) >= 0
+    console.log("CSV Columns:", Object.keys(results.data[0]));
+    // Filter Active subscriptions only
+    rawData = results.data.filter(r => 
+      r["Active_Status"]?.trim() === "Active" && 
+      r["Expiry_Clean"]?.trim()
     );
 
     populateFilters();
@@ -152,67 +157,65 @@ Papa.parse(CSV_URL, {
   }
 });
 
+// Populate date and center filters
 function populateFilters() {
   const dateSet = new Set();
   const centerSet = new Set();
 
   rawData.forEach(r => {
-    dateSet.add(r.Expiry_Clean);
-    centerSet.add(r.Center);
+    dateSet.add(r["Expiry_Clean"].trim());
+    centerSet.add(r["Center"].trim());
   });
 
-  [...dateSet].sort().forEach(d =>
-    dateFilter.innerHTML += `<option value="${d}">${d}</option>`
-  );
+  [...dateSet].sort().forEach(d => {
+    dateFilter.innerHTML += `<option value="${d}">${d}</option>`;
+  });
 
-  [...centerSet].sort().forEach(c =>
-    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
-  );
+  [...centerSet].sort().forEach(c => {
+    centerFilter.innerHTML += `<option value="${c}">${c}</option>`;
+  });
 }
 
-dateFilter.onchange = centerFilter.onchange = applyFilters;
-
-function applyFilters() {
+// Apply filters
+dateFilter.onchange = centerFilter.onchange = function() {
   const d = dateFilter.value;
   const c = centerFilter.value;
 
   const filtered = rawData.filter(r =>
-    (!d || r.Expiry_Clean === d) &&
-    (!c || r.Center === c)
+    (!d || r["Expiry_Clean"].trim() === d) &&
+    (!c || r["Center"].trim() === c)
   );
 
   renderTable(filtered);
 }
 
-/* 🔹 NEW: Date parser for sorting */
+// Parse date in DD-MM-YYYY for sorting
 function parseDate(val) {
-  const p = val.split("-");
-  const year = p[2].length === 2 ? "20" + p[2] : p[2];
-  return new Date(year, p[1] - 1, p[0]);
+  const [day, month, year] = val.split("-");
+  const fullYear = year.length === 2 ? "20" + year : year;
+  return new Date(fullYear, month - 1, day);
 }
 
+// Render table
 function renderTable(data) {
   tableBody.innerHTML = "";
 
-  /* 🔹 NEW: Sort latest expiry first */
-  data.sort((a, b) =>
-    parseDate(b.Expiry_Clean) - parseDate(a.Expiry_Clean)
-  );
+  data.sort((a, b) => parseDate(b["Expiry_Clean"]) - parseDate(a["Expiry_Clean"]));
 
   data.forEach(r => {
-    const msg = `🔔 Renewal Alert: Access Ends on ${r.Expiry_Clean} - after 10:00 PM`;
-    const phone = r.Phone.replace(/\D/g, "");
-    const wa = `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+    const msg = `🔔 Renewal Alert: Access Ends on ${r["Expiry_Clean"]} - after 10:00 PM`;
+    const phoneNum = (r["Phone"] || r["Phone (WhatsApp)"] || "").replace(/\D/g, "");
+    const waLink = phoneNum ? `https://wa.me/91${phoneNum}?text=${encodeURIComponent(msg)}` : "#";
 
     tableBody.innerHTML += `
       <tr>
-        <td class="expiry">${r.Expiry_Clean}</td>
-        <td>${r.Center}</td>
+        <td class="expiry">${r["Expiry_Clean"]}</td>
+        <td>${r["Center"]}</td>
         <td>${r["Full Name"]}</td>
-        <td>${r.Plan}</td>
+        <td>${r["Plan"]}</td>
         <td>
-          <a class="whatsapp-link" href="${wa}" target="_blank">
-            ${r.Phone}
+          <a class="whatsapp-link" href="${waLink}" target="_blank">
+            ${r["Phone"] || r["Phone (WhatsApp)"] || "N/A"}
           </a>
         </td>
       </tr>
