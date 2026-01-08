@@ -9,44 +9,68 @@
   body {
     font-family: Arial, sans-serif;
     background: #f4f6fb;
-    padding: 15px;
+    padding: 12px;
   }
+
   .top-bar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
+    margin-bottom: 8px;
   }
+
   .back-btn {
     background: #333;
     color: #fff;
-    padding: 6px 12px;
+    padding: 6px 10px;
     text-decoration: none;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
   }
+
+  select {
+    padding: 6px;
+    font-size: 13px;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
-    margin-top: 12px;
-    font-size: 14px;
+    table-layout: fixed; /* prevents horizontal scroll */
+    font-size: 13px;
   }
+
   th, td {
     border: 1px solid #ddd;
-    padding: 8px;
+    padding: 6px;
+    word-wrap: break-word;
   }
+
   th {
     background: #007bff;
     color: #fff;
+    text-align: left;
   }
+
   tr:nth-child(even) {
     background: #f9f9f9;
   }
+
   a.whatsapp-link {
     color: #25D366;
     font-weight: bold;
     text-decoration: none;
+    font-size: 12px;
   }
+
+  /* column width control */
+  th:nth-child(1), td:nth-child(1) { width: 18%; }
+  th:nth-child(2), td:nth-child(2) { width: 14%; }
+  th:nth-child(3), td:nth-child(3) { width: 26%; }
+  th:nth-child(4), td:nth-child(4) { width: 14%; }
+  th:nth-child(5), td:nth-child(5) { width: 28%; }
 </style>
 </head>
 
@@ -54,7 +78,10 @@
 
 <div class="top-bar">
   <a href="index.html" class="back-btn">← Back</a>
-  <h2>Upcoming Expiry Subscriptions</h2>
+  <strong>Center:</strong>
+  <select id="centerFilter">
+    <option value="ALL">All</option>
+  </select>
 </div>
 
 <table id="subscriptionTable">
@@ -74,35 +101,31 @@
 const csvUrl =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-/* ---------- CSV SAFE PARSER ---------- */
 function parseCSVLine(line) {
-  const out = [];
-  let cur = '';
-  let q = false;
-
+  const res = [];
+  let cur = '', q = false;
   for (let c of line) {
     if (c === '"') q = !q;
-    else if (c === ',' && !q) {
-      out.push(cur);
-      cur = '';
-    } else cur += c;
+    else if (c === ',' && !q) { res.push(cur); cur = ''; }
+    else cur += c;
   }
-  out.push(cur);
-  return out.map(v => v.replace(/^"|"$/g, '').trim());
+  res.push(cur);
+  return res.map(v => v.replace(/^"|"$/g, '').trim());
 }
 
-/* ---------- DATE PARSER (DD-MM-YY / DD-MM-YYYY) ---------- */
-function parseExpiryDate(val) {
+function parseDate(val) {
   if (!val) return null;
   const p = val.split('-');
   if (p.length !== 3) return null;
-
   let [d, m, y] = p.map(n => parseInt(n, 10));
-  if (y < 100) y += 2000; // handle YY
-
-  const date = new Date(y, m - 1, d);
-  return isNaN(date) ? null : date;
+  if (y < 100) y += 2000;
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt) ? null : dt;
 }
+
+const tbody = document.querySelector('#subscriptionTable tbody');
+const centerFilter = document.getElementById('centerFilter');
+let allRows = [];
 
 fetch(csvUrl)
   .then(r => r.text())
@@ -110,46 +133,41 @@ fetch(csvUrl)
     const lines = csv.trim().split('\n');
     const headers = parseCSVLine(lines[0]);
 
-    const findCol = key =>
-      headers.findIndex(h => h.toLowerCase().includes(key));
-
     const col = {
-      expiry: findCol('expiry'),
-      center: findCol('center'),
-      name: findCol('full'),
-      plan: findCol('plan'),
-      phone: findCol('phone')
+      expiry: headers.findIndex(h => h.toLowerCase().includes('expiry')),
+      center: headers.findIndex(h => h.toLowerCase().includes('center')),
+      name: headers.findIndex(h => h.toLowerCase().includes('full')),
+      plan: headers.findIndex(h => h.toLowerCase().includes('plan')),
+      phone: headers.findIndex(h => h.toLowerCase().includes('phone'))
     };
 
-    const rows = [];
+    const centers = new Set();
 
-    lines.slice(1).forEach(line => {
-      const c = parseCSVLine(line);
+    lines.slice(1).forEach(l => {
+      const c = parseCSVLine(l);
       const expiryRaw = c[col.expiry];
-      const expiryDate = parseExpiryDate(expiryRaw);
+      const date = parseDate(expiryRaw);
+      if (!date) return; // remove empty expiry rows
 
-      // ❌ eliminate empty / invalid expiry
-      if (!expiryDate) return;
+      const center = c[col.center] || '';
+      centers.add(center);
 
       let phone = (c[col.phone] || '').replace(/\D/g, '');
       let phoneHTML = '';
-
       if (phone.length >= 10) {
         const msg = encodeURIComponent(
           `🔔 Renewal Alert: Access Ends on ${expiryRaw} - after 10:00 PM`
         );
-        phoneHTML = `
-          <a class="whatsapp-link"
-             href="https://wa.me/${phone}?text=${msg}"
-             target="_blank">${phone}</a>`;
+        phoneHTML = `<a class="whatsapp-link" href="https://wa.me/${phone}?text=${msg}" target="_blank">${phone}</a>`;
       }
 
-      rows.push({
-        date: expiryDate,
+      allRows.push({
+        center,
+        date,
         html: `
           <tr>
             <td>${expiryRaw}</td>
-            <td>${c[col.center] || ''}</td>
+            <td>${center}</td>
             <td>${c[col.name] || ''}</td>
             <td>${c[col.plan] || ''}</td>
             <td>${phoneHTML}</td>
@@ -157,13 +175,26 @@ fetch(csvUrl)
       });
     });
 
-    /* ---------- SORT: LATEST ON TOP ---------- */
-    rows.sort((a, b) => b.date - a.date);
+    /* 🔁 SORT: EARLIEST EXPIRY ON TOP */
+    allRows.sort((a, b) => a.date - b.date);
 
-    const tbody = document.querySelector('#subscriptionTable tbody');
-    rows.forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
-  })
-  .catch(e => console.error('CSV error:', e));
+    /* Populate center dropdown */
+    [...centers].sort().forEach(c =>
+      centerFilter.insertAdjacentHTML('beforeend',
+        `<option value="${c}">${c}</option>`));
+
+    renderTable();
+  });
+
+function renderTable() {
+  tbody.innerHTML = '';
+  const selected = centerFilter.value;
+  allRows
+    .filter(r => selected === 'ALL' || r.center === selected)
+    .forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
+}
+
+centerFilter.addEventListener('change', renderTable);
 </script>
 
 </body>
