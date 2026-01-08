@@ -2,107 +2,140 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Study ZONE | Subscriptions</title>
+<title>Study ZONE | Upcoming Expiry Subscriptions</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-  h1 { text-align: center; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background: #007BFF; color: white; }
-  select { padding: 5px; margin-right: 10px; }
-  .whatsapp { color: green; font-weight: bold; text-decoration: none; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    padding: 10px;
+  }
+
+  h2 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 10px;
+    font-size: 1.5em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+  }
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #007bff;
+    color: white;
+    font-size: 0.95em;
+  }
+
+  tr:nth-child(even){background-color: #f9f9f9;}
+  tr:hover {background-color: #e6f0ff;}
+
+  a.whatsapp-link {
+    color: #25D366;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  /* Responsive for mobile */
+  @media screen and (max-width: 600px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead tr {
+      display: none;
+    }
+
+    tr {
+      margin-bottom: 10px;
+      border-bottom: 2px solid #007bff;
+      padding: 5px;
+    }
+
+    td {
+      border: none;
+      padding: 4px 0;
+      position: relative;
+      padding-left: 50%;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    td::before {
+      position: absolute;
+      top: 4px;
+      left: 8px;
+      width: 45%;
+      white-space: nowrap;
+      font-weight: bold;
+      content: attr(data-label);
+    }
+  }
 </style>
 </head>
 <body>
-
-<h1>Study ZONE | Upcoming Expiry Subscriptions</h1>
-
-<div>
-  <label for="centerFilter">Center:</label>
-  <select id="centerFilter"><option value="">All</option></select>
-
-  <label for="planFilter">Plan:</label>
-  <select id="planFilter"><option value="">All</option></select>
-</div>
-
+<h2>Upcoming Expiry Subscriptions</h2>
 <table id="subscriptionTable">
   <thead>
     <tr>
-      <th>Employee Code</th>
-      <th>Full Name</th>
-      <th>Phone</th>
       <th>Access Expiry</th>
-      <th>Plan</th>
       <th>Center</th>
-      <th>WhatsApp</th>
+      <th>Full Name</th>
+      <th>Plan</th>
+      <th>Phone (WhatsApp)</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-let subscriptions = [];
+fetch(csvUrl)
+  .then(response => response.text())
+  .then(csvText => {
+    const rows = csvText.trim().split('\n');
+    const headers = rows[0].split('\t'); // TSV separator
+    const tbody = document.querySelector('#subscriptionTable tbody');
 
-// Fetch CSV and parse
-Papa.parse(csvUrl, {
-  download: true,
-  header: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    subscriptions = results.data;
-    populateFilters();
-    renderTable();
-  }
-});
+    rows.slice(1).forEach(row => {
+      const cols = row.split('\t');
+      const data = {
+        'Access Expiry': cols[headers.indexOf('Access Expiry (DD-MM-YY)')],
+        'Center': cols[headers.indexOf('Center')],
+        'Full Name': cols[headers.indexOf('Full Name')],
+        'Plan': cols[headers.indexOf('Plan')],
+        'Phone': cols[headers.indexOf('Phone')]
+      };
 
-// Populate Center and Plan filters dynamically
-function populateFilters() {
-  const centers = [...new Set(subscriptions.map(s => s.Center).filter(Boolean))];
-  const plans = [...new Set(subscriptions.map(s => s.Plan).filter(Boolean))];
+      if(data['Phone']) {
+        const waMessage = encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${data['Access Expiry']}`);
+        data['Phone'] = `<a class="whatsapp-link" href="https://wa.me/${data['Phone']}?text=${waMessage}" target="_blank">${data['Phone']}</a>`;
+      }
 
-  const centerSelect = document.getElementById("centerFilter");
-  centers.forEach(c => centerSelect.innerHTML += `<option value="${c}">${c}</option>`);
-
-  const planSelect = document.getElementById("planFilter");
-  plans.forEach(p => planSelect.innerHTML += `<option value="${p}">${p}</option>`);
-
-  centerSelect.addEventListener("change", renderTable);
-  planSelect.addEventListener("change", renderTable);
-}
-
-// Render filtered table
-function renderTable() {
-  const centerFilter = document.getElementById("centerFilter").value;
-  const planFilter = document.getElementById("planFilter").value;
-  const tbody = document.querySelector("#subscriptionTable tbody");
-  tbody.innerHTML = "";
-
-  const filtered = subscriptions.filter(s => {
-    return (centerFilter === "" || s.Center === centerFilter) &&
-           (planFilter === "" || s.Plan === planFilter);
-  });
-
-  filtered.forEach(s => {
-    const phone = s.Phone ? s.Phone.replace(/\s+/g, '') : "";
-    const whatsappLink = phone ? `https://wa.me/91${phone}?text=${encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${s['Access Expiry (DD-MM-YY)']} - after 10:00 PM`)}` : "#";
-    tbody.innerHTML += `
-      <tr>
-        <td>${s['Employee Code'] || ""}</td>
-        <td>${s['Full Name'] || ""}</td>
-        <td>${s.Phone || ""}</td>
-        <td>${s['Access Expiry (DD-MM-YY)'] || ""}</td>
-        <td>${s.Plan || ""}</td>
-        <td>${s.Center || ""}</td>
-        <td>${phone ? `<a class="whatsapp" href="${whatsappLink}" target="_blank">WhatsApp</a>` : ""}</td>
-      </tr>
-    `;
-  });
-}
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td data-label="Access Expiry">${data['Access Expiry'] || ''}</td>
+        <td data-label="Center">${data['Center'] || ''}</td>
+        <td data-label="Full Name">${data['Full Name'] || ''}</td>
+        <td data-label="Plan">${data['Plan'] || ''}</td>
+        <td data-label="Phone (WhatsApp)">${data['Phone'] || ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  })
+  .catch(err => console.error('Error fetching CSV:', err));
 </script>
-
 </body>
 </html>
