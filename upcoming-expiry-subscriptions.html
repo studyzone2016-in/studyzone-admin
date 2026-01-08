@@ -8,79 +8,27 @@
   body {
     font-family: Arial, sans-serif;
     background: #f4f6fb;
-    padding: 10px;
+    padding: 20px;
   }
-
-  h2 {
-    text-align: center;
-    color: #007bff;
-    margin-bottom: 10px;
-    font-size: 1.5em;
-  }
-
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9em;
+    margin-top: 20px;
   }
-
   th, td {
     border: 1px solid #ddd;
-    padding: 6px 8px;
+    padding: 8px;
     text-align: left;
   }
-
   th {
     background-color: #007bff;
     color: white;
-    font-size: 0.95em;
   }
-
-  tr:nth-child(even){background-color: #f9f9f9;}
-  tr:hover {background-color: #e6f0ff;}
-
+  tr:nth-child(even){background-color: #f2f2f2;}
   a.whatsapp-link {
     color: #25D366;
     text-decoration: none;
     font-weight: bold;
-  }
-
-  /* Responsive for mobile */
-  @media screen and (max-width: 600px) {
-    table, thead, tbody, th, td, tr {
-      display: block;
-    }
-
-    thead tr {
-      display: none;
-    }
-
-    tr {
-      margin-bottom: 10px;
-      border-bottom: 2px solid #007bff;
-      padding: 5px;
-    }
-
-    td {
-      border: none;
-      padding: 4px 0;
-      position: relative;
-      padding-left: 50%;
-      text-align: left;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    td::before {
-      position: absolute;
-      top: 4px;
-      left: 8px;
-      width: 45%;
-      white-space: nowrap;
-      font-weight: bold;
-      content: attr(data-label);
-    }
   }
 </style>
 </head>
@@ -126,11 +74,11 @@ fetch(csvUrl)
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td data-label="Access Expiry">${data['Access Expiry'] || ''}</td>
-        <td data-label="Center">${data['Center'] || ''}</td>
-        <td data-label="Full Name">${data['Full Name'] || ''}</td>
-        <td data-label="Plan">${data['Plan'] || ''}</td>
-        <td data-label="Phone (WhatsApp)">${data['Phone'] || ''}</td>
+        <td>${data['Access Expiry'] || ''}</td>
+        <td>${data['Center'] || ''}</td>
+        <td>${data['Full Name'] || ''}</td>
+        <td>${data['Plan'] || ''}</td>
+        <td>${data['Phone'] || ''}</td>
       `;
       tbody.appendChild(tr);
     });
