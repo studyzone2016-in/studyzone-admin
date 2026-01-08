@@ -20,51 +20,72 @@ body { font-family: Arial, sans-serif; margin: 10px; }
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
-.dropdown { position: relative; min-width: 170px; }
+.dropdown {
+  position: relative;
+  min-width: 180px;
+}
 
 .drop-btn {
   width: 100%;
-  padding: 6px;
+  padding: 7px 8px;
   border: 1px solid #ccc;
   background: #fff;
   cursor: pointer;
   text-align: left;
+  border-radius: 4px;
+}
+
+.drop-btn::after {
+  content: "▾";
+  float: right;
 }
 
 .drop-list {
   display: none;
   position: absolute;
-  z-index: 20;
+  top: 110%;
+  left: 0;
+  z-index: 999;
   background: #fff;
   border: 1px solid #ccc;
-  max-height: 180px;
+  border-radius: 4px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.12);
+  max-height: 220px;
   overflow-y: auto;
   width: 100%;
 }
 
 .drop-list label {
   display: block;
-  padding: 6px;
+  padding: 7px 10px;
   font-size: 14px;
+  cursor: pointer;
+}
+
+.drop-list label:hover {
+  background: #f4f6f8;
 }
 
 input[type="text"] {
-  padding: 6px;
+  padding: 7px;
   font-size: 14px;
 }
 
 .count-box {
   background: #f2f2f2;
   border: 1px solid #ccc;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-weight: bold;
   border-radius: 4px;
 }
 
-.table-wrap { overflow-x: auto; border: 1px solid #ccc; }
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #ccc;
+}
 
 table {
   border-collapse: collapse;
@@ -84,7 +105,7 @@ th { background: #f2f2f2; }
 
 .call-btn { background: #4CAF50; color: #fff; border: none; padding:4px 8px; }
 .wa-btn { background: #25D366; color: #fff; border: none; padding:4px 8px; }
-.disabled { opacity: 0.4; pointer-events: none; }
+.disabled { opacity: .4; pointer-events: none; }
 </style>
 </head>
 
@@ -96,13 +117,20 @@ th { background: #f2f2f2; }
 </div>
 
 <div class="filters">
+
+  <!-- ✅ FEES STATUS FIRST -->
   <div class="dropdown">
-    <div class="drop-btn" onclick="toggleDrop('centerList')">Select Center</div>
+    <div class="drop-btn" onclick="toggleDrop('feesList')">Fees Status</div>
+    <div class="drop-list" id="feesList"></div>
+  </div>
+
+  <div class="dropdown">
+    <div class="drop-btn" onclick="toggleDrop('centerList')">Center</div>
     <div class="drop-list" id="centerList"></div>
   </div>
 
   <div class="dropdown">
-    <div class="drop-btn" onclick="toggleDrop('planList')">Select Plan</div>
+    <div class="drop-btn" onclick="toggleDrop('planList')">Plan</div>
     <div class="drop-list" id="planList"></div>
   </div>
 
@@ -134,134 +162,120 @@ th { background: #f2f2f2; }
 const CSV_URL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let allRows = [];
-let idxGlobal = null;
+let allRows = [], idxGlobal = null;
 
-/* ✅ PHONE NORMALIZATION */
 function normalizePhone(raw) {
   if (!raw) return null;
-  let p = raw.replace(/\D/g, "");     // digits only
-  if (p.startsWith("91") && p.length > 10) {
-    p = p.slice(-10);                 // remove 91 prefix
-  }
+  let p = raw.replace(/\D/g,"");
+  if (p.startsWith("91") && p.length > 10) p = p.slice(-10);
   return /^\d{10}$/.test(p) ? p : null;
 }
 
 fetch(CSV_URL)
-  .then(r => r.text())
-  .then(csv => {
-    const rows = parseCSV(csv);
-    const headers = rows.shift();
+.then(r=>r.text())
+.then(csv=>{
+  const rows=parseCSV(csv);
+  const headers=rows.shift();
 
-    idxGlobal = {
-      center: headers.indexOf("Center"),
-      plan: headers.indexOf("Plan"),
-      name: headers.indexOf("Full Name"),
-      phone: headers.indexOf("Phone"),
-      join: headers.indexOf("Joining Date (DD-MM-YY)"),
-      expiry: headers.indexOf("Access Expiry (DD-MM-YY)"),
-      fees: headers.indexOf("Fees Status")
-    };
+  idxGlobal={
+    fees:headers.indexOf("Fees Status"),
+    center:headers.indexOf("Center"),
+    plan:headers.indexOf("Plan"),
+    name:headers.indexOf("Full Name"),
+    phone:headers.indexOf("Phone"),
+    join:headers.indexOf("Joining Date (DD-MM-YY)"),
+    expiry:headers.indexOf("Access Expiry (DD-MM-YY)")
+  };
 
-    const today = new Date(); today.setHours(0,0,0,0);
+  const today=new Date(); today.setHours(0,0,0,0);
 
-    allRows = rows.filter(r => {
-      const e = r[idxGlobal.expiry];
-      if (!e) return false;
-      const [dd, mm, yy] = e.split("-");
-      return new Date(`20${yy}`, mm-1, dd) >= today;
-    });
-
-    buildDropdown("centerList", idxGlobal.center);
-    buildDropdown("planList", idxGlobal.plan);
-    render();
+  allRows=rows.filter(r=>{
+    const e=r[idxGlobal.expiry];
+    if(!e) return false;
+    const [dd,mm,yy]=e.split("-");
+    return new Date(`20${yy}`,mm-1,dd)>=today;
   });
 
-function toggleDrop(id) {
-  const el = document.getElementById(id);
-  closeAllDropdowns();
-  el.style.display = "block";
+  buildDropdown("feesList",idxGlobal.fees);
+  buildDropdown("centerList",idxGlobal.center);
+  buildDropdown("planList",idxGlobal.plan);
+  render();
+});
+
+function toggleDrop(id){
+  const el=document.getElementById(id);
+  const open=el.style.display==="block";
+  closeAll();
+  if(!open) el.style.display="block";
 }
 
-function closeAllDropdowns() {
-  document.querySelectorAll(".drop-list").forEach(d => d.style.display = "none");
+function closeAll(){
+  document.querySelectorAll(".drop-list").forEach(d=>d.style.display="none");
 }
 
-function buildDropdown(id, col) {
-  const box = document.getElementById(id);
-  [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
-    const lbl = document.createElement("label");
-    lbl.innerHTML = `<input type="checkbox" value="${v}"> ${v}`;
-    lbl.querySelector("input").onchange = () => { render(); closeAllDropdowns(); };
-    box.appendChild(lbl);
+function buildDropdown(id,col){
+  const box=document.getElementById(id);
+  [...new Set(allRows.map(r=>r[col]).filter(Boolean))].forEach(v=>{
+    const l=document.createElement("label");
+    l.innerHTML=`<input type="checkbox" value="${v}"> ${v}`;
+    l.querySelector("input").onchange=render;
+    box.appendChild(l);
   });
 }
 
-function selectedValues(id) {
-  return [...document.querySelectorAll(`#${id} input:checked`)].map(cb => cb.value);
+function selected(id){
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value);
 }
 
-function render() {
-  const idx = idxGlobal;
-  tableBody.innerHTML = "";
+function render(){
+  tableBody.innerHTML="";
+  const f=selected("feesList"),
+        c=selected("centerList"),
+        p=selected("planList"),
+        q=nameSearch.value.toLowerCase();
 
-  const centers = selectedValues("centerList");
-  const plans = selectedValues("planList");
-  const q = nameSearch.value.toLowerCase();
-
-  const filtered = allRows.filter(r => {
-    if (centers.length && !centers.includes(r[idx.center])) return false;
-    if (plans.length && !plans.includes(r[idx.plan])) return false;
-    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
+  const data=allRows.filter(r=>{
+    if(f.length && !f.includes(r[idxGlobal.fees])) return false;
+    if(c.length && !c.includes(r[idxGlobal.center])) return false;
+    if(p.length && !p.includes(r[idxGlobal.plan])) return false;
+    if(q && !r[idxGlobal.name].toLowerCase().includes(q)) return false;
     return true;
   });
 
-  resultCount.innerText = filtered.length;
+  resultCount.innerText=data.length;
 
-  filtered.forEach(r => {
-    const cleanPhone = normalizePhone(r[idx.phone]);
-    const msg = encodeURIComponent(
-      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
-    );
+  data.forEach(r=>{
+    const ph=normalizePhone(r[idxGlobal.phone]);
+    const msg=encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idxGlobal.expiry]} - after 10:00 PM`);
 
-    tableBody.innerHTML += `
-      <tr>
-        <td>${r[idx.name]}</td>
-        <td>${cleanPhone ?? r[idx.phone]}</td>
-        <td>${r[idx.join]}</td>
-        <td>${r[idx.expiry]}</td>
-        <td>${r[idx.fees]}</td>
-        <td>
-          ${cleanPhone
-            ? `<button class="call-btn" onclick="location.href='tel:${cleanPhone}'">Call</button>`
-            : `<button class="call-btn disabled">Call</button>`}
-        </td>
-        <td>
-          ${cleanPhone
-            ? `<button class="wa-btn" onclick="location.href='https://wa.me/91${cleanPhone}?text=${msg}'">WhatsApp</button>`
-            : `<button class="wa-btn disabled">WhatsApp</button>`}
-        </td>
-      </tr>`;
+    tableBody.innerHTML+=`
+    <tr>
+      <td>${r[idxGlobal.name]}</td>
+      <td>${ph ?? r[idxGlobal.phone]}</td>
+      <td>${r[idxGlobal.join]}</td>
+      <td>${r[idxGlobal.expiry]}</td>
+      <td>${r[idxGlobal.fees]}</td>
+      <td>${ph?`<button class="call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="call-btn disabled">Call</button>`}</td>
+      <td>${ph?`<button class="wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="wa-btn disabled">WhatsApp</button>`}</td>
+    </tr>`;
   });
 }
 
-document.addEventListener("click", e => {
-  if (!e.target.closest(".dropdown")) closeAllDropdowns();
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".dropdown")) closeAll();
 });
+nameSearch.oninput=render;
 
-nameSearch.oninput = render;
-
-/* CSV parser */
-function parseCSV(text) {
-  const rows=[], row=[], cur={v:""}, q={v:false};
-  for (let c of text) {
-    if (c === '"') q.v = !q.v;
-    else if (c === "," && !q.v) { row.push(cur.v); cur.v=""; }
-    else if (c === "\n" && !q.v) { row.push(cur.v); rows.push([...row]); row.length=0; cur.v=""; }
-    else cur.v += c;
+function parseCSV(t){
+  const r=[],row=[],c={v:""},q={v:false};
+  for(let x of t){
+    if(x=='"') q.v=!q.v;
+    else if(x==","&&!q.v){row.push(c.v);c.v="";}
+    else if(x=="\n"&&!q.v){row.push(c.v);r.push([...row]);row.length=0;c.v="";}
+    else c.v+=x;
   }
-  row.push(cur.v); rows.push([...row]);
-  return rows;
+  row.push(c.v); r.push([...row]);
+  return r;
 }
 </script>
 
