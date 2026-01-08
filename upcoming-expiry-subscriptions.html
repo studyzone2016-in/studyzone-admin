@@ -14,13 +14,13 @@
 
   .top-bar {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .back-btn {
+    width: fit-content;
     background: #333;
     color: #fff;
     padding: 6px 10px;
@@ -29,9 +29,17 @@
     font-size: 13px;
   }
 
-  select {
-    padding: 6px;
+  .center-filter {
+    background: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
     font-size: 13px;
+  }
+
+  .center-filter label {
+    margin-right: 12px;
+    white-space: nowrap;
   }
 
   table {
@@ -65,11 +73,10 @@
     font-size: 12px;
   }
 
-  /* column width control */
   th:nth-child(1), td:nth-child(1) { width: 20%; }
-  th:nth-child(2), td:nth-child(2) { width: 35%; }
+  th:nth-child(2), td:nth-child(2) { width: 40%; }
   th:nth-child(3), td:nth-child(3) { width: 15%; }
-  th:nth-child(4), td:nth-child(4) { width: 30%; }
+  th:nth-child(4), td:nth-child(4) { width: 25%; }
 </style>
 </head>
 
@@ -77,10 +84,14 @@
 
 <div class="top-bar">
   <a href="index.html" class="back-btn">← Back</a>
-  <strong>Center:</strong>
-  <select id="centerFilter">
-    <option value="ALL">All</option>
-  </select>
+
+  <div class="center-filter" id="centerFilter">
+    <strong>Centers:</strong><br>
+    <label>
+      <input type="checkbox" value="ALL" checked>
+      All
+    </label>
+  </div>
 </div>
 
 <table id="subscriptionTable">
@@ -122,8 +133,10 @@ function parseDate(val) {
 }
 
 const tbody = document.querySelector('#subscriptionTable tbody');
-const centerFilter = document.getElementById('centerFilter');
+const filterBox = document.getElementById('centerFilter');
+
 let allRows = [];
+let centers = [];
 
 fetch(csvUrl)
   .then(r => r.text())
@@ -139,7 +152,7 @@ fetch(csvUrl)
       phone: headers.findIndex(h => h.toLowerCase().includes('phone'))
     };
 
-    const centers = new Set();
+    const centerSet = new Set();
 
     lines.slice(1).forEach(l => {
       const c = parseCSVLine(l);
@@ -148,7 +161,7 @@ fetch(csvUrl)
       if (!date) return;
 
       const center = c[col.center] || '';
-      centers.add(center);
+      centerSet.add(center);
 
       let phone = (c[col.phone] || '').replace(/\D/g, '');
       let phoneHTML = '';
@@ -172,25 +185,55 @@ fetch(csvUrl)
       });
     });
 
-    /* Earliest expiry on top */
     allRows.sort((a, b) => a.date - b.date);
+    centers = [...centerSet].sort();
 
-    [...centers].sort().forEach(c =>
-      centerFilter.insertAdjacentHTML('beforeend',
-        `<option value="${c}">${c}</option>`));
-
+    renderCenterCheckboxes();
     renderTable();
   });
 
-function renderTable() {
-  tbody.innerHTML = '';
-  const sel = centerFilter.value;
-  allRows
-    .filter(r => sel === 'ALL' || r.center === sel)
-    .forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
+function renderCenterCheckboxes() {
+  centers.forEach(c => {
+    filterBox.insertAdjacentHTML(
+      'beforeend',
+      `<label>
+        <input type="checkbox" value="${c}">
+        ${c}
+      </label>`
+    );
+  });
+
+  filterBox.addEventListener('change', handleCenterChange);
 }
 
-centerFilter.addEventListener('change', renderTable);
+function handleCenterChange(e) {
+  const allBox = filterBox.querySelector('input[value="ALL"]');
+  const boxes = [...filterBox.querySelectorAll('input')].filter(b => b.value !== 'ALL');
+
+  if (e.target.value === 'ALL') {
+    boxes.forEach(b => b.checked = allBox.checked);
+  } else {
+    allBox.checked = boxes.every(b => b.checked);
+  }
+
+  renderTable();
+}
+
+function getSelectedCenters() {
+  const boxes = [...filterBox.querySelectorAll('input')]
+    .filter(b => b.checked && b.value !== 'ALL')
+    .map(b => b.value);
+  return boxes;
+}
+
+function renderTable() {
+  tbody.innerHTML = '';
+  const selected = getSelectedCenters();
+
+  allRows
+    .filter(r => selected.length === 0 || selected.includes(r.center))
+    .forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
+}
 </script>
 
 </body>
