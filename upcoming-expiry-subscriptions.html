@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Study ZONE | Upcoming Expiry Subscriptions</title>
+<title>Study ZONE | Subscription Expiry Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -12,15 +12,31 @@
     padding: 12px;
   }
 
-  .top-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .top-controls {
+    background: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
     margin-bottom: 10px;
   }
 
+  .top-controls > div {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .top-controls label {
+    margin-right: 12px;
+    white-space: nowrap;
+  }
+
+  select {
+    padding: 5px;
+  }
+
   .back-btn {
-    width: fit-content;
+    display: inline-block;
+    margin-bottom: 8px;
     background: #333;
     color: #fff;
     padding: 6px 10px;
@@ -29,236 +45,206 @@
     font-size: 13px;
   }
 
-  .center-filter {
+  /* Scrollable table container */
+  .table-container {
+    overflow: auto;
+    max-height: 70vh;
+    border: 1px solid #ccc;
     background: #fff;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    font-size: 13px;
-  }
-
-  .center-filter label {
-    margin-right: 12px;
-    white-space: nowrap;
   }
 
   table {
-    width: 100%;
     border-collapse: collapse;
-    background: #fff;
-    table-layout: fixed;
-    font-size: 13px;
+    min-width: 900px; /* enables horizontal scroll */
+    font-size: 14px;
   }
 
   th, td {
     border: 1px solid #ddd;
-    padding: 6px;
-    word-wrap: break-word;
-    vertical-align: top;
+    padding: 10px;
+    text-align: left;
+    white-space: nowrap;
   }
 
   th {
     background: #007bff;
     color: #fff;
-    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
 
   tr:nth-child(even) {
     background: #f9f9f9;
   }
 
-  .phone-box {
-    font-size: 12px;
-  }
-
-  .phone-number {
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-
-  .phone-actions a {
-    margin-right: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 12px;
-  }
-
-  .call-link {
+  .call-btn {
     color: #007bff;
+    font-weight: bold;
+    text-decoration: none;
   }
 
-  .wa-link {
+  .wa-btn {
     color: #25D366;
+    font-weight: bold;
+    text-decoration: none;
   }
-
-  th:nth-child(1), td:nth-child(1) { width: 20%; }
-  th:nth-child(2), td:nth-child(2) { width: 40%; }
-  th:nth-child(3), td:nth-child(3) { width: 15%; }
-  th:nth-child(4), td:nth-child(4) { width: 25%; }
 </style>
 </head>
 
 <body>
 
-<div class="top-bar">
-  <a href="index.html" class="back-btn">← Back</a>
+<a href="index.html" class="back-btn">← Back</a>
 
-  <div class="center-filter" id="centerFilter">
+<div class="top-controls">
+
+  <div id="centerFilter">
     <strong>Centers:</strong><br>
-    <label>
-      <input type="checkbox" value="ALL" checked>
-      All
-    </label>
+    <label><input type="checkbox" value="ALL" checked> All</label>
   </div>
+
+  <div>
+    <strong>Show Plan Column:</strong>
+    <select id="planToggle">
+      <option value="NO">No</option>
+      <option value="YES">Yes</option>
+    </select>
+  </div>
+
 </div>
 
+<div class="table-container">
 <table id="subscriptionTable">
   <thead>
-    <tr>
-      <th>Access Expiry</th>
-      <th>Full Name</th>
-      <th>Plan</th>
-      <th>Phone</th>
+    <tr id="tableHeader">
+      <th>Expiry Date</th>
+      <th>Subscriber Name</th>
+      <th class="plan-col" style="display:none;">Plan</th>
+      <th>Contact</th>
+      <th>Call</th>
+      <th>WhatsApp</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
+</div>
 
 <script>
 const csvUrl =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
 function parseCSVLine(line) {
   const res = [];
-  let cur = '', q = false;
+  let cur='', q=false;
   for (let c of line) {
     if (c === '"') q = !q;
-    else if (c === ',' && !q) { res.push(cur); cur = ''; }
+    else if (c === ',' && !q) { res.push(cur); cur=''; }
     else cur += c;
   }
   res.push(cur);
-  return res.map(v => v.replace(/^"|"$/g, '').trim());
+  return res.map(v => v.replace(/^"|"$/g,'').trim());
 }
 
-function parseDate(val) {
-  if (!val) return null;
-  const p = val.split('-');
-  if (p.length !== 3) return null;
-  let [d, m, y] = p.map(n => parseInt(n, 10));
-  if (y < 100) y += 2000;
-  const dt = new Date(y, m - 1, d);
-  return isNaN(dt) ? null : dt;
+function parseDate(v) {
+  if (!v) return null;
+  let [d,m,y] = v.split('-').map(n=>parseInt(n,10));
+  if (y<100) y+=2000;
+  const dt = new Date(y,m-1,d);
+  return isNaN(dt)?null:dt;
 }
 
 const tbody = document.querySelector('#subscriptionTable tbody');
-const filterBox = document.getElementById('centerFilter');
+const centerBox = document.getElementById('centerFilter');
+const planToggle = document.getElementById('planToggle');
 
-let allRows = [];
-let centers = [];
+let rows=[], centers=[];
 
-fetch(csvUrl)
-  .then(r => r.text())
-  .then(csv => {
-    const lines = csv.trim().split('\n');
-    const headers = parseCSVLine(lines[0]);
+fetch(csvUrl).then(r=>r.text()).then(csv=>{
+  const lines = csv.trim().split('\n');
+  const h = parseCSVLine(lines[0]);
 
-    const col = {
-      expiry: headers.findIndex(h => h.toLowerCase().includes('expiry')),
-      center: headers.findIndex(h => h.toLowerCase().includes('center')),
-      name: headers.findIndex(h => h.toLowerCase().includes('full')),
-      plan: headers.findIndex(h => h.toLowerCase().includes('plan')),
-      phone: headers.findIndex(h => h.toLowerCase().includes('phone'))
-    };
+  const col = {
+    expiry: h.findIndex(x=>x.toLowerCase().includes('expiry')),
+    center: h.findIndex(x=>x.toLowerCase().includes('center')),
+    name: h.findIndex(x=>x.toLowerCase().includes('full')),
+    plan: h.findIndex(x=>x.toLowerCase().includes('plan')),
+    phone: h.findIndex(x=>x.toLowerCase().includes('phone'))
+  };
 
-    const centerSet = new Set();
+  const cs = new Set();
 
-    lines.slice(1).forEach(l => {
-      const c = parseCSVLine(l);
-      const expiryRaw = c[col.expiry];
-      const date = parseDate(expiryRaw);
-      if (!date) return;
+  lines.slice(1).forEach(l=>{
+    const c = parseCSVLine(l);
+    const d = parseDate(c[col.expiry]);
+    if (!d) return;
 
-      const center = c[col.center] || '';
-      centerSet.add(center);
+    const center = c[col.center] || '';
+    cs.add(center);
 
-      let phone = (c[col.phone] || '').replace(/\D/g, '');
-      let phoneHTML = '';
+    const phone = (c[col.phone]||'').replace(/\D/g,'');
+    if (phone.length<10) return;
 
-      if (phone.length >= 10) {
-        const msg = encodeURIComponent(
-          `🔔 Renewal Alert: Access Ends on ${expiryRaw} - after 10:00 PM`
-        );
-
-        phoneHTML = `
-          <div class="phone-box">
-            <div class="phone-number">${phone}</div>
-            <div class="phone-actions">
-              <a class="call-link" href="tel:${phone}">📞 Call</a>
-              <a class="wa-link" href="https://wa.me/${phone}?text=${msg}" target="_blank">💬 WhatsApp</a>
-            </div>
-          </div>`;
-      }
-
-      allRows.push({
-        center,
-        date,
-        html: `
-          <tr>
-            <td>${expiryRaw}</td>
-            <td>${c[col.name] || ''}</td>
-            <td>${c[col.plan] || ''}</td>
-            <td>${phoneHTML}</td>
-          </tr>`
-      });
+    rows.push({
+      center,
+      date:d,
+      expiry:c[col.expiry],
+      name:c[col.name]||'',
+      plan:c[col.plan]||'',
+      phone
     });
-
-    allRows.sort((a, b) => a.date - b.date);
-    centers = [...centerSet].sort();
-
-    renderCenterCheckboxes();
-    renderTable();
   });
 
-function renderCenterCheckboxes() {
-  centers.forEach(c => {
-    filterBox.insertAdjacentHTML(
-      'beforeend',
-      `<label>
-        <input type="checkbox" value="${c}">
-        ${c}
-      </label>`
+  rows.sort((a,b)=>a.date-b.date);
+  centers=[...cs].sort();
+
+  centers.forEach(c=>{
+    centerBox.insertAdjacentHTML('beforeend',
+      `<label><input type="checkbox" value="${c}"> ${c}</label>`
     );
   });
 
-  filterBox.addEventListener('change', handleCenterChange);
+  centerBox.addEventListener('change',render);
+  planToggle.addEventListener('change',togglePlan);
+
+  render();
+});
+
+function getCenters(){
+  const boxes=[...centerBox.querySelectorAll('input')];
+  const all=boxes.find(b=>b.value==='ALL');
+  const sel=boxes.filter(b=>b.checked && b.value!=='ALL').map(b=>b.value);
+  if (event?.target?.value==='ALL')
+    boxes.forEach(b=>b.checked=all.checked);
+  all.checked = sel.length === boxes.length-1;
+  return sel;
 }
 
-function handleCenterChange(e) {
-  const allBox = filterBox.querySelector('input[value="ALL"]');
-  const boxes = [...filterBox.querySelectorAll('input')].filter(b => b.value !== 'ALL');
-
-  if (e.target.value === 'ALL') {
-    boxes.forEach(b => b.checked = allBox.checked);
-  } else {
-    allBox.checked = boxes.every(b => b.checked);
-  }
-
-  renderTable();
+function togglePlan(){
+  const show = planToggle.value==='YES';
+  document.querySelectorAll('.plan-col').forEach(c=>{
+    c.style.display = show?'table-cell':'none';
+  });
+  render();
 }
 
-function getSelectedCenters() {
-  return [...filterBox.querySelectorAll('input')]
-    .filter(b => b.checked && b.value !== 'ALL')
-    .map(b => b.value);
-}
-
-function renderTable() {
-  tbody.innerHTML = '';
-  const selected = getSelectedCenters();
-
-  allRows
-    .filter(r => selected.length === 0 || selected.includes(r.center))
-    .forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
+function render(){
+  tbody.innerHTML='';
+  const sel=getCenters();
+  rows.filter(r=>sel.length===0||sel.includes(r.center))
+    .forEach(r=>{
+      tbody.insertAdjacentHTML('beforeend',`
+        <tr>
+          <td>${r.expiry}</td>
+          <td>${r.name}</td>
+          <td class="plan-col" style="display:${planToggle.value==='YES'?'table-cell':'none'}">${r.plan}</td>
+          <td>${r.phone}</td>
+          <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
+          <td><a class="wa-btn" href="https://wa.me/${r.phone}?text=${encodeURIComponent(
+            `🔔 Renewal Alert: Access Ends on ${r.expiry} - after 10:00 PM`
+          )}" target="_blank">💬 WhatsApp</a></td>
+        </tr>
+      `);
+    });
 }
 </script>
 
