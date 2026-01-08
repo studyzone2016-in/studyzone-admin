@@ -2,194 +2,187 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Study ZONE | Center & Plan Viewer</title>
+<title>Study ZONE | Active Members</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PapaParse -->
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f4f6fb;
-  margin: 0;
-  padding: 15px;
-}
-
-h2 {
-  text-align: center;
-  color: #1f3c88;
-}
-
-.container {
-  max-width: 600px;
-  margin: auto;
-  background: #fff;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
-
-label {
-  font-weight: 600;
-  display: block;
-  margin-top: 15px;
-}
-
-select {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  margin-top: 6px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 13px;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-th {
-  background: #1f3c88;
-  color: white;
-}
-
-.status-paid {
-  color: green;
-  font-weight: 600;
-}
-
-.status-pending {
-  color: red;
-  font-weight: 600;
-}
-
-@media (max-width: 600px) {
-  table {
-    font-size: 12px;
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    padding: 12px;
   }
-}
+
+  h2 {
+    margin-top: 0;
+  }
+
+  .back-btn {
+    display: inline-block;
+    margin-bottom: 10px;
+    background: #333;
+    color: #fff;
+    padding: 6px 10px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  .table-wrap {
+    overflow: auto;
+    max-height: 75vh;
+    border: 1px solid #ccc;
+    background: #fff;
+  }
+
+  table {
+    border-collapse: collapse;
+    min-width: 850px;
+    width: 100%;
+    font-size: 14px;
+  }
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #007bff;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+
+  .phone a {
+    display: inline-block;
+    margin-right: 6px;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .call {
+    color: #007bff;
+  }
+
+  .wa {
+    color: #25D366;
+  }
+
+  .status-active {
+    color: #2e7d32;
+    font-weight: bold;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>Center → Plan → Member Details</h2>
+<a href="index.html" class="back-btn">← Back</a>
+<h2>Active Members</h2>
 
-<div class="container">
-
-  <label>Select Center</label>
-  <select id="centerSelect">
-    <option value="">-- Select Center --</option>
-  </select>
-
-  <label>Select Plan</label>
-  <select id="planSelect" disabled>
-    <option value="">-- Select Plan --</option>
-  </select>
-
-  <table id="dataTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Full Name</th>
-        <th>Phone</th>
-        <th>Joining Date</th>
-        <th>Fees Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Full Name</th>
+      <th>Phone</th>
+      <th>Joining Date</th>
+      <th>Access Expiry</th>
+      <th>Fees Status</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
 </div>
 
 <script>
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1262676184&single=true&output=csv";
-let rawData = [];
+const csvUrl =
+'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-Papa.parse(sheetURL, {
-  download: true,
-  header: true,
-  complete: function(results) {
-    rawData = results.data.filter(r =>
-      r.Center &&
-      r.Plan &&
-      !r.Center.toLowerCase().includes("total")
-    );
-    loadCenters();
+function parseCSV(line){
+  const out=[]; let cur='',q=false;
+  for(const ch of line){
+    if(ch === '"') q=!q;
+    else if(ch === ',' && !q){ out.push(cur); cur=''; }
+    else cur+=ch;
   }
-});
-
-function loadCenters() {
-  const centers = [...new Set(rawData.map(r => r.Center))];
-  const centerSelect = document.getElementById("centerSelect");
-
-  centers.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    centerSelect.appendChild(opt);
-  });
+  out.push(cur);
+  return out.map(v=>v.replace(/^"|"$/g,'').trim());
 }
 
-document.getElementById("centerSelect").addEventListener("change", function() {
-  const center = this.value;
-  const planSelect = document.getElementById("planSelect");
+function parseDate(v){
+  if(!v) return null;
+  let [d,m,y]=v.split('-').map(n=>parseInt(n,10));
+  if(y < 100) y += 2000;
+  const dt = new Date(y,m-1,d);
+  return isNaN(dt) ? null : dt;
+}
 
-  planSelect.innerHTML = `<option value="">-- Select Plan --</option>`;
-  planSelect.disabled = true;
-  document.getElementById("dataTable").style.display = "none";
+const tbody = document.getElementById('tbody');
+const today = new Date();
+today.setHours(0,0,0,0);
 
-  if (!center) return;
+fetch(csvUrl)
+  .then(r=>r.text())
+  .then(csv=>{
+    const lines = csv.trim().split('\n');
+    const h = parseCSV(lines[0]);
 
-  const plans = [...new Set(
-    rawData.filter(r => r.Center === center).map(r => r.Plan)
-  )];
+    const idx = {
+      name: h.findIndex(x=>x.toLowerCase().includes('full')),
+      phone: h.findIndex(x=>x.toLowerCase().includes('phone')),
+      join: h.findIndex(x=>x.toLowerCase().includes('joining')),
+      expiry: h.findIndex(x=>x.toLowerCase().includes('expiry')),
+      fees: h.findIndex(x=>x.toLowerCase().includes('fees'))
+    };
 
-  plans.forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p;
-    planSelect.appendChild(opt);
+    const rows = [];
+
+    lines.slice(1).forEach(l=>{
+      const c = parseCSV(l);
+      const expiryDate = parseDate(c[idx.expiry]);
+      if(!expiryDate || expiryDate < today) return; // ACTIVE ONLY
+
+      rows.push({
+        name: c[idx.name] || '',
+        phone: (c[idx.phone]||'').replace(/\D/g,''),
+        join: c[idx.join] || '',
+        expiry: c[idx.expiry] || '',
+        fees: c[idx.fees] || '',
+        date: expiryDate
+      });
+    });
+
+    // Sort by nearest expiry
+    rows.sort((a,b)=>a.date-b.date);
+
+    rows.forEach(r=>{
+      const msg = encodeURIComponent(
+        `🔔 Access valid till ${r.expiry}`
+      );
+      tbody.insertAdjacentHTML('beforeend',`
+        <tr>
+          <td>${r.name}</td>
+          <td class="phone">
+            ${r.phone}
+            <br>
+            <a class="call" href="tel:${r.phone}">📞 Call</a>
+            <a class="wa" target="_blank"
+               href="https://wa.me/${r.phone}?text=${msg}">💬 WhatsApp</a>
+          </td>
+          <td>${r.join}</td>
+          <td>${r.expiry}</td>
+          <td class="status-active">${r.fees}</td>
+        </tr>
+      `);
+    });
   });
-
-  planSelect.disabled = false;
-});
-
-document.getElementById("planSelect").addEventListener("change", function() {
-  const center = document.getElementById("centerSelect").value;
-  const plan = this.value;
-  const tbody = document.querySelector("#dataTable tbody");
-
-  tbody.innerHTML = "";
-
-  const filtered = rawData.filter(r =>
-    r.Center === center && r.Plan === plan
-  );
-
-  filtered.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r["Full Name"]}</td>
-      <td>${r["Phone"]}</td>
-      <td>${r["Joining Date (DD-MM-YY)"]}</td>
-      <td class="${r["Fees Status"].toLowerCase().includes("paid") ? "status-paid" : "status-pending"}">
-        ${r["Fees Status"]}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById("dataTable").style.display = filtered.length ? "table" : "none";
-});
 </script>
 
 </body>
