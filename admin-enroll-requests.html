@@ -53,7 +53,7 @@ th, td {
     border: 1px solid #e0e0e0;
     padding: 10px 8px;
     font-size: 14px;
-    height: 48px;               /* uniform row height */
+    height: 48px;
     vertical-align: middle;
     white-space: nowrap;
 }
@@ -75,22 +75,28 @@ tr:nth-child(even) {
     gap: 10px;
 }
 
-.phone-number {
+.phone-link {
     font-weight: 500;
+    color: #1f3c88;
+    text-decoration: none;
+}
+
+.phone-link:hover {
+    text-decoration: underline;
 }
 
 .phone-actions a {
-    color: #1f3c88;
     text-decoration: none;
     font-size: 16px;
+    margin-left: 6px;
 }
 
-.phone-actions a.whatsapp {
+.phone-actions .call {
+    color: #1f3c88;
+}
+
+.phone-actions .whatsapp {
     color: #25D366;
-}
-
-.phone-actions a:hover {
-    opacity: 0.75;
 }
 </style>
 </head>
@@ -132,16 +138,17 @@ Papa.parse(
             const rowHtml = r.map((cell, idx) => {
                 const headerName = header[idx].toLowerCase();
 
-                /* Phone column enhancement only */
                 if (headerName.includes("phone")) {
                     const phone = (cell || "").replace(/\D/g, "");
                     return `
                         <td>
                             <div class="phone-cell">
-                                <span class="phone-number">${cell || ""}</span>
+                                <a class="phone-link" href="tel:${phone}">
+                                    ${cell || ""}
+                                </a>
                                 ${phone ? `
                                 <span class="phone-actions">
-                                    <a href="tel:${phone}" title="Call">
+                                    <a class="call" href="tel:${phone}" title="Call">
                                         <i class="fa-solid fa-phone"></i>
                                     </a>
                                     <a class="whatsapp"
