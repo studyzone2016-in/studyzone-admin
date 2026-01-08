@@ -15,9 +15,10 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 10px;
 }
 
-.back-btn {
+button {
   padding: 6px 10px;
   cursor: pointer;
 }
@@ -26,7 +27,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 12px 0;
+  margin-bottom: 10px;
 }
 
 select, input {
@@ -41,8 +42,8 @@ select, input {
 
 table {
   border-collapse: collapse;
-  width: 100%;
   min-width: 900px;
+  width: 100%;
 }
 
 th, td {
@@ -59,16 +60,14 @@ th {
 
 .call-btn {
   background: #4CAF50;
-  color: white;
+  color: #fff;
   border: none;
-  padding: 5px 8px;
 }
 
 .wa-btn {
   background: #25D366;
-  color: white;
+  color: #fff;
   border: none;
-  padding: 5px 8px;
 }
 </style>
 </head>
@@ -76,7 +75,7 @@ th {
 <body>
 
 <div class="top-bar">
-  <button class="back-btn" onclick="history.back()">⬅ Back</button>
+  <button onclick="history.back()">⬅ Back</button>
   <h3>Active Members</h3>
 </div>
 
@@ -110,104 +109,114 @@ th {
 </div>
 
 <script>
-/* 🔴 UPDATE THESE TWO VALUES ONLY */
-const SHEET_ID = "PUT_YOUR_SHEET_ID_HERE";
-const GID = "0";
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-const URL =
-`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json`;
+let allRows = [];
 
-let allData = [];
-
-fetch(URL)
+fetch(CSV_URL)
   .then(r => r.text())
-  .then(text => {
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-    const headers = json.table.cols.map(c => c.label);
-    const rows = json.table.rows;
+  .then(csv => {
+    const rows = parseCSV(csv);
+    const headers = rows.shift();
 
-    const col = h => headers.indexOf(h);
+    const idx = {
+      center: headers.indexOf("Center"),
+      plan: headers.indexOf("Plan"),
+      name: headers.indexOf("Full Name"),
+      phone: headers.indexOf("Phone"),
+      join: headers.indexOf("Joining Date (DD-MM-YY)"),
+      expiry: headers.indexOf("Access Expiry (DD-MM-YY)"),
+      fees: headers.indexOf("Fees Status")
+    };
 
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    allData = rows.map(r => ({
-      center: r.c[col("Center")]?.v || "",
-      plan: r.c[col("Plan")]?.v || "",
-      name: r.c[col("Full Name")]?.v || "",
-      phone: r.c[col("Phone")]?.v || "",
-      join: r.c[col("Joining Date (DD-MM-YY)")]?.v || "",
-      expiry: r.c[col("Access Expiry (DD-MM-YY)")]?.v || "",
-      fees: r.c[col("Fees Status")]?.v || ""
-    })).filter(r => {
-      if (!r.expiry) return false;
-      const [dd, mm, yy] = r.expiry.split("-");
+    allRows = rows.filter(r => {
+      const e = r[idx.expiry];
+      if (!e) return false;
+      const [dd, mm, yy] = e.split("-");
       const d = new Date(`20${yy}`, mm - 1, dd);
       return d >= today;
     });
 
-    buildFilters();
-    renderTable();
+    populateFilters(idx);
+    render(idx);
   });
 
-function buildFilters() {
-  const centerSet = new Set();
-  const planSet = new Set();
+function populateFilters(idx) {
+  const centers = new Set();
+  const plans = new Set();
 
-  allData.forEach(r => {
-    centerSet.add(r.center);
-    planSet.add(r.plan);
+  allRows.forEach(r => {
+    centers.add(r[idx.center]);
+    plans.add(r[idx.plan]);
   });
 
-  centerSet.forEach(c =>
+  centers.forEach(c =>
     centerFilter.innerHTML += `<option value="${c}">${c}</option>`
   );
-  planSet.forEach(p =>
+  plans.forEach(p =>
     planFilter.innerHTML += `<option value="${p}">${p}</option>`
   );
 
-  centerFilter.onchange = renderTable;
-  planFilter.onchange = renderTable;
-  nameSearch.oninput = renderTable;
+  centerFilter.onchange = () => render(idx);
+  planFilter.onchange = () => render(idx);
+  nameSearch.oninput = () => render(idx);
 }
 
-function renderTable() {
+function render(idx) {
   tableBody.innerHTML = "";
 
-  const cVal = centerFilter.value;
-  const pVal = planFilter.value;
+  const c = centerFilter.value;
+  const p = planFilter.value;
   const q = nameSearch.value.toLowerCase();
 
-  allData.filter(r => {
-    if (cVal && r.center !== cVal) return false;
-    if (pVal && r.plan !== pVal) return false;
-    if (q && !r.name.toLowerCase().includes(q)) return false;
+  allRows.filter(r => {
+    if (c && r[idx.center] !== c) return false;
+    if (p && r[idx.plan] !== p) return false;
+    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
     return true;
   }).forEach(r => {
-    const phoneClean = r.phone.replace(/\D/g,"");
+    const phone = r[idx.phone].replace(/\D/g, "");
     const msg = encodeURIComponent(
-      `🔔 Renewal Alert: Access Ends on ${r.expiry} - after 10:00 PM`
+      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
     );
 
     tableBody.innerHTML += `
-      <tr>
-        <td>${r.name}</td>
-        <td>${r.phone}</td>
-        <td>${r.join}</td>
-        <td>${r.expiry}</td>
-        <td>${r.fees}</td>
-        <td>
-          <button class="call-btn"
-            onclick="location.href='tel:${phoneClean}'">Call</button>
-        </td>
-        <td>
-          <button class="wa-btn"
-            onclick="location.href='https://wa.me/91${phoneClean}?text=${msg}'">
-            WhatsApp
-          </button>
-        </td>
-      </tr>`;
+    <tr>
+      <td>${r[idx.name]}</td>
+      <td>${r[idx.phone]}</td>
+      <td>${r[idx.join]}</td>
+      <td>${r[idx.expiry]}</td>
+      <td>${r[idx.fees]}</td>
+      <td><button class="call-btn" onclick="location.href='tel:${phone}'">Call</button></td>
+      <td><button class="wa-btn" onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
+    </tr>`;
   });
+}
+
+/* Robust CSV parser (handles commas inside quotes) */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cur = "", inside = false;
+
+  for (let c of text) {
+    if (c === '"' ) inside = !inside;
+    else if (c === "," && !inside) {
+      row.push(cur); cur = "";
+    } else if (c === "\n" && !inside) {
+      row.push(cur);
+      rows.push(row);
+      row = []; cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  row.push(cur);
+  rows.push(row);
+  return rows;
 }
 </script>
 
