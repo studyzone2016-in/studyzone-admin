@@ -6,10 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 10px;
-}
+body { font-family: Arial, sans-serif; margin: 10px; }
 
 .top-bar {
   display: flex;
@@ -18,10 +15,7 @@ body {
   margin-bottom: 10px;
 }
 
-.back-btn {
-  padding: 6px 10px;
-  cursor: pointer;
-}
+.back-btn { padding: 6px 10px; cursor: pointer; }
 
 .filters {
   display: flex;
@@ -38,15 +32,9 @@ body {
   min-width: 160px;
 }
 
-.filter-box b {
-  display: block;
-  margin-bottom: 4px;
-}
+.filter-box b { display: block; margin-bottom: 4px; }
 
-input[type="text"] {
-  padding: 6px;
-  font-size: 14px;
-}
+input[type="text"] { padding: 6px; font-size: 14px; }
 
 .table-wrapper {
   overflow: auto;
@@ -98,14 +86,8 @@ button.whatsapp {
 </div>
 
 <div class="filters">
-  <div class="filter-box" id="centerFilter">
-    <b>Center</b>
-  </div>
-
-  <div class="filter-box" id="planFilter">
-    <b>Plan</b>
-  </div>
-
+  <div class="filter-box" id="centerFilter"><b>Center</b></div>
+  <div class="filter-box" id="planFilter"><b>Plan</b></div>
   <input type="text" id="nameSearch" placeholder="Search Full Name">
 </div>
 
@@ -128,37 +110,60 @@ button.whatsapp {
 
 <script>
 const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
 let allRows = [];
 let selectedCenters = new Set();
 let selectedPlans = new Set();
 
+/* ---------- Robust CSV Parser ---------- */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], val = "", inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (c === '"' && inQuotes && n === '"') { val += '"'; i++; }
+    else if (c === '"') inQuotes = !inQuotes;
+    else if (c === "," && !inQuotes) { row.push(val); val = ""; }
+    else if ((c === "\n" || c === "\r") && !inQuotes) {
+      if (val || row.length) row.push(val);
+      if (row.length) rows.push(row);
+      row = []; val = "";
+    } else val += c;
+  }
+  if (val || row.length) { row.push(val); rows.push(row); }
+  return rows;
+}
+
+function parseDMY(v) {
+  const p = v.split("-");
+  if (p.length !== 3) return null;
+  return new Date(p[2], p[1] - 1, p[0]);
+}
+
 fetch(CSV_URL)
   .then(r => r.text())
   .then(csv => {
-    const lines = csv.trim().split("\n").map(l => l.split(","));
-    const headers = lines.shift();
+    const data = parseCSV(csv);
+    const headers = data.shift().map(h => h.trim());
 
     const idx = {
-      center: headers.indexOf("Center"),
-      plan: headers.indexOf("Plan"),
-      name: headers.indexOf("Full Name"),
-      phone: headers.indexOf("Phone"),
-      join: headers.indexOf("Joining Date"),
-      expiry: headers.indexOf("Access Expiry"),
-      fees: headers.indexOf("Fees Status")
+      center: headers.findIndex(h => h.startsWith("Center")),
+      plan: headers.findIndex(h => h.startsWith("Plan")),
+      name: headers.findIndex(h => h.startsWith("Full Name")),
+      phone: headers.findIndex(h => h.startsWith("Phone")),
+      join: headers.findIndex(h => h.startsWith("Joining")),
+      expiry: headers.findIndex(h => h.startsWith("Access Expiry")),
+      fees: headers.findIndex(h => h.startsWith("Fees"))
     };
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
 
-    allRows = lines.filter(r => {
+    allRows = data.filter(r => {
       if (!r[idx.expiry]) return false;
-      const p = r[idx.expiry].split("-");
-      if (p.length !== 3) return false;
-      const d = new Date(p[2], p[1]-1, p[0]);
-      return d >= today;
+      const d = parseDMY(r[idx.expiry]);
+      return d && d >= today;
     });
 
     initFilters(idx);
@@ -174,14 +179,14 @@ function initFilters(idx) {
 function buildFilter(divId, col, set, idx) {
   const div = document.getElementById(divId);
   [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
-    const lbl = document.createElement("label");
-    lbl.style.display = "block";
-    lbl.innerHTML = `<input type="checkbox"> ${v}`;
-    lbl.querySelector("input").onchange = e => {
+    const l = document.createElement("label");
+    l.style.display = "block";
+    l.innerHTML = `<input type="checkbox"> ${v}`;
+    l.querySelector("input").onchange = e => {
       e.target.checked ? set.add(v) : set.delete(v);
       renderTable(idx);
     };
-    div.appendChild(lbl);
+    div.appendChild(l);
   });
 }
 
@@ -197,7 +202,7 @@ function renderTable(idx) {
     if (q && !r[idx.name].toLowerCase().includes(q)) return false;
     return true;
   }).forEach(r => {
-    const phone = r[idx.phone].replace(/\D/g,"");
+    const phone = r[idx.phone].replace(/\D/g, "");
     const msg = encodeURIComponent(
       `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
     );
@@ -211,8 +216,7 @@ function renderTable(idx) {
         <td>${r[idx.fees]}</td>
         <td><button class="call" onclick="location.href='tel:${phone}'">Call</button></td>
         <td><button class="whatsapp"
-          onclick="location.href='https://wa.me/91${phone}?text=${msg}'">
-          WhatsApp</button></td>
+          onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
       </tr>`;
   });
 }
