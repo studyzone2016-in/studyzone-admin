@@ -26,22 +26,29 @@ button {
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 10px;
   align-items: center;
 }
 
-select, input {
+select {
+  padding: 6px;
+  font-size: 14px;
+  min-width: 160px;
+  height: 90px;
+}
+
+input {
   padding: 6px;
   font-size: 14px;
 }
 
 .count-box {
-  font-size: 13px;
   background: #f2f2f2;
-  padding: 4px 8px;
-  border-radius: 4px;
   border: 1px solid #ccc;
+  padding: 6px 12px;
+  font-weight: bold;
+  border-radius: 4px;
 }
 
 .table-wrap {
@@ -89,17 +96,14 @@ th {
 </div>
 
 <div class="filters">
-  <select id="centerFilter">
-    <option value="">All Centers</option>
-  </select>
-  <span class="count-box" id="centerCount">0</span>
-
-  <select id="planFilter">
-    <option value="">All Plans</option>
-  </select>
-  <span class="count-box" id="planCount">0</span>
+  <select id="centerFilter" multiple></select>
+  <select id="planFilter" multiple></select>
 
   <input type="text" id="nameSearch" placeholder="Search Full Name">
+
+  <div class="count-box">
+    Total: <span id="resultCount">0</span>
+  </div>
 </div>
 
 <div class="table-wrap">
@@ -157,13 +161,8 @@ fetch(CSV_URL)
   });
 
 function populateFilters(idx) {
-  const centers = new Set();
-  const plans = new Set();
-
-  allRows.forEach(r => {
-    centers.add(r[idx.center]);
-    plans.add(r[idx.plan]);
-  });
+  const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
+  const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
 
   centers.forEach(c =>
     centerFilter.innerHTML += `<option value="${c}">${c}</option>`
@@ -177,23 +176,25 @@ function populateFilters(idx) {
   nameSearch.oninput = () => render(idx);
 }
 
+function getSelectedValues(select) {
+  return [...select.selectedOptions].map(o => o.value);
+}
+
 function render(idx) {
   tableBody.innerHTML = "";
 
-  const c = centerFilter.value;
-  const p = planFilter.value;
+  const centers = getSelectedValues(centerFilter);
+  const plans = getSelectedValues(planFilter);
   const q = nameSearch.value.toLowerCase();
 
   const filtered = allRows.filter(r => {
-    if (c && r[idx.center] !== c) return false;
-    if (p && r[idx.plan] !== p) return false;
+    if (centers.length && !centers.includes(r[idx.center])) return false;
+    if (plans.length && !plans.includes(r[idx.plan])) return false;
     if (q && !r[idx.name].toLowerCase().includes(q)) return false;
     return true;
   });
 
-  // ✅ Update counts
-  document.getElementById("centerCount").innerText = filtered.length;
-  document.getElementById("planCount").innerText = filtered.length;
+  document.getElementById("resultCount").innerText = filtered.length;
 
   filtered.forEach(r => {
     const phone = r[idx.phone].replace(/\D/g, "");
