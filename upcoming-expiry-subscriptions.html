@@ -4,36 +4,80 @@
 <meta charset="UTF-8">
 <title>Study ZONE | Upcoming Expiry Subscriptions</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
   body {
     font-family: Arial, sans-serif;
     background: #f4f6fb;
-    padding: 20px;
+    padding: 15px;
   }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .back-btn {
+    padding: 6px 12px;
+    background: #333;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  h2 {
+    margin: 10px 0;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 10px;
+    background: #fff;
+    font-size: 14px;
   }
+
   th, td {
     border: 1px solid #ddd;
     padding: 8px;
+  }
+
+  th {
+    background: #007bff;
+    color: #fff;
     text-align: left;
   }
-  th {
-    background-color: #007bff;
-    color: white;
+
+  tr:nth-child(even) {
+    background: #f9f9f9;
   }
-  tr:nth-child(even){background-color: #f2f2f2;}
+
   a.whatsapp-link {
     color: #25D366;
     text-decoration: none;
     font-weight: bold;
   }
+
+  @media (max-width: 600px) {
+    table {
+      font-size: 13px;
+    }
+    th, td {
+      padding: 6px;
+    }
+  }
 </style>
 </head>
+
 <body>
-<h2>Upcoming Expiry Subscriptions</h2>
+
+<div class="top-bar">
+  <a class="back-btn" href="index.html">← Back</a>
+  <h2>Upcoming Expiry Subscriptions</h2>
+</div>
+
 <table id="subscriptionTable">
   <thead>
     <tr>
@@ -48,42 +92,59 @@
 </table>
 
 <script>
-const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
+const csvUrl =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
 fetch(csvUrl)
-  .then(response => response.text())
-  .then(csvText => {
-    const rows = csvText.trim().split('\n');
-    const headers = rows[0].split('\t'); // TSV separator
+  .then(res => res.text())
+  .then(csv => {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',');
+
+    const idx = {
+      expiry: headers.indexOf('Access Expiry'),
+      center: headers.indexOf('Center'),
+      name: headers.indexOf('Full Name'),
+      plan: headers.indexOf('Plan'),
+      phone: headers.indexOf('Phone (WhatsApp)')
+    };
+
     const tbody = document.querySelector('#subscriptionTable tbody');
 
-    rows.slice(1).forEach(row => {
-      const cols = row.split('\t');
-      const data = {
-        'Access Expiry': cols[headers.indexOf('Access Expiry (DD-MM-YY)')],
-        'Center': cols[headers.indexOf('Center')],
-        'Full Name': cols[headers.indexOf('Full Name')],
-        'Plan': cols[headers.indexOf('Plan')],
-        'Phone': cols[headers.indexOf('Phone')]
-      };
+    lines.slice(1).forEach(line => {
+      const cols = line.split(',');
 
-      if(data['Phone']) {
-        const waMessage = encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${data['Access Expiry']}`);
-        data['Phone'] = `<a class="whatsapp-link" href="https://wa.me/${data['Phone']}?text=${waMessage}" target="_blank">${data['Phone']}</a>`;
+      if (!cols[idx.name]) return; // skip empty rows
+
+      const expiry = cols[idx.expiry];
+      const phoneRaw = cols[idx.phone]?.replace(/\D/g, '');
+
+      let phoneHtml = '';
+      if (phoneRaw) {
+        const msg = encodeURIComponent(
+          `🔔 Renewal Alert: Access Ends on ${expiry} - after 10:00 PM`
+        );
+        phoneHtml = `
+          <a class="whatsapp-link"
+             href="https://wa.me/${phoneRaw}?text=${msg}"
+             target="_blank">
+             ${phoneRaw}
+          </a>`;
       }
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${data['Access Expiry'] || ''}</td>
-        <td>${data['Center'] || ''}</td>
-        <td>${data['Full Name'] || ''}</td>
-        <td>${data['Plan'] || ''}</td>
-        <td>${data['Phone'] || ''}</td>
-      `;
-      tbody.appendChild(tr);
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>${expiry || ''}</td>
+          <td>${cols[idx.center] || ''}</td>
+          <td>${cols[idx.name] || ''}</td>
+          <td>${cols[idx.plan] || ''}</td>
+          <td>${phoneHtml}</td>
+        </tr>
+      `);
     });
   })
-  .catch(err => console.error('Error fetching CSV:', err));
+  .catch(err => console.error('CSV Load Error:', err));
 </script>
+
 </body>
 </html>
