@@ -34,8 +34,8 @@ button {
 select {
   padding: 6px;
   font-size: 14px;
-  min-width: 160px;
-  height: 90px;
+  min-width: 170px;
+  height: 100px;
 }
 
 input {
@@ -85,6 +85,11 @@ th {
   color: #fff;
   border: none;
 }
+
+.wa-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
 </style>
 </head>
 
@@ -100,6 +105,8 @@ th {
   <select id="planFilter" multiple></select>
 
   <input type="text" id="nameSearch" placeholder="Search Full Name">
+
+  <button onclick="resetFilters()">Reset</button>
 
   <div class="count-box">
     Total: <span id="resultCount">0</span>
@@ -164,6 +171,9 @@ function populateFilters(idx) {
   const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
   const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
 
+  centerFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
+  planFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
+
   centers.forEach(c =>
     centerFilter.innerHTML += `<option value="${c}">${c}</option>`
   );
@@ -171,33 +181,58 @@ function populateFilters(idx) {
     planFilter.innerHTML += `<option value="${p}">${p}</option>`
   );
 
-  centerFilter.onchange = () => render(idx);
-  planFilter.onchange = () => render(idx);
+  centerFilter.onchange = () => handleSelect(centerFilter, idx);
+  planFilter.onchange = () => handleSelect(planFilter, idx);
   nameSearch.oninput = () => render(idx);
+
+  centerFilter.options[0].selected = true;
+  planFilter.options[0].selected = true;
 }
 
-function getSelectedValues(select) {
-  return [...select.selectedOptions].map(o => o.value);
+function handleSelect(select, idx) {
+  const allOption = select.options[0];
+
+  if (allOption.selected && select.selectedOptions.length > 1) {
+    [...select.options].forEach(o => o.selected = false);
+    allOption.selected = true;
+  } else if (!allOption.selected && select.selectedOptions.length > 0) {
+    allOption.selected = false;
+  }
+  render(idx);
 }
 
+function resetFilters() {
+  [...centerFilter.options].forEach(o => o.selected = false);
+  [...planFilter.options].forEach(o => o.selected = false);
+  centerFilter.options[0].selected = true;
+  planFilter.options[0].selected = true;
+  nameSearch.value = "";
+  render(currentIdx);
+}
+
+let currentIdx;
 function render(idx) {
+  currentIdx = idx;
   tableBody.innerHTML = "";
 
-  const centers = getSelectedValues(centerFilter);
-  const plans = getSelectedValues(planFilter);
+  const centers = getSelected(centerFilter);
+  const plans = getSelected(planFilter);
   const q = nameSearch.value.toLowerCase();
 
   const filtered = allRows.filter(r => {
-    if (centers.length && !centers.includes(r[idx.center])) return false;
-    if (plans.length && !plans.includes(r[idx.plan])) return false;
+    if (!centers.includes("ALL") && !centers.includes(r[idx.center])) return false;
+    if (!plans.includes("ALL") && !plans.includes(r[idx.plan])) return false;
     if (q && !r[idx.name].toLowerCase().includes(q)) return false;
     return true;
   });
 
-  document.getElementById("resultCount").innerText = filtered.length;
+  resultCount.innerText = filtered.length;
 
   filtered.forEach(r => {
-    const phone = r[idx.phone].replace(/\D/g, "");
+    const raw = r[idx.phone] || "";
+    const phone = raw.replace(/\D/g, "");
+    const validPhone = phone.length === 10;
+
     const msg = encodeURIComponent(
       `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
     );
@@ -205,14 +240,26 @@ function render(idx) {
     tableBody.innerHTML += `
     <tr>
       <td>${r[idx.name]}</td>
-      <td>${r[idx.phone]}</td>
+      <td>${raw}</td>
       <td>${r[idx.join]}</td>
       <td>${r[idx.expiry]}</td>
       <td>${r[idx.fees]}</td>
-      <td><button class="call-btn" onclick="location.href='tel:${phone}'">Call</button></td>
-      <td><button class="wa-btn" onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
+      <td>
+        ${validPhone
+          ? `<button class="call-btn" onclick="location.href='tel:${phone}'">Call</button>`
+          : ""}
+      </td>
+      <td>
+        ${validPhone
+          ? `<button class="wa-btn" onclick="location.href='https://wa.me/${phone}?text=${msg}'">WhatsApp</button>`
+          : `<button class="wa-btn" disabled>WhatsApp</button>`}
+      </td>
     </tr>`;
   });
+}
+
+function getSelected(select) {
+  return [...select.selectedOptions].map(o => o.value);
 }
 
 /* Robust CSV parser */
