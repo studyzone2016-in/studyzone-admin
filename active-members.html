@@ -1,126 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Study ZONE | Active Members</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 10px;
-  background: #f6f7fb;
+body { font-family: Arial, sans-serif; margin: 10px; background:#f5f6fa; }
+.top-bar { display:flex; flex-direction:column; gap:10px; }
+
+.filter-box {
+  background:#fff; border:1px solid #ccc; border-radius:6px;
+  padding:8px;
 }
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.filter-title {
+  font-weight:bold;
+  cursor:pointer;
 }
 
-.dropdown-box {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px;
+.filter-options {
+  display:none;
+  margin-top:6px;
+  max-height:180px;
+  overflow-y:auto;
 }
 
-.dropdown-header {
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.dropdown-list {
-  display: none;
-  margin-top: 8px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.dropdown-list label {
-  display: block;
-  font-size: 14px;
-  padding: 4px 0;
+.filter-options label {
+  display:block;
+  font-size:14px;
+  padding:4px 0;
 }
 
 button {
-  padding: 8px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  padding:8px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-.reset-btn {
-  background: #d9534f;
-  color: #fff;
-}
+.reset { background:#dc3545; color:#fff; }
 
 .count-box {
-  background: #0d6efd;
-  color: #fff;
-  padding: 10px;
-  border-radius: 6px;
-  text-align: center;
-  font-weight: bold;
+  background:#0d6efd;
+  color:#fff;
+  padding:10px;
+  border-radius:6px;
+  font-weight:bold;
+  text-align:center;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background: #fff;
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:#fff;
 }
 
 th, td {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-  font-size: 13px;
-  text-align: left;
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  font-size:13px;
 }
 
 th {
-  background: #343a40;
-  color: #fff;
-  position: sticky;
-  top: 0;
+  background:#343a40;
+  color:#fff;
+  position:sticky;
+  top:0;
 }
 
-.actions button {
-  margin-right: 5px;
-  font-size: 12px;
-}
-
-.whatsapp {
-  background: #25D366;
-  color: #fff;
-}
-
-.call {
-  background: #198754;
-  color: #fff;
-}
+.actions button { font-size:12px; margin-right:4px; }
+.call { background:#198754; color:#fff; }
+.wa { background:#25D366; color:#fff; }
 </style>
 </head>
 
 <body>
 
-<div class="controls">
+<div class="top-bar">
 
-  <div class="dropdown-box">
-    <div class="dropdown-header" onclick="toggleDropdown('centerList')">
-      📍 Select Center(s)
-    </div>
-    <div class="dropdown-list" id="centerList"></div>
+  <div class="filter-box">
+    <div class="filter-title" onclick="toggle('centerBox')">📍 Select Center</div>
+    <div class="filter-options" id="centerBox"></div>
   </div>
 
-  <div class="dropdown-box">
-    <div class="dropdown-header" onclick="toggleDropdown('planList')">
-      📦 Select Plan(s)
-    </div>
-    <div class="dropdown-list" id="planList"></div>
+  <div class="filter-box">
+    <div class="filter-title" onclick="toggle('planBox')">📦 Select Plan</div>
+    <div class="filter-options" id="planBox"></div>
   </div>
 
-  <button class="reset-btn" onclick="resetFilters()">🔄 Reset Selection</button>
+  <button class="reset" onclick="resetAll()">🔄 Reset Filters</button>
 
   <div class="count-box" id="countBox">Total Members: 0</div>
 </div>
@@ -133,120 +103,113 @@ th {
   <th>Joining Date</th>
   <th>Access Expiry</th>
   <th>Fees Status</th>
-  <th>Actions</th>
+  <th>Action</th>
 </tr>
 </thead>
-<tbody id="tableBody"></tbody>
+<tbody id="tbody"></tbody>
 </table>
 
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let data = [];
+/* 🔒 LOCKED COLUMN INDEX */
+const COL = {
+  CENTER: 0,
+  PLAN: 1,
+  NAME: 2,
+  PHONE: 3,
+  JOIN: 4,
+  EXPIRY: 5,
+  FEES: 6
+};
 
-function toggleDropdown(id) {
+let rows = [];
+
+function toggle(id) {
   const el = document.getElementById(id);
   el.style.display = el.style.display === "block" ? "none" : "block";
 }
 
-function cleanPhone(phone) {
-  phone = phone.replace(/\D/g, "");
-  if (phone.startsWith("91") && phone.length > 10) {
-    phone = phone.slice(-10);
-  }
-  return phone.length === 10 ? phone : null;
-}
-
-function createCheckbox(listId, value) {
-  return `
-    <label>
-      <input type="checkbox" value="${value}" onchange="applyFilters()"> ${value}
-    </label>`;
+function cleanPhone(p) {
+  p = p.replace(/\D/g,'');
+  if (p.startsWith("91") && p.length > 10) p = p.slice(-10);
+  return p.length === 10 ? p : "";
 }
 
 fetch(CSV_URL)
   .then(r => r.text())
   .then(text => {
-    const rows = text.trim().split("\n").map(r => r.split(","));
-    const headers = rows.shift();
-
-    data = rows.map(r => ({
-      Center: r[0],
-      Plan: r[1],
-      Name: r[2],
-      Phone: r[3],
-      Join: r[4],
-      Expiry: r[5],
-      Fees: r[6]
-    }));
-
-    initFilters();
+    const lines = text.trim().split("\n").map(r => r.split(","));
+    lines.shift(); // header
+    rows = lines;
+    buildFilters();
     applyFilters();
   });
 
-function initFilters() {
-  const centers = [...new Set(data.map(d => d.Center))];
-  const plans = [...new Set(data.map(d => d.Plan))];
+function buildFilters() {
+  const centers = [...new Set(rows.map(r => r[COL.CENTER]))];
+  const plans = [...new Set(rows.map(r => r[COL.PLAN]))];
 
-  const centerList = document.getElementById("centerList");
-  const planList = document.getElementById("planList");
+  const cBox = document.getElementById("centerBox");
+  const pBox = document.getElementById("planBox");
 
-  centerList.innerHTML = `<label><input type="checkbox" onclick="selectAll('centerList', this)"> Entire Selection</label>`;
-  centers.forEach(c => centerList.innerHTML += createCheckbox("centerList", c));
+  cBox.innerHTML = `<label><input type="checkbox" onclick="selectAll(this,'center')"> Entire Selection</label>`;
+  centers.forEach(c =>
+    cBox.innerHTML += `<label><input type="checkbox" class="center" value="${c}" onchange="applyFilters()"> ${c}</label>`
+  );
 
-  planList.innerHTML = `<label><input type="checkbox" onclick="selectAll('planList', this)"> Entire Selection</label>`;
-  plans.forEach(p => planList.innerHTML += createCheckbox("planList", p));
+  pBox.innerHTML = `<label><input type="checkbox" onclick="selectAll(this,'plan')"> Entire Selection</label>`;
+  plans.forEach(p =>
+    pBox.innerHTML += `<label><input type="checkbox" class="plan" value="${p}" onchange="applyFilters()"> ${p}</label>`
+  );
 }
 
-function selectAll(listId, source) {
-  document.querySelectorAll(`#${listId} input[type=checkbox]`)
-    .forEach(cb => cb.checked = source.checked);
+function selectAll(src, cls) {
+  document.querySelectorAll(`.${cls}`).forEach(cb => cb.checked = src.checked);
   applyFilters();
 }
 
-function getSelected(listId) {
-  return [...document.querySelectorAll(`#${listId} input[type=checkbox]:checked`)]
-    .map(cb => cb.value)
-    .filter(v => v !== "on");
+function getSelected(cls) {
+  return [...document.querySelectorAll(`.${cls}:checked`)].map(cb => cb.value);
 }
 
 function applyFilters() {
-  const centers = getSelected("centerList");
-  const plans = getSelected("planList");
+  const cSel = getSelected("center");
+  const pSel = getSelected("plan");
 
-  let filtered = data.filter(d =>
-    (centers.length === 0 || centers.includes(d.Center)) &&
-    (plans.length === 0 || plans.includes(d.Plan))
+  const filtered = rows.filter(r =>
+    (cSel.length === 0 || cSel.includes(r[COL.CENTER])) &&
+    (pSel.length === 0 || pSel.includes(r[COL.PLAN]))
   );
 
-  renderTable(filtered);
+  render(filtered);
   document.getElementById("countBox").innerText =
     `Total Members: ${filtered.length}`;
 }
 
-function resetFilters() {
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
+function resetAll() {
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked=false);
   applyFilters();
 }
 
-function renderTable(rows) {
-  const body = document.getElementById("tableBody");
-  body.innerHTML = "";
+function render(data) {
+  const tb = document.getElementById("tbody");
+  tb.innerHTML = "";
 
-  rows.forEach(r => {
-    const phone = cleanPhone(r.Phone);
-    body.innerHTML += `
+  data.forEach(r => {
+    const phone = cleanPhone(r[COL.PHONE]);
+    tb.innerHTML += `
       <tr>
-        <td>${r.Name}</td>
+        <td>${r[COL.NAME]}</td>
         <td>${phone || "Invalid"}</td>
-        <td>${r.Join}</td>
-        <td>${r.Expiry}</td>
-        <td>${r.Fees}</td>
+        <td>${r[COL.JOIN]}</td>
+        <td>${r[COL.EXPIRY]}</td>
+        <td>${r[COL.FEES]}</td>
         <td class="actions">
           ${phone ? `
             <a href="tel:${phone}"><button class="call">Call</button></a>
             <a href="https://wa.me/${phone}" target="_blank">
-              <button class="whatsapp">WhatsApp</button>
+              <button class="wa">WA</button>
             </a>` : ""}
         </td>
       </tr>`;
