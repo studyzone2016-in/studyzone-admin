@@ -54,6 +54,7 @@
     border: 1px solid #ddd;
     padding: 6px;
     word-wrap: break-word;
+    vertical-align: top;
   }
 
   th {
@@ -66,11 +67,28 @@
     background: #f9f9f9;
   }
 
-  a.whatsapp-link {
-    color: #25D366;
-    font-weight: bold;
-    text-decoration: none;
+  .phone-box {
     font-size: 12px;
+  }
+
+  .phone-number {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .phone-actions a {
+    margin-right: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  .call-link {
+    color: #007bff;
+  }
+
+  .wa-link {
+    color: #25D366;
   }
 
   th:nth-child(1), td:nth-child(1) { width: 20%; }
@@ -100,7 +118,7 @@
       <th>Access Expiry</th>
       <th>Full Name</th>
       <th>Plan</th>
-      <th>Phone (WhatsApp)</th>
+      <th>Phone</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -165,11 +183,20 @@ fetch(csvUrl)
 
       let phone = (c[col.phone] || '').replace(/\D/g, '');
       let phoneHTML = '';
+
       if (phone.length >= 10) {
         const msg = encodeURIComponent(
           `🔔 Renewal Alert: Access Ends on ${expiryRaw} - after 10:00 PM`
         );
-        phoneHTML = `<a class="whatsapp-link" href="https://wa.me/${phone}?text=${msg}" target="_blank">${phone}</a>`;
+
+        phoneHTML = `
+          <div class="phone-box">
+            <div class="phone-number">${phone}</div>
+            <div class="phone-actions">
+              <a class="call-link" href="tel:${phone}">📞 Call</a>
+              <a class="wa-link" href="https://wa.me/${phone}?text=${msg}" target="_blank">💬 WhatsApp</a>
+            </div>
+          </div>`;
       }
 
       allRows.push({
@@ -220,10 +247,9 @@ function handleCenterChange(e) {
 }
 
 function getSelectedCenters() {
-  const boxes = [...filterBox.querySelectorAll('input')]
+  return [...filterBox.querySelectorAll('input')]
     .filter(b => b.checked && b.value !== 'ALL')
     .map(b => b.value);
-  return boxes;
 }
 
 function renderTable() {
