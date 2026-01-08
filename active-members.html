@@ -3,98 +3,117 @@
 <head>
 <meta charset="UTF-8">
 <title>Study ZONE | Active Members</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { font-family: Arial, sans-serif; margin: 10px; background:#f5f6fa; }
-.top-bar { display:flex; flex-direction:column; gap:10px; }
-
-.filter-box {
-  background:#fff; border:1px solid #ccc; border-radius:6px;
-  padding:8px;
+body {
+  font-family: Arial, sans-serif;
+  margin: 10px;
 }
 
-.filter-title {
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.filter-options {
-  display:none;
-  margin-top:6px;
-  max-height:180px;
-  overflow-y:auto;
-}
-
-.filter-options label {
-  display:block;
-  font-size:14px;
-  padding:4px 0;
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 button {
-  padding:8px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
-.reset { background:#dc3545; color:#fff; }
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+select {
+  padding: 6px;
+  font-size: 14px;
+  min-width: 170px;
+  height: 100px;
+}
+
+input {
+  padding: 6px;
+  font-size: 14px;
+}
 
 .count-box {
-  background:#0d6efd;
-  color:#fff;
-  padding:10px;
-  border-radius:6px;
-  font-weight:bold;
-  text-align:center;
+  background: #f2f2f2;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #ccc;
 }
 
 table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-  background:#fff;
+  border-collapse: collapse;
+  min-width: 900px;
+  width: 100%;
 }
 
 th, td {
-  padding:8px;
-  border-bottom:1px solid #ddd;
-  font-size:13px;
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 th {
-  background:#343a40;
-  color:#fff;
-  position:sticky;
-  top:0;
+  background: #f2f2f2;
 }
 
-.actions button { font-size:12px; margin-right:4px; }
-.call { background:#198754; color:#fff; }
-.wa { background:#25D366; color:#fff; }
+.call-btn {
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+}
+
+.wa-btn {
+  background: #25D366;
+  color: #fff;
+  border: none;
+}
+
+.wa-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
 </style>
 </head>
 
 <body>
 
 <div class="top-bar">
-
-  <div class="filter-box">
-    <div class="filter-title" onclick="toggle('centerBox')">📍 Select Center</div>
-    <div class="filter-options" id="centerBox"></div>
-  </div>
-
-  <div class="filter-box">
-    <div class="filter-title" onclick="toggle('planBox')">📦 Select Plan</div>
-    <div class="filter-options" id="planBox"></div>
-  </div>
-
-  <button class="reset" onclick="resetAll()">🔄 Reset Filters</button>
-
-  <div class="count-box" id="countBox">Total Members: 0</div>
+  <button onclick="history.back()">⬅ Back</button>
+  <h3>Active Members</h3>
 </div>
 
+<div class="filters">
+  <select id="centerFilter" multiple></select>
+  <select id="planFilter" multiple></select>
+
+  <input type="text" id="nameSearch" placeholder="Search Full Name">
+
+  <button onclick="resetFilters()">Reset</button>
+
+  <div class="count-box">
+    Total: <span id="resultCount">0</span>
+  </div>
+</div>
+
+<div class="table-wrap">
 <table>
 <thead>
 <tr>
@@ -103,117 +122,166 @@ th {
   <th>Joining Date</th>
   <th>Access Expiry</th>
   <th>Fees Status</th>
-  <th>Action</th>
+  <th>Call</th>
+  <th>WhatsApp</th>
 </tr>
 </thead>
-<tbody id="tbody"></tbody>
+<tbody id="tableBody"></tbody>
 </table>
+</div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-/* 🔒 LOCKED COLUMN INDEX */
-const COL = {
-  CENTER: 0,
-  PLAN: 1,
-  NAME: 2,
-  PHONE: 3,
-  JOIN: 4,
-  EXPIRY: 5,
-  FEES: 6
-};
-
-let rows = [];
-
-function toggle(id) {
-  const el = document.getElementById(id);
-  el.style.display = el.style.display === "block" ? "none" : "block";
-}
-
-function cleanPhone(p) {
-  p = p.replace(/\D/g,'');
-  if (p.startsWith("91") && p.length > 10) p = p.slice(-10);
-  return p.length === 10 ? p : "";
-}
+let allRows = [];
 
 fetch(CSV_URL)
   .then(r => r.text())
-  .then(text => {
-    const lines = text.trim().split("\n").map(r => r.split(","));
-    lines.shift(); // header
-    rows = lines;
-    buildFilters();
-    applyFilters();
+  .then(csv => {
+    const rows = parseCSV(csv);
+    const headers = rows.shift();
+
+    const idx = {
+      center: headers.indexOf("Center"),
+      plan: headers.indexOf("Plan"),
+      name: headers.indexOf("Full Name"),
+      phone: headers.indexOf("Phone"),
+      join: headers.indexOf("Joining Date (DD-MM-YY)"),
+      expiry: headers.indexOf("Access Expiry (DD-MM-YY)"),
+      fees: headers.indexOf("Fees Status")
+    };
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    allRows = rows.filter(r => {
+      const e = r[idx.expiry];
+      if (!e) return false;
+      const [dd, mm, yy] = e.split("-");
+      const d = new Date(`20${yy}`, mm - 1, dd);
+      return d >= today;
+    });
+
+    populateFilters(idx);
+    render(idx);
   });
 
-function buildFilters() {
-  const centers = [...new Set(rows.map(r => r[COL.CENTER]))];
-  const plans = [...new Set(rows.map(r => r[COL.PLAN]))];
+function populateFilters(idx) {
+  const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
+  const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
 
-  const cBox = document.getElementById("centerBox");
-  const pBox = document.getElementById("planBox");
+  centerFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
+  planFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
 
-  cBox.innerHTML = `<label><input type="checkbox" onclick="selectAll(this,'center')"> Entire Selection</label>`;
   centers.forEach(c =>
-    cBox.innerHTML += `<label><input type="checkbox" class="center" value="${c}" onchange="applyFilters()"> ${c}</label>`
+    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
   );
-
-  pBox.innerHTML = `<label><input type="checkbox" onclick="selectAll(this,'plan')"> Entire Selection</label>`;
   plans.forEach(p =>
-    pBox.innerHTML += `<label><input type="checkbox" class="plan" value="${p}" onchange="applyFilters()"> ${p}</label>`
-  );
-}
-
-function selectAll(src, cls) {
-  document.querySelectorAll(`.${cls}`).forEach(cb => cb.checked = src.checked);
-  applyFilters();
-}
-
-function getSelected(cls) {
-  return [...document.querySelectorAll(`.${cls}:checked`)].map(cb => cb.value);
-}
-
-function applyFilters() {
-  const cSel = getSelected("center");
-  const pSel = getSelected("plan");
-
-  const filtered = rows.filter(r =>
-    (cSel.length === 0 || cSel.includes(r[COL.CENTER])) &&
-    (pSel.length === 0 || pSel.includes(r[COL.PLAN]))
+    planFilter.innerHTML += `<option value="${p}">${p}</option>`
   );
 
-  render(filtered);
-  document.getElementById("countBox").innerText =
-    `Total Members: ${filtered.length}`;
+  centerFilter.onchange = () => handleSelect(centerFilter, idx);
+  planFilter.onchange = () => handleSelect(planFilter, idx);
+  nameSearch.oninput = () => render(idx);
+
+  centerFilter.options[0].selected = true;
+  planFilter.options[0].selected = true;
 }
 
-function resetAll() {
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked=false);
-  applyFilters();
+function handleSelect(select, idx) {
+  const allOption = select.options[0];
+
+  if (allOption.selected && select.selectedOptions.length > 1) {
+    [...select.options].forEach(o => o.selected = false);
+    allOption.selected = true;
+  } else if (!allOption.selected && select.selectedOptions.length > 0) {
+    allOption.selected = false;
+  }
+  render(idx);
 }
 
-function render(data) {
-  const tb = document.getElementById("tbody");
-  tb.innerHTML = "";
+function resetFilters() {
+  [...centerFilter.options].forEach(o => o.selected = false);
+  [...planFilter.options].forEach(o => o.selected = false);
+  centerFilter.options[0].selected = true;
+  planFilter.options[0].selected = true;
+  nameSearch.value = "";
+  render(currentIdx);
+}
 
-  data.forEach(r => {
-    const phone = cleanPhone(r[COL.PHONE]);
-    tb.innerHTML += `
-      <tr>
-        <td>${r[COL.NAME]}</td>
-        <td>${phone || "Invalid"}</td>
-        <td>${r[COL.JOIN]}</td>
-        <td>${r[COL.EXPIRY]}</td>
-        <td>${r[COL.FEES]}</td>
-        <td class="actions">
-          ${phone ? `
-            <a href="tel:${phone}"><button class="call">Call</button></a>
-            <a href="https://wa.me/${phone}" target="_blank">
-              <button class="wa">WA</button>
-            </a>` : ""}
-        </td>
-      </tr>`;
+let currentIdx;
+function render(idx) {
+  currentIdx = idx;
+  tableBody.innerHTML = "";
+
+  const centers = getSelected(centerFilter);
+  const plans = getSelected(planFilter);
+  const q = nameSearch.value.toLowerCase();
+
+  const filtered = allRows.filter(r => {
+    if (!centers.includes("ALL") && !centers.includes(r[idx.center])) return false;
+    if (!plans.includes("ALL") && !plans.includes(r[idx.plan])) return false;
+    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
+    return true;
   });
+
+  resultCount.innerText = filtered.length;
+
+  filtered.forEach(r => {
+    const raw = r[idx.phone] || "";
+    const phone = raw.replace(/\D/g, "");
+    const validPhone = phone.length === 10;
+
+    const msg = encodeURIComponent(
+      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
+    );
+
+    tableBody.innerHTML += `
+    <tr>
+      <td>${r[idx.name]}</td>
+      <td>${raw}</td>
+      <td>${r[idx.join]}</td>
+      <td>${r[idx.expiry]}</td>
+      <td>${r[idx.fees]}</td>
+      <td>
+        ${validPhone
+          ? `<button class="call-btn" onclick="location.href='tel:${phone}'">Call</button>`
+          : ""}
+      </td>
+      <td>
+        ${validPhone
+          ? `<button class="wa-btn" onclick="location.href='https://wa.me/${phone}?text=${msg}'">WhatsApp</button>`
+          : `<button class="wa-btn" disabled>WhatsApp</button>`}
+      </td>
+    </tr>`;
+  });
+}
+
+function getSelected(select) {
+  return [...select.selectedOptions].map(o => o.value);
+}
+
+/* Robust CSV parser */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cur = "", inside = false;
+
+  for (let c of text) {
+    if (c === '"') inside = !inside;
+    else if (c === "," && !inside) {
+      row.push(cur); cur = "";
+    } else if (c === "\n" && !inside) {
+      row.push(cur);
+      rows.push(row);
+      row = []; cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  row.push(cur);
+  rows.push(row);
+  return rows;
 }
 </script>
 
