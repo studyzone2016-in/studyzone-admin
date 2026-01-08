@@ -84,6 +84,17 @@ tr:hover {
   font-weight: 600;
 }
 
+/* WhatsApp link style */
+.whatsapp-link {
+  color: #16a34a;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.whatsapp-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   th, td {
     font-size: 13px;
@@ -128,7 +139,7 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
         <th>Center</th>
         <th>Full Name</th>
         <th>Plan</th>
-        <th>Phone</th>
+        <th>Phone (WhatsApp)</th>
       </tr>
     </thead>
     <tbody id="tableBody">
@@ -147,13 +158,16 @@ const centerFilter = document.getElementById("centerFilter");
 
 let fullData = [];
 
+// WhatsApp prefilled message
+const WHATSAPP_TEXT =
+  "Hi, your Study ZONE subscription is over today. Please renew to continue uninterrupted access.";
+
 Papa.parse(CSV_URL, {
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
     fullData = results.data;
-
     populateFilters(fullData);
     renderTable(fullData);
   },
@@ -169,10 +183,8 @@ function populateFilters(data) {
   const centers = new Set();
 
   data.forEach(row => {
-    if (row["Access Expiry (DD-MM-YY)"])
-      dates.add(row["Access Expiry (DD-MM-YY)"]);
-    if (row["Center"])
-      centers.add(row["Center"]);
+    if (row["Access Expiry (DD-MM-YY)"]) dates.add(row["Access Expiry (DD-MM-YY)"]);
+    if (row["Center"]) centers.add(row["Center"]);
   });
 
   [...dates].sort().forEach(d => {
@@ -192,12 +204,10 @@ function applyFilters() {
   const selectedDate = dateFilter.value;
   const selectedCenter = centerFilter.value;
 
-  const filtered = fullData.filter(row => {
-    return (
-      (!selectedDate || row["Access Expiry (DD-MM-YY)"] === selectedDate) &&
-      (!selectedCenter || row["Center"] === selectedCenter)
-    );
-  });
+  const filtered = fullData.filter(row =>
+    (!selectedDate || row["Access Expiry (DD-MM-YY)"] === selectedDate) &&
+    (!selectedCenter || row["Center"] === selectedCenter)
+  );
 
   renderTable(filtered);
 }
@@ -213,13 +223,24 @@ function renderTable(data) {
   }
 
   data.forEach(row => {
+    const rawPhone = row["Phone"] || "";
+    const cleanPhone = rawPhone.replace(/\D/g, ""); // digits only
+
+    const whatsappLink = cleanPhone
+      ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(WHATSAPP_TEXT)}`
+      : "#";
+
     tableBody.innerHTML += `
       <tr>
         <td class="expiry">${row["Access Expiry (DD-MM-YY)"] || "--"}</td>
         <td>${row["Center"] || "--"}</td>
         <td>${row["Full Name"] || "--"}</td>
         <td>${row["Plan"] || "--"}</td>
-        <td>${row["Phone"] || "--"}</td>
+        <td>
+          ${cleanPhone
+            ? `<a class="whatsapp-link" href="${whatsappLink}" target="_blank">${rawPhone}</a>`
+            : "--"}
+        </td>
       </tr>`;
   });
 }
