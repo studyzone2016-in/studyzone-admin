@@ -6,10 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 10px;
-}
+body { font-family: Arial, sans-serif; margin: 10px; }
 
 .top-bar {
   display: flex;
@@ -18,27 +15,46 @@ body {
   margin-bottom: 10px;
 }
 
-button {
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
   align-items: center;
+  margin-bottom: 10px;
 }
 
-select {
+.dropdown {
+  position: relative;
+  min-width: 170px;
+}
+
+.drop-btn {
+  width: 100%;
   padding: 6px;
-  font-size: 14px;
-  min-width: 160px;
-  height: 90px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
 }
 
-input {
+.drop-list {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  background: #fff;
+  border: 1px solid #ccc;
+  max-height: 180px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.drop-list label {
+  display: block;
+  padding: 4px 6px;
+  font-size: 14px;
+}
+
+input[type="text"] {
   padding: 6px;
   font-size: 14px;
 }
@@ -70,21 +86,10 @@ th, td {
   white-space: nowrap;
 }
 
-th {
-  background: #f2f2f2;
-}
+th { background: #f2f2f2; }
 
-.call-btn {
-  background: #4CAF50;
-  color: #fff;
-  border: none;
-}
-
-.wa-btn {
-  background: #25D366;
-  color: #fff;
-  border: none;
-}
+.call-btn { background: #4CAF50; color: #fff; border: none; }
+.wa-btn { background: #25D366; color: #fff; border: none; }
 </style>
 </head>
 
@@ -96,8 +101,18 @@ th {
 </div>
 
 <div class="filters">
-  <select id="centerFilter" multiple></select>
-  <select id="planFilter" multiple></select>
+
+  <!-- Center Dropdown -->
+  <div class="dropdown">
+    <div class="drop-btn" onclick="toggleDrop('centerList')">Select Center</div>
+    <div class="drop-list" id="centerList"></div>
+  </div>
+
+  <!-- Plan Dropdown -->
+  <div class="dropdown">
+    <div class="drop-btn" onclick="toggleDrop('planList')">Select Plan</div>
+    <div class="drop-list" id="planList"></div>
+  </div>
 
   <input type="text" id="nameSearch" placeholder="Search Full Name">
 
@@ -145,46 +160,46 @@ fetch(CSV_URL)
       fees: headers.indexOf("Fees Status")
     };
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
 
     allRows = rows.filter(r => {
       const e = r[idx.expiry];
       if (!e) return false;
       const [dd, mm, yy] = e.split("-");
-      const d = new Date(`20${yy}`, mm - 1, dd);
-      return d >= today;
+      return new Date(`20${yy}`, mm-1, dd) >= today;
     });
 
-    populateFilters(idx);
+    buildDropdown("centerList", idx.center);
+    buildDropdown("planList", idx.plan);
     render(idx);
   });
 
-function populateFilters(idx) {
-  const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
-  const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
-
-  centers.forEach(c =>
-    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
-  );
-  plans.forEach(p =>
-    planFilter.innerHTML += `<option value="${p}">${p}</option>`
-  );
-
-  centerFilter.onchange = () => render(idx);
-  planFilter.onchange = () => render(idx);
-  nameSearch.oninput = () => render(idx);
+function toggleDrop(id) {
+  document.getElementById(id).style.display =
+    document.getElementById(id).style.display === "block" ? "none" : "block";
 }
 
-function getSelectedValues(select) {
-  return [...select.selectedOptions].map(o => o.value);
+function buildDropdown(id, col) {
+  const box = document.getElementById(id);
+  [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
+    box.innerHTML += `
+      <label>
+        <input type="checkbox" value="${v}" onchange="render(window.idx)">
+        ${v}
+      </label>`;
+  });
+}
+
+function selectedValues(id) {
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(cb => cb.value);
 }
 
 function render(idx) {
+  window.idx = idx;
   tableBody.innerHTML = "";
 
-  const centers = getSelectedValues(centerFilter);
-  const plans = getSelectedValues(planFilter);
+  const centers = selectedValues("centerList");
+  const plans = selectedValues("planList");
   const q = nameSearch.value.toLowerCase();
 
   const filtered = allRows.filter(r => {
@@ -194,46 +209,35 @@ function render(idx) {
     return true;
   });
 
-  document.getElementById("resultCount").innerText = filtered.length;
+  resultCount.innerText = filtered.length;
 
   filtered.forEach(r => {
-    const phone = r[idx.phone].replace(/\D/g, "");
-    const msg = encodeURIComponent(
-      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
-    );
+    const phone = r[idx.phone].replace(/\D/g,"");
+    const msg = encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`);
 
     tableBody.innerHTML += `
-    <tr>
-      <td>${r[idx.name]}</td>
-      <td>${r[idx.phone]}</td>
-      <td>${r[idx.join]}</td>
-      <td>${r[idx.expiry]}</td>
-      <td>${r[idx.fees]}</td>
-      <td><button class="call-btn" onclick="location.href='tel:${phone}'">Call</button></td>
-      <td><button class="wa-btn" onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
-    </tr>`;
+      <tr>
+        <td>${r[idx.name]}</td>
+        <td>${r[idx.phone]}</td>
+        <td>${r[idx.join]}</td>
+        <td>${r[idx.expiry]}</td>
+        <td>${r[idx.fees]}</td>
+        <td><button class="call-btn" onclick="location.href='tel:${phone}'">Call</button></td>
+        <td><button class="wa-btn" onclick="location.href='https://wa.me/91${phone}?text=${msg}'">WhatsApp</button></td>
+      </tr>`;
   });
 }
 
-/* Robust CSV parser */
+/* CSV Parser (unchanged) */
 function parseCSV(text) {
-  const rows = [];
-  let row = [], cur = "", inside = false;
-
+  const rows=[], row=[], cur={v:""}, q={v:false};
   for (let c of text) {
-    if (c === '"') inside = !inside;
-    else if (c === "," && !inside) {
-      row.push(cur); cur = "";
-    } else if (c === "\n" && !inside) {
-      row.push(cur);
-      rows.push(row);
-      row = []; cur = "";
-    } else {
-      cur += c;
-    }
+    if (c === '"') q.v = !q.v;
+    else if (c === "," && !q.v) { row.push(cur.v); cur.v=""; }
+    else if (c === "\n" && !q.v) { row.push(cur.v); rows.push([...row]); row.length=0; cur.v=""; }
+    else cur.v += c;
   }
-  row.push(cur);
-  rows.push(row);
+  row.push(cur.v); rows.push([...row]);
   return rows;
 }
 </script>
