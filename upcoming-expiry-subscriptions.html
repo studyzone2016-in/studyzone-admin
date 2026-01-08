@@ -43,7 +43,7 @@ h2 {
   margin-bottom: 14px;
 }
 
-select {
+select, input[type="date"] {
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
@@ -84,7 +84,6 @@ tr:hover {
   font-weight: 600;
 }
 
-/* WhatsApp link style */
 .whatsapp-link {
   color: #16a34a;
   font-weight: 600;
@@ -106,7 +105,6 @@ tr:hover {
 
 <body>
 
-<!-- Session Check -->
 <script>
 if (sessionStorage.getItem("adminAuth") !== "true") {
   alert("Unauthorized Access");
@@ -120,7 +118,6 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 
 <h2>Upcoming Expiry Subscriptions</h2>
 
-<!-- Filters -->
 <div class="filters">
   <select id="dateFilter">
     <option value="">All Dates</option>
@@ -129,6 +126,9 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
   <select id="centerFilter">
     <option value="">All Centers</option>
   </select>
+
+  <!-- WhatsApp Message Date -->
+  <input type="date" id="messageDate">
 </div>
 
 <div class="table-container">
@@ -155,12 +155,23 @@ const CSV_URL =
 const tableBody = document.getElementById("tableBody");
 const dateFilter = document.getElementById("dateFilter");
 const centerFilter = document.getElementById("centerFilter");
+const messageDateInput = document.getElementById("messageDate");
+
+/* Default message date = today */
+const today = new Date().toISOString().split("T")[0];
+messageDateInput.value = today;
 
 let fullData = [];
 
-// WhatsApp prefilled message
-const WHATSAPP_TEXT =
-  "Hi, your Study ZONE subscription is over today. Please renew to continue uninterrupted access.";
+/* Build WhatsApp message dynamically */
+function getWhatsappMessage() {
+  const selectedDate = messageDateInput.value;
+  const formattedDate = selectedDate
+    ? selectedDate.split("-").reverse().join("-")
+    : "today";
+
+  return `Hi, your Study ZONE subscription is over on ${formattedDate}. Please renew to continue uninterrupted access.`;
+}
 
 Papa.parse(CSV_URL, {
   download: true,
@@ -196,7 +207,7 @@ function populateFilters(data) {
   });
 }
 
-/* Filter logic */
+/* Filters */
 dateFilter.addEventListener("change", applyFilters);
 centerFilter.addEventListener("change", applyFilters);
 
@@ -224,10 +235,11 @@ function renderTable(data) {
 
   data.forEach(row => {
     const rawPhone = row["Phone"] || "";
-    const cleanPhone = rawPhone.replace(/\D/g, ""); // digits only
+    const cleanPhone = rawPhone.replace(/\D/g, "");
+    const whatsappMessage = getWhatsappMessage();
 
     const whatsappLink = cleanPhone
-      ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(WHATSAPP_TEXT)}`
+      ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`
       : "#";
 
     tableBody.innerHTML += `
