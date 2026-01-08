@@ -40,7 +40,7 @@ body { font-family: Arial, sans-serif; margin: 10px; }
 .drop-list {
   display: none;
   position: absolute;
-  z-index: 10;
+  z-index: 20;
   background: #fff;
   border: 1px solid #ccc;
   max-height: 180px;
@@ -50,7 +50,7 @@ body { font-family: Arial, sans-serif; margin: 10px; }
 
 .drop-list label {
   display: block;
-  padding: 4px 6px;
+  padding: 6px;
   font-size: 14px;
 }
 
@@ -102,13 +102,11 @@ th { background: #f2f2f2; }
 
 <div class="filters">
 
-  <!-- Center Dropdown -->
   <div class="dropdown">
     <div class="drop-btn" onclick="toggleDrop('centerList')">Select Center</div>
     <div class="drop-list" id="centerList"></div>
   </div>
 
-  <!-- Plan Dropdown -->
   <div class="dropdown">
     <div class="drop-btn" onclick="toggleDrop('planList')">Select Plan</div>
     <div class="drop-list" id="planList"></div>
@@ -143,6 +141,7 @@ const CSV_URL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
 let allRows = [];
+let idxGlobal = null;
 
 fetch(CSV_URL)
   .then(r => r.text())
@@ -160,6 +159,8 @@ fetch(CSV_URL)
       fees: headers.indexOf("Fees Status")
     };
 
+    idxGlobal = idx;
+
     const today = new Date(); today.setHours(0,0,0,0);
 
     allRows = rows.filter(r => {
@@ -171,22 +172,30 @@ fetch(CSV_URL)
 
     buildDropdown("centerList", idx.center);
     buildDropdown("planList", idx.plan);
-    render(idx);
+    render();
   });
 
 function toggleDrop(id) {
-  document.getElementById(id).style.display =
-    document.getElementById(id).style.display === "block" ? "none" : "block";
+  const el = document.getElementById(id);
+  const open = el.style.display === "block";
+  closeAllDropdowns();
+  if (!open) el.style.display = "block";
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll(".drop-list").forEach(d => d.style.display = "none");
 }
 
 function buildDropdown(id, col) {
   const box = document.getElementById(id);
   [...new Set(allRows.map(r => r[col]).filter(Boolean))].forEach(v => {
-    box.innerHTML += `
-      <label>
-        <input type="checkbox" value="${v}" onchange="render(window.idx)">
-        ${v}
-      </label>`;
+    const lbl = document.createElement("label");
+    lbl.innerHTML = `<input type="checkbox" value="${v}"> ${v}`;
+    lbl.querySelector("input").onchange = () => {
+      render();
+      closeAllDropdowns();   // ✅ AUTO CLOSE AFTER SELECTION
+    };
+    box.appendChild(lbl);
   });
 }
 
@@ -194,8 +203,8 @@ function selectedValues(id) {
   return [...document.querySelectorAll(`#${id} input:checked`)].map(cb => cb.value);
 }
 
-function render(idx) {
-  window.idx = idx;
+function render() {
+  const idx = idxGlobal;
   tableBody.innerHTML = "";
 
   const centers = selectedValues("centerList");
@@ -213,7 +222,9 @@ function render(idx) {
 
   filtered.forEach(r => {
     const phone = r[idx.phone].replace(/\D/g,"");
-    const msg = encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`);
+    const msg = encodeURIComponent(
+      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
+    );
 
     tableBody.innerHTML += `
       <tr>
@@ -228,7 +239,13 @@ function render(idx) {
   });
 }
 
-/* CSV Parser (unchanged) */
+document.addEventListener("click", e => {
+  if (!e.target.closest(".dropdown")) closeAllDropdowns();
+});
+
+nameSearch.oninput = () => render();
+
+/* CSV parser (unchanged) */
 function parseCSV(text) {
   const rows=[], row=[], cur={v:""}, q={v:false};
   for (let c of text) {
