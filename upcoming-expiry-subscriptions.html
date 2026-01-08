@@ -184,8 +184,20 @@ function applyFilters() {
   renderTable(filtered);
 }
 
+/* 🔹 NEW: Date parser for sorting */
+function parseDate(val) {
+  const p = val.split("-");
+  const year = p[2].length === 2 ? "20" + p[2] : p[2];
+  return new Date(year, p[1] - 1, p[0]);
+}
+
 function renderTable(data) {
   tableBody.innerHTML = "";
+
+  /* 🔹 NEW: Sort latest expiry first */
+  data.sort((a, b) =>
+    parseDate(b.Expiry_Clean) - parseDate(a.Expiry_Clean)
+  );
 
   data.forEach(r => {
     const msg = `🔔 Renewal Alert: Access Ends on ${r.Expiry_Clean} - after 10:00 PM`;
