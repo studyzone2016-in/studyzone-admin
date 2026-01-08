@@ -17,8 +17,6 @@ body {
 }
 
 .top-bar {
-    display: flex;
-    align-items: center;
     margin-bottom: 12px;
 }
 
@@ -44,14 +42,14 @@ h1 {
 
 table {
     width: 100%;
-    min-width: 720px;
+    min-width: 900px;
     border-collapse: collapse;
     background: #fff;
 }
 
 th, td {
     border: 1px solid #e0e0e0;
-    padding: 10px 8px;
+    padding: 10px;
     font-size: 14px;
     height: 48px;
     vertical-align: middle;
@@ -77,7 +75,7 @@ tr:nth-child(even) {
 .phone-link {
     color: #1f3c88;
     font-weight: 600;
-    text-decoration: underline; /* force visible hyperlink */
+    text-decoration: underline;
 }
 
 .phone-actions a {
@@ -128,34 +126,41 @@ Papa.parse(
         header.forEach(h => tableHeader.innerHTML += `<th>${h}</th>`);
 
         rows.reverse().forEach(r => {
-            const cells = r.map((cell, idx) => {
+            const row = r.map((cell, idx) => {
                 const col = header[idx].toLowerCase();
 
-                if (col.includes("phone")) {
-                    let phone = (cell || "").replace(/\D/g, "");
+                /* ✅ CORRECT COLUMN DETECTION */
+                if (
+                    col.includes("mobile") ||
+                    col.includes("phone") ||
+                    col.includes("contact")
+                ) {
+                    let raw = cell || "";
+                    let digits = raw.replace(/\D/g, "");
 
-                    // normalize Indian numbers
-                    if (phone.length === 10) phone = "91" + phone;
-                    if (phone.length !== 12) phone = "";
+                    // Indian normalization
+                    if (digits.length === 10) digits = "91" + digits;
+                    if (digits.length !== 12) {
+                        return `<td>${raw}</td>`;
+                    }
 
                     return `
                     <td>
                         <div class="phone-cell">
-                            ${phone ? `
-                            <a class="phone-link" href="tel:+${phone}">
-                                ${cell}
+                            <a class="phone-link" href="tel:+${digits}">
+                                ${raw}
                             </a>
                             <span class="phone-actions">
-                                <a class="call" href="tel:+${phone}" title="Call">
+                                <a class="call" href="tel:+${digits}" title="Call">
                                     <i class="fa-solid fa-phone"></i>
                                 </a>
                                 <a class="whatsapp"
-                                   href="https://wa.me/${phone}"
+                                   href="https://wa.me/${digits}"
                                    target="_blank"
                                    title="WhatsApp">
                                     <i class="fa-brands fa-whatsapp"></i>
                                 </a>
-                            </span>` : cell}
+                            </span>
                         </div>
                     </td>`;
                 }
@@ -163,7 +168,7 @@ Papa.parse(
                 return `<td>${cell || ""}</td>`;
             }).join("");
 
-            tableBody.innerHTML += `<tr>${cells}</tr>`;
+            tableBody.innerHTML += `<tr>${row}</tr>`;
         });
     }
 });
