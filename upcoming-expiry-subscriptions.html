@@ -45,7 +45,7 @@
     font-size: 13px;
   }
 
-  /* Scrollable table container */
+  /* Scroll container */
   .table-container {
     overflow: auto;
     max-height: 70vh;
@@ -55,27 +55,50 @@
 
   table {
     border-collapse: collapse;
-    min-width: 900px; /* enables horizontal scroll */
+    min-width: 1000px;
     font-size: 14px;
   }
 
   th, td {
     border: 1px solid #ddd;
     padding: 10px;
-    text-align: left;
     white-space: nowrap;
   }
 
+  /* Sticky header */
   th {
     background: #007bff;
     color: #fff;
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 3;
   }
 
   tr:nth-child(even) {
     background: #f9f9f9;
+  }
+
+  /* ===== FREEZE FIRST 2 COLUMNS ===== */
+
+  .sticky-col-1 {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+  }
+
+  .sticky-col-2 {
+    position: sticky;
+    left: 130px; /* width of column 1 */
+    background: #fff;
+    z-index: 2;
+  }
+
+  /* Header for sticky columns */
+  th.sticky-col-1,
+  th.sticky-col-2 {
+    background: #007bff;
+    z-index: 4;
   }
 
   .call-btn {
@@ -97,7 +120,6 @@
 <a href="index.html" class="back-btn">← Back</a>
 
 <div class="top-controls">
-
   <div id="centerFilter">
     <strong>Centers:</strong><br>
     <label><input type="checkbox" value="ALL" checked> All</label>
@@ -110,15 +132,14 @@
       <option value="YES">Yes</option>
     </select>
   </div>
-
 </div>
 
 <div class="table-container">
 <table id="subscriptionTable">
   <thead>
-    <tr id="tableHeader">
-      <th>Expiry Date</th>
-      <th>Subscriber Name</th>
+    <tr>
+      <th class="sticky-col-1" style="width:130px;">Expiry Date</th>
+      <th class="sticky-col-2" style="width:220px;">Subscriber Name</th>
       <th class="plan-col" style="display:none;">Plan</th>
       <th>Contact</th>
       <th>Call</th>
@@ -133,64 +154,58 @@
 const csvUrl =
 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-function parseCSVLine(line) {
-  const res = [];
-  let cur='', q=false;
-  for (let c of line) {
-    if (c === '"') q = !q;
-    else if (c === ',' && !q) { res.push(cur); cur=''; }
-    else cur += c;
+function parseCSVLine(line){
+  const r=[], q=false; let c='',qt=false;
+  for(let ch of line){
+    if(ch=='"') qt=!qt;
+    else if(ch==','&&!qt){r.push(c);c='';}
+    else c+=ch;
   }
-  res.push(cur);
-  return res.map(v => v.replace(/^"|"$/g,'').trim());
+  r.push(c);
+  return r.map(v=>v.replace(/^"|"$/g,'').trim());
 }
 
-function parseDate(v) {
-  if (!v) return null;
-  let [d,m,y] = v.split('-').map(n=>parseInt(n,10));
-  if (y<100) y+=2000;
-  const dt = new Date(y,m-1,d);
+function parseDate(v){
+  if(!v) return null;
+  let [d,m,y]=v.split('-').map(n=>parseInt(n,10));
+  if(y<100) y+=2000;
+  const dt=new Date(y,m-1,d);
   return isNaN(dt)?null:dt;
 }
 
-const tbody = document.querySelector('#subscriptionTable tbody');
-const centerBox = document.getElementById('centerFilter');
-const planToggle = document.getElementById('planToggle');
+const tbody=document.querySelector('tbody');
+const centerBox=document.getElementById('centerFilter');
+const planToggle=document.getElementById('planToggle');
 
-let rows=[], centers=[];
+let rows=[],centers=[];
 
 fetch(csvUrl).then(r=>r.text()).then(csv=>{
-  const lines = csv.trim().split('\n');
-  const h = parseCSVLine(lines[0]);
-
-  const col = {
-    expiry: h.findIndex(x=>x.toLowerCase().includes('expiry')),
-    center: h.findIndex(x=>x.toLowerCase().includes('center')),
-    name: h.findIndex(x=>x.toLowerCase().includes('full')),
-    plan: h.findIndex(x=>x.toLowerCase().includes('plan')),
-    phone: h.findIndex(x=>x.toLowerCase().includes('phone'))
+  const l=csv.trim().split('\n');
+  const h=parseCSVLine(l[0]);
+  const idx={
+    expiry:h.findIndex(x=>x.toLowerCase().includes('expiry')),
+    center:h.findIndex(x=>x.toLowerCase().includes('center')),
+    name:h.findIndex(x=>x.toLowerCase().includes('full')),
+    plan:h.findIndex(x=>x.toLowerCase().includes('plan')),
+    phone:h.findIndex(x=>x.toLowerCase().includes('phone'))
   };
 
-  const cs = new Set();
+  const cs=new Set();
+  l.slice(1).forEach(x=>{
+    const c=parseCSVLine(x);
+    const d=parseDate(c[idx.expiry]);
+    if(!d) return;
+    const p=(c[idx.phone]||'').replace(/\D/g,'');
+    if(p.length<10) return;
 
-  lines.slice(1).forEach(l=>{
-    const c = parseCSVLine(l);
-    const d = parseDate(c[col.expiry]);
-    if (!d) return;
-
-    const center = c[col.center] || '';
-    cs.add(center);
-
-    const phone = (c[col.phone]||'').replace(/\D/g,'');
-    if (phone.length<10) return;
-
+    cs.add(c[idx.center]||'');
     rows.push({
-      center,
+      center:c[idx.center],
+      expiry:c[idx.expiry],
       date:d,
-      expiry:c[col.expiry],
-      name:c[col.name]||'',
-      plan:c[col.plan]||'',
-      phone
+      name:c[idx.name]||'',
+      plan:c[idx.plan]||'',
+      phone:p
     });
   });
 
@@ -204,47 +219,32 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
   });
 
   centerBox.addEventListener('change',render);
-  planToggle.addEventListener('change',togglePlan);
-
+  planToggle.addEventListener('change',render);
   render();
 });
 
-function getCenters(){
-  const boxes=[...centerBox.querySelectorAll('input')];
-  const all=boxes.find(b=>b.value==='ALL');
-  const sel=boxes.filter(b=>b.checked && b.value!=='ALL').map(b=>b.value);
-  if (event?.target?.value==='ALL')
-    boxes.forEach(b=>b.checked=all.checked);
-  all.checked = sel.length === boxes.length-1;
-  return sel;
-}
-
-function togglePlan(){
-  const show = planToggle.value==='YES';
-  document.querySelectorAll('.plan-col').forEach(c=>{
-    c.style.display = show?'table-cell':'none';
-  });
-  render();
-}
-
 function render(){
+  const sel=[...centerBox.querySelectorAll('input')]
+    .filter(x=>x.checked && x.value!=='ALL')
+    .map(x=>x.value);
+
   tbody.innerHTML='';
-  const sel=getCenters();
   rows.filter(r=>sel.length===0||sel.includes(r.center))
-    .forEach(r=>{
-      tbody.insertAdjacentHTML('beforeend',`
-        <tr>
-          <td>${r.expiry}</td>
-          <td>${r.name}</td>
-          <td class="plan-col" style="display:${planToggle.value==='YES'?'table-cell':'none'}">${r.plan}</td>
-          <td>${r.phone}</td>
-          <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
-          <td><a class="wa-btn" href="https://wa.me/${r.phone}?text=${encodeURIComponent(
+  .forEach(r=>{
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td class="sticky-col-1">${r.expiry}</td>
+        <td class="sticky-col-2">${r.name}</td>
+        <td class="plan-col" style="display:${planToggle.value==='YES'?'table-cell':'none'}">${r.plan}</td>
+        <td>${r.phone}</td>
+        <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
+        <td><a class="wa-btn" target="_blank"
+          href="https://wa.me/${r.phone}?text=${encodeURIComponent(
             `🔔 Renewal Alert: Access Ends on ${r.expiry} - after 10:00 PM`
-          )}" target="_blank">💬 WhatsApp</a></td>
-        </tr>
-      `);
-    });
+          )}">💬 WhatsApp</a></td>
+      </tr>
+    `);
+  });
 }
 </script>
 
