@@ -17,7 +17,6 @@ body {
 
 .top-bar {
   display: flex;
-  align-items: center;
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -47,7 +46,6 @@ select {
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  font-size: 14px;
 }
 
 .table-container {
@@ -89,17 +87,6 @@ tr:hover {
   font-weight: 600;
   text-decoration: none;
 }
-
-.whatsapp-link:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  th, td {
-    font-size: 13px;
-    padding: 8px;
-  }
-}
 </style>
 </head>
 
@@ -120,7 +107,7 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 
 <div class="filters">
   <select id="dateFilter">
-    <option value="">All Dates</option>
+    <option value="">All Expiry Dates</option>
   </select>
 
   <select id="centerFilter">
@@ -139,105 +126,85 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
         <th>Phone (WhatsApp)</th>
       </tr>
     </thead>
-    <tbody id="tableBody">
-      <tr><td colspan="5">Loading data...</td></tr>
-    </tbody>
+    <tbody id="tableBody"></tbody>
   </table>
 </div>
 
 <script>
-const CSV_URL =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=2082915008&single=true&output=csv";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-const tableBody = document.getElementById("tableBody");
-const dateFilter = document.getElementById("dateFilter");
-const centerFilter = document.getElementById("centerFilter");
-
-let fullData = [];
+let rawData = [];
 
 Papa.parse(CSV_URL, {
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
-    fullData = results.data;
-    populateFilters(fullData);
-    renderTable(fullData);
-  },
-  error: function() {
-    tableBody.innerHTML =
-      `<tr><td colspan="5">Failed to load data</td></tr>`;
+    rawData = results.data.filter(r =>
+      r.Active_Status === "Active" &&
+      r.Expiry_Clean &&
+      !isNaN(parseInt(r.Days_To_Expiry)) &&
+      parseInt(r.Days_To_Expiry) >= 0
+    );
+
+    populateFilters();
+    renderTable(rawData);
   }
 });
 
-/* Populate filters */
-function populateFilters(data) {
-  const dates = new Set();
-  const centers = new Set();
+function populateFilters() {
+  const dateSet = new Set();
+  const centerSet = new Set();
 
-  data.forEach(row => {
-    if (row["Access Expiry (DD-MM-YY)"]) dates.add(row["Access Expiry (DD-MM-YY)"]);
-    if (row["Center"]) centers.add(row["Center"]);
+  rawData.forEach(r => {
+    dateSet.add(r.Expiry_Clean);
+    centerSet.add(r.Center);
   });
 
-  [...dates].sort().forEach(d => {
-    dateFilter.innerHTML += `<option value="${d}">${d}</option>`;
-  });
+  [...dateSet].sort().forEach(d =>
+    dateFilter.innerHTML += `<option value="${d}">${d}</option>`
+  );
 
-  [...centers].sort().forEach(c => {
-    centerFilter.innerHTML += `<option value="${c}">${c}</option>`;
-  });
+  [...centerSet].sort().forEach(c =>
+    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
+  );
 }
 
-dateFilter.addEventListener("change", applyFilters);
-centerFilter.addEventListener("change", applyFilters);
+dateFilter.onchange = centerFilter.onchange = applyFilters;
 
 function applyFilters() {
-  const selectedDate = dateFilter.value;
-  const selectedCenter = centerFilter.value;
+  const d = dateFilter.value;
+  const c = centerFilter.value;
 
-  const filtered = fullData.filter(row =>
-    (!selectedDate || row["Access Expiry (DD-MM-YY)"] === selectedDate) &&
-    (!selectedCenter || row["Center"] === selectedCenter)
+  const filtered = rawData.filter(r =>
+    (!d || r.Expiry_Clean === d) &&
+    (!c || r.Center === c)
   );
 
   renderTable(filtered);
 }
 
-/* Render table */
 function renderTable(data) {
   tableBody.innerHTML = "";
 
-  if (data.length === 0) {
-    tableBody.innerHTML =
-      `<tr><td colspan="5">No matching records</td></tr>`;
-    return;
-  }
-
-  data.forEach(row => {
-    const expiryDate = row["Access Expiry (DD-MM-YY)"] || "--";
-    const rawPhone = row["Phone"] || "";
-    const cleanPhone = rawPhone.replace(/\D/g, "");
-
-    const whatsappMessage =
-      `🔔 Renewal Alert: Access Ends on ${expiryDate} - after 10:00 PM.`;
-
-    const whatsappLink = cleanPhone
-      ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`
-      : "#";
+  data.forEach(r => {
+    const msg = `🔔 Renewal Alert: Access Ends on ${r.Expiry_Clean} - after 10:00 PM`;
+    const phone = r.Phone.replace(/\D/g, "");
+    const wa = `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
 
     tableBody.innerHTML += `
       <tr>
-        <td class="expiry">${expiryDate}</td>
-        <td>${row["Center"] || "--"}</td>
-        <td>${row["Full Name"] || "--"}</td>
-        <td>${row["Plan"] || "--"}</td>
+        <td class="expiry">${r.Expiry_Clean}</td>
+        <td>${r.Center}</td>
+        <td>${r["Full Name"]}</td>
+        <td>${r.Plan}</td>
         <td>
-          ${cleanPhone
-            ? `<a class="whatsapp-link" href="${whatsappLink}" target="_blank">${rawPhone}</a>`
-            : "--"}
+          <a class="whatsapp-link" href="${wa}" target="_blank">
+            ${r.Phone}
+          </a>
         </td>
-      </tr>`;
+      </tr>
+    `;
   });
 }
 </script>
