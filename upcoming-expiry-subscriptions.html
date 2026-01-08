@@ -38,7 +38,7 @@
     width: 100%;
     border-collapse: collapse;
     background: #fff;
-    table-layout: fixed; /* prevents horizontal scroll */
+    table-layout: fixed;
     font-size: 13px;
   }
 
@@ -66,11 +66,10 @@
   }
 
   /* column width control */
-  th:nth-child(1), td:nth-child(1) { width: 18%; }
-  th:nth-child(2), td:nth-child(2) { width: 14%; }
-  th:nth-child(3), td:nth-child(3) { width: 26%; }
-  th:nth-child(4), td:nth-child(4) { width: 14%; }
-  th:nth-child(5), td:nth-child(5) { width: 28%; }
+  th:nth-child(1), td:nth-child(1) { width: 20%; }
+  th:nth-child(2), td:nth-child(2) { width: 35%; }
+  th:nth-child(3), td:nth-child(3) { width: 15%; }
+  th:nth-child(4), td:nth-child(4) { width: 30%; }
 </style>
 </head>
 
@@ -88,7 +87,6 @@
   <thead>
     <tr>
       <th>Access Expiry</th>
-      <th>Center</th>
       <th>Full Name</th>
       <th>Plan</th>
       <th>Phone (WhatsApp)</th>
@@ -147,7 +145,7 @@ fetch(csvUrl)
       const c = parseCSVLine(l);
       const expiryRaw = c[col.expiry];
       const date = parseDate(expiryRaw);
-      if (!date) return; // remove empty expiry rows
+      if (!date) return;
 
       const center = c[col.center] || '';
       centers.add(center);
@@ -167,7 +165,6 @@ fetch(csvUrl)
         html: `
           <tr>
             <td>${expiryRaw}</td>
-            <td>${center}</td>
             <td>${c[col.name] || ''}</td>
             <td>${c[col.plan] || ''}</td>
             <td>${phoneHTML}</td>
@@ -175,10 +172,9 @@ fetch(csvUrl)
       });
     });
 
-    /* 🔁 SORT: EARLIEST EXPIRY ON TOP */
+    /* Earliest expiry on top */
     allRows.sort((a, b) => a.date - b.date);
 
-    /* Populate center dropdown */
     [...centers].sort().forEach(c =>
       centerFilter.insertAdjacentHTML('beforeend',
         `<option value="${c}">${c}</option>`));
@@ -188,9 +184,9 @@ fetch(csvUrl)
 
 function renderTable() {
   tbody.innerHTML = '';
-  const selected = centerFilter.value;
+  const sel = centerFilter.value;
   allRows
-    .filter(r => selected === 'ALL' || r.center === selected)
+    .filter(r => sel === 'ALL' || r.center === sel)
     .forEach(r => tbody.insertAdjacentHTML('beforeend', r.html));
 }
 
