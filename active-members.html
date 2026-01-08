@@ -1,119 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Study ZONE | Active Members</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
 body {
   font-family: Arial, sans-serif;
   margin: 10px;
+  background: #f6f7fb;
 }
 
-.top-bar {
+.controls {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
-button {
-  padding: 6px 10px;
+.dropdown-box {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.dropdown-header {
+  font-weight: bold;
   cursor: pointer;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
-  align-items: center;
+.dropdown-list {
+  display: none;
+  margin-top: 8px;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
-select {
-  padding: 6px;
+.dropdown-list label {
+  display: block;
   font-size: 14px;
-  min-width: 170px;
-  height: 100px;
+  padding: 4px 0;
 }
 
-input {
-  padding: 6px;
-  font-size: 14px;
+button {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.reset-btn {
+  background: #d9534f;
+  color: #fff;
 }
 
 .count-box {
-  background: #f2f2f2;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
+  background: #0d6efd;
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
   font-weight: bold;
-  border-radius: 4px;
-}
-
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid #ccc;
 }
 
 table {
-  border-collapse: collapse;
-  min-width: 900px;
   width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: #fff;
 }
 
 th, td {
-  border: 1px solid #ddd;
-  padding: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
   font-size: 13px;
-  text-align: center;
-  white-space: nowrap;
+  text-align: left;
 }
 
 th {
-  background: #f2f2f2;
-}
-
-.call-btn {
-  background: #4CAF50;
+  background: #343a40;
   color: #fff;
-  border: none;
+  position: sticky;
+  top: 0;
 }
 
-.wa-btn {
+.actions button {
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.whatsapp {
   background: #25D366;
   color: #fff;
-  border: none;
 }
 
-.wa-btn:disabled {
-  background: #aaa;
-  cursor: not-allowed;
+.call {
+  background: #198754;
+  color: #fff;
 }
 </style>
 </head>
 
 <body>
 
-<div class="top-bar">
-  <button onclick="history.back()">⬅ Back</button>
-  <h3>Active Members</h3>
-</div>
+<div class="controls">
 
-<div class="filters">
-  <select id="centerFilter" multiple></select>
-  <select id="planFilter" multiple></select>
-
-  <input type="text" id="nameSearch" placeholder="Search Full Name">
-
-  <button onclick="resetFilters()">Reset</button>
-
-  <div class="count-box">
-    Total: <span id="resultCount">0</span>
+  <div class="dropdown-box">
+    <div class="dropdown-header" onclick="toggleDropdown('centerList')">
+      📍 Select Center(s)
+    </div>
+    <div class="dropdown-list" id="centerList"></div>
   </div>
+
+  <div class="dropdown-box">
+    <div class="dropdown-header" onclick="toggleDropdown('planList')">
+      📦 Select Plan(s)
+    </div>
+    <div class="dropdown-list" id="planList"></div>
+  </div>
+
+  <button class="reset-btn" onclick="resetFilters()">🔄 Reset Selection</button>
+
+  <div class="count-box" id="countBox">Total Members: 0</div>
 </div>
 
-<div class="table-wrap">
 <table>
 <thead>
 <tr>
@@ -122,166 +133,124 @@ th {
   <th>Joining Date</th>
   <th>Access Expiry</th>
   <th>Fees Status</th>
-  <th>Call</th>
-  <th>WhatsApp</th>
+  <th>Actions</th>
 </tr>
 </thead>
 <tbody id="tableBody"></tbody>
 </table>
-</div>
 
 <script>
-const CSV_URL =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let allRows = [];
+let data = [];
+
+function toggleDropdown(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+function cleanPhone(phone) {
+  phone = phone.replace(/\D/g, "");
+  if (phone.startsWith("91") && phone.length > 10) {
+    phone = phone.slice(-10);
+  }
+  return phone.length === 10 ? phone : null;
+}
+
+function createCheckbox(listId, value) {
+  return `
+    <label>
+      <input type="checkbox" value="${value}" onchange="applyFilters()"> ${value}
+    </label>`;
+}
 
 fetch(CSV_URL)
   .then(r => r.text())
-  .then(csv => {
-    const rows = parseCSV(csv);
+  .then(text => {
+    const rows = text.trim().split("\n").map(r => r.split(","));
     const headers = rows.shift();
 
-    const idx = {
-      center: headers.indexOf("Center"),
-      plan: headers.indexOf("Plan"),
-      name: headers.indexOf("Full Name"),
-      phone: headers.indexOf("Phone"),
-      join: headers.indexOf("Joining Date (DD-MM-YY)"),
-      expiry: headers.indexOf("Access Expiry (DD-MM-YY)"),
-      fees: headers.indexOf("Fees Status")
-    };
+    data = rows.map(r => ({
+      Center: r[0],
+      Plan: r[1],
+      Name: r[2],
+      Phone: r[3],
+      Join: r[4],
+      Expiry: r[5],
+      Fees: r[6]
+    }));
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    allRows = rows.filter(r => {
-      const e = r[idx.expiry];
-      if (!e) return false;
-      const [dd, mm, yy] = e.split("-");
-      const d = new Date(`20${yy}`, mm - 1, dd);
-      return d >= today;
-    });
-
-    populateFilters(idx);
-    render(idx);
+    initFilters();
+    applyFilters();
   });
 
-function populateFilters(idx) {
-  const centers = [...new Set(allRows.map(r => r[idx.center]).filter(Boolean))];
-  const plans = [...new Set(allRows.map(r => r[idx.plan]).filter(Boolean))];
+function initFilters() {
+  const centers = [...new Set(data.map(d => d.Center))];
+  const plans = [...new Set(data.map(d => d.Plan))];
 
-  centerFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
-  planFilter.innerHTML = `<option value="ALL">Entire Selection</option>`;
+  const centerList = document.getElementById("centerList");
+  const planList = document.getElementById("planList");
 
-  centers.forEach(c =>
-    centerFilter.innerHTML += `<option value="${c}">${c}</option>`
-  );
-  plans.forEach(p =>
-    planFilter.innerHTML += `<option value="${p}">${p}</option>`
-  );
+  centerList.innerHTML = `<label><input type="checkbox" onclick="selectAll('centerList', this)"> Entire Selection</label>`;
+  centers.forEach(c => centerList.innerHTML += createCheckbox("centerList", c));
 
-  centerFilter.onchange = () => handleSelect(centerFilter, idx);
-  planFilter.onchange = () => handleSelect(planFilter, idx);
-  nameSearch.oninput = () => render(idx);
-
-  centerFilter.options[0].selected = true;
-  planFilter.options[0].selected = true;
+  planList.innerHTML = `<label><input type="checkbox" onclick="selectAll('planList', this)"> Entire Selection</label>`;
+  plans.forEach(p => planList.innerHTML += createCheckbox("planList", p));
 }
 
-function handleSelect(select, idx) {
-  const allOption = select.options[0];
+function selectAll(listId, source) {
+  document.querySelectorAll(`#${listId} input[type=checkbox]`)
+    .forEach(cb => cb.checked = source.checked);
+  applyFilters();
+}
 
-  if (allOption.selected && select.selectedOptions.length > 1) {
-    [...select.options].forEach(o => o.selected = false);
-    allOption.selected = true;
-  } else if (!allOption.selected && select.selectedOptions.length > 0) {
-    allOption.selected = false;
-  }
-  render(idx);
+function getSelected(listId) {
+  return [...document.querySelectorAll(`#${listId} input[type=checkbox]:checked`)]
+    .map(cb => cb.value)
+    .filter(v => v !== "on");
+}
+
+function applyFilters() {
+  const centers = getSelected("centerList");
+  const plans = getSelected("planList");
+
+  let filtered = data.filter(d =>
+    (centers.length === 0 || centers.includes(d.Center)) &&
+    (plans.length === 0 || plans.includes(d.Plan))
+  );
+
+  renderTable(filtered);
+  document.getElementById("countBox").innerText =
+    `Total Members: ${filtered.length}`;
 }
 
 function resetFilters() {
-  [...centerFilter.options].forEach(o => o.selected = false);
-  [...planFilter.options].forEach(o => o.selected = false);
-  centerFilter.options[0].selected = true;
-  planFilter.options[0].selected = true;
-  nameSearch.value = "";
-  render(currentIdx);
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
+  applyFilters();
 }
 
-let currentIdx;
-function render(idx) {
-  currentIdx = idx;
-  tableBody.innerHTML = "";
+function renderTable(rows) {
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
 
-  const centers = getSelected(centerFilter);
-  const plans = getSelected(planFilter);
-  const q = nameSearch.value.toLowerCase();
-
-  const filtered = allRows.filter(r => {
-    if (!centers.includes("ALL") && !centers.includes(r[idx.center])) return false;
-    if (!plans.includes("ALL") && !plans.includes(r[idx.plan])) return false;
-    if (q && !r[idx.name].toLowerCase().includes(q)) return false;
-    return true;
+  rows.forEach(r => {
+    const phone = cleanPhone(r.Phone);
+    body.innerHTML += `
+      <tr>
+        <td>${r.Name}</td>
+        <td>${phone || "Invalid"}</td>
+        <td>${r.Join}</td>
+        <td>${r.Expiry}</td>
+        <td>${r.Fees}</td>
+        <td class="actions">
+          ${phone ? `
+            <a href="tel:${phone}"><button class="call">Call</button></a>
+            <a href="https://wa.me/${phone}" target="_blank">
+              <button class="whatsapp">WhatsApp</button>
+            </a>` : ""}
+        </td>
+      </tr>`;
   });
-
-  resultCount.innerText = filtered.length;
-
-  filtered.forEach(r => {
-    const raw = r[idx.phone] || "";
-    const phone = raw.replace(/\D/g, "");
-    const validPhone = phone.length === 10;
-
-    const msg = encodeURIComponent(
-      `🔔 Renewal Alert: Access Ends on ${r[idx.expiry]} - after 10:00 PM`
-    );
-
-    tableBody.innerHTML += `
-    <tr>
-      <td>${r[idx.name]}</td>
-      <td>${raw}</td>
-      <td>${r[idx.join]}</td>
-      <td>${r[idx.expiry]}</td>
-      <td>${r[idx.fees]}</td>
-      <td>
-        ${validPhone
-          ? `<button class="call-btn" onclick="location.href='tel:${phone}'">Call</button>`
-          : ""}
-      </td>
-      <td>
-        ${validPhone
-          ? `<button class="wa-btn" onclick="location.href='https://wa.me/${phone}?text=${msg}'">WhatsApp</button>`
-          : `<button class="wa-btn" disabled>WhatsApp</button>`}
-      </td>
-    </tr>`;
-  });
-}
-
-function getSelected(select) {
-  return [...select.selectedOptions].map(o => o.value);
-}
-
-/* Robust CSV parser */
-function parseCSV(text) {
-  const rows = [];
-  let row = [], cur = "", inside = false;
-
-  for (let c of text) {
-    if (c === '"') inside = !inside;
-    else if (c === "," && !inside) {
-      row.push(cur); cur = "";
-    } else if (c === "\n" && !inside) {
-      row.push(cur);
-      rows.push(row);
-      row = []; cur = "";
-    } else {
-      cur += c;
-    }
-  }
-  row.push(cur);
-  rows.push(row);
-  return rows;
 }
 </script>
 
