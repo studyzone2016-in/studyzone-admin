@@ -28,7 +28,7 @@ body { font-family: Arial, sans-serif; margin: 10px; }
   min-width: 180px;
 }
 
-.drop-btn {
+.drop-btn, select {
   width: 100%;
   padding: 7px 8px;
   border: 1px solid #ccc;
@@ -65,9 +65,7 @@ body { font-family: Arial, sans-serif; margin: 10px; }
   cursor: pointer;
 }
 
-.drop-list label:hover {
-  background: #f4f6f8;
-}
+.drop-list label:hover { background: #f4f6f8; }
 
 input[type="text"] {
   padding: 7px;
@@ -82,10 +80,7 @@ input[type="text"] {
   border-radius: 4px;
 }
 
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid #ccc;
-}
+.table-wrap { overflow-x: auto; border: 1px solid #ccc; }
 
 table {
   border-collapse: collapse;
@@ -133,6 +128,15 @@ th { background: #f2f2f2; }
     <div class="drop-list" id="planList"></div>
   </div>
 
+  <!-- ✅ SORT DROPDOWN -->
+  <select id="sortBy" onchange="render()">
+    <option value="">Sort By</option>
+    <option value="joinAsc">Joining Date ↑</option>
+    <option value="joinDesc">Joining Date ↓</option>
+    <option value="expAsc">Access Expiry ↑</option>
+    <option value="expDesc">Access Expiry ↓</option>
+  </select>
+
   <input type="text" id="nameSearch" placeholder="Search Full Name">
 
   <div class="count-box">
@@ -161,13 +165,19 @@ th { background: #f2f2f2; }
 const CSV_URL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let allRows = [], idxGlobal = null;
+let allRows=[], idxGlobal=null;
 
-function normalizePhone(raw) {
-  if (!raw) return null;
-  let p = raw.replace(/\D/g,"");
-  if (p.startsWith("91") && p.length > 10) p = p.slice(-10);
-  return /^\d{10}$/.test(p) ? p : null;
+function normalizePhone(raw){
+  if(!raw) return null;
+  let p=raw.replace(/\D/g,"");
+  if(p.startsWith("91") && p.length>10) p=p.slice(-10);
+  return /^\d{10}$/.test(p)?p:null;
+}
+
+function toDate(v){
+  if(!v) return new Date(0);
+  const [d,m,y]=v.split("-");
+  return new Date(`20${y}`,m-1,d);
 }
 
 fetch(CSV_URL)
@@ -188,12 +198,7 @@ fetch(CSV_URL)
 
   const today=new Date(); today.setHours(0,0,0,0);
 
-  allRows=rows.filter(r=>{
-    const e=r[idxGlobal.expiry];
-    if(!e) return false;
-    const [dd,mm,yy]=e.split("-");
-    return new Date(`20${yy}`,mm-1,dd)>=today;
-  });
+  allRows=rows.filter(r=>toDate(r[idxGlobal.expiry])>=today);
 
   buildDropdown("feesList",idxGlobal.fees);
   buildDropdown("centerList",idxGlobal.center);
@@ -207,11 +212,9 @@ function toggleDrop(id){
   closeAll();
   if(!open) el.style.display="block";
 }
-
 function closeAll(){
   document.querySelectorAll(".drop-list").forEach(d=>d.style.display="none");
 }
-
 function buildDropdown(id,col){
   const box=document.getElementById(id);
   [...new Set(allRows.map(r=>r[col]).filter(Boolean))].forEach(v=>{
@@ -221,7 +224,6 @@ function buildDropdown(id,col){
     box.appendChild(l);
   });
 }
-
 function selected(id){
   return [...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value);
 }
@@ -231,15 +233,25 @@ function render(){
   const f=selected("feesList"),
         c=selected("centerList"),
         p=selected("planList"),
-        q=nameSearch.value.toLowerCase();
+        q=nameSearch.value.toLowerCase(),
+        s=sortBy.value;
 
-  const data=allRows.filter(r=>{
+  let data=allRows.filter(r=>{
     if(f.length && !f.includes(r[idxGlobal.fees])) return false;
     if(c.length && !c.includes(r[idxGlobal.center])) return false;
     if(p.length && !p.includes(r[idxGlobal.plan])) return false;
     if(q && !r[idxGlobal.name].toLowerCase().includes(q)) return false;
     return true;
   });
+
+  if(s){
+    data.sort((a,b)=>{
+      if(s==="joinAsc") return toDate(a[idxGlobal.join])-toDate(b[idxGlobal.join]);
+      if(s==="joinDesc") return toDate(b[idxGlobal.join])-toDate(a[idxGlobal.join]);
+      if(s==="expAsc") return toDate(a[idxGlobal.expiry])-toDate(b[idxGlobal.expiry]);
+      if(s==="expDesc") return toDate(b[idxGlobal.expiry])-toDate(a[idxGlobal.expiry]);
+    });
+  }
 
   resultCount.innerText=data.length;
 
