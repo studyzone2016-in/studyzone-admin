@@ -8,34 +8,39 @@
 <style>
 body { font-family: Arial, sans-serif; margin: 10px; }
 
+/* TOP BAR */
 .top-bar {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* ✅ RESPONSIVE FILTER GRID */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
   margin-bottom: 10px;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 12px;
+@media (min-width: 768px) {
+  .filters {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    align-items: center;
+  }
 }
 
-.dropdown {
-  position: relative;
-  min-width: 180px;
-}
+.dropdown { position: relative; width: 100%; }
 
-.drop-btn, select {
+.drop-btn, select, input[type="text"] {
   width: 100%;
-  padding: 7px 8px;
+  padding: 6px 8px;
   border: 1px solid #ccc;
   background: #fff;
   cursor: pointer;
-  text-align: left;
   border-radius: 4px;
+  font-size: 13px;
 }
 
 .drop-btn::after {
@@ -46,7 +51,7 @@ body { font-family: Arial, sans-serif; margin: 10px; }
 .drop-list {
   display: none;
   position: absolute;
-  top: 110%;
+  top: 105%;
   left: 0;
   z-index: 999;
   background: #fff;
@@ -60,26 +65,29 @@ body { font-family: Arial, sans-serif; margin: 10px; }
 
 .drop-list label {
   display: block;
-  padding: 7px 10px;
-  font-size: 14px;
+  padding: 6px 10px;
+  font-size: 13px;
   cursor: pointer;
 }
 
 .drop-list label:hover { background: #f4f6f8; }
 
-input[type="text"] {
-  padding: 7px;
-  font-size: 14px;
-}
-
+/* COUNT BOX */
 .count-box {
+  grid-column: span 2;
   background: #f2f2f2;
   border: 1px solid #ccc;
-  padding: 7px 14px;
+  padding: 6px;
   font-weight: bold;
   border-radius: 4px;
+  text-align: center;
 }
 
+@media (min-width: 768px) {
+  .count-box { grid-column: auto; }
+}
+
+/* TABLE */
 .table-wrap { overflow-x: auto; border: 1px solid #ccc; }
 
 table {
@@ -111,6 +119,7 @@ th { background: #f2f2f2; }
   <h3>Active Members</h3>
 </div>
 
+<!-- FILTERS -->
 <div class="filters">
 
   <div class="dropdown">
@@ -128,7 +137,6 @@ th { background: #f2f2f2; }
     <div class="drop-list" id="planList"></div>
   </div>
 
-  <!-- ✅ SORT DROPDOWN -->
   <select id="sortBy" onchange="render()">
     <option value="">Sort By</option>
     <option value="joinAsc">Joining Date ↑</option>
@@ -142,8 +150,10 @@ th { background: #f2f2f2; }
   <div class="count-box">
     Total: <span id="resultCount">0</span>
   </div>
+
 </div>
 
+<!-- TABLE -->
 <div class="table-wrap">
 <table>
 <thead>
@@ -197,7 +207,6 @@ fetch(CSV_URL)
   };
 
   const today=new Date(); today.setHours(0,0,0,0);
-
   allRows=rows.filter(r=>toDate(r[idxGlobal.expiry])>=today);
 
   buildDropdown("feesList",idxGlobal.fees);
@@ -212,9 +221,11 @@ function toggleDrop(id){
   closeAll();
   if(!open) el.style.display="block";
 }
+
 function closeAll(){
   document.querySelectorAll(".drop-list").forEach(d=>d.style.display="none");
 }
+
 function buildDropdown(id,col){
   const box=document.getElementById(id);
   [...new Set(allRows.map(r=>r[col]).filter(Boolean))].forEach(v=>{
@@ -224,6 +235,7 @@ function buildDropdown(id,col){
     box.appendChild(l);
   });
 }
+
 function selected(id){
   return [...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value);
 }
