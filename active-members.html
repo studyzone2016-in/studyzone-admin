@@ -118,7 +118,6 @@ th { background: #f2f2f2; }
 
 <div class="filters">
 
-  <!-- ✅ FEES STATUS FIRST -->
   <div class="dropdown">
     <div class="drop-btn" onclick="toggleDrop('feesList')">Fees Status</div>
     <div class="drop-list" id="feesList"></div>
@@ -146,10 +145,10 @@ th { background: #f2f2f2; }
 <thead>
 <tr>
   <th>Full Name</th>
-  <th>Phone</th>
+  <th>Center</th>
+  <th>Plan</th>
   <th>Joining Date</th>
   <th>Access Expiry</th>
-  <th>Fees Status</th>
   <th>Call</th>
   <th>WhatsApp</th>
 </tr>
@@ -251,10 +250,10 @@ function render(){
     tableBody.innerHTML+=`
     <tr>
       <td>${r[idxGlobal.name]}</td>
-      <td>${ph ?? r[idxGlobal.phone]}</td>
+      <td>${r[idxGlobal.center]}</td>
+      <td>${r[idxGlobal.plan]}</td>
       <td>${r[idxGlobal.join]}</td>
       <td>${r[idxGlobal.expiry]}</td>
-      <td>${r[idxGlobal.fees]}</td>
       <td>${ph?`<button class="call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="call-btn disabled">Call</button>`}</td>
       <td>${ph?`<button class="wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="wa-btn disabled">WhatsApp</button>`}</td>
     </tr>`;
