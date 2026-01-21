@@ -90,27 +90,76 @@ tr:hover{background:#eef3ff}
 </div>
 
 <script>
+/* AUTH */
 if(sessionStorage.getItem("adminAuth")!=="true"){
-  alert("Unauthorized Access");location.href="index.html";
+  alert("Unauthorized Access");
+  location.href="index.html";
 }
 
-let headers=[],selected={};
+let headers=[], selected={};
 
+/* HELPERS */
 function formatDate(val){
   const d=new Date(val);
-  if(isNaN(d))return val||"—";
+  if(isNaN(d)) return val || "—";
   return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 }
 
 function getUPI(branch){
   const b=(branch||"").toLowerCase();
-  if(b.includes("west"))return "9987896069@upi";
-  if(b.includes("east"))return "studyzonedombivli@upi";
+  if(b.includes("west")) return "9987896069@upi";
+  if(b.includes("east")) return "studyzonedombivli@upi";
   return "";
 }
 
+/* WHATSAPP MESSAGE BUILDER (SINGLE SOURCE) */
+function buildWhatsAppMessage(data){
+  const upi = getUPI(data["Preferred Branch"]);
+  const amount = data["Grand Estimated Cost"];
+  const upiLink =
+`https://pay.google.com/gp/p/ui/pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
+
+  return `Hello ${data["Full Name"]} 👋
+
+Thank you for choosing *Study ZONE*.
+Your enrollment request has been successfully received.
+
+📌 *Enrollment Summary*
+• Preferred Branch: ${data["Preferred Branch"]}
+• Preferred Plan: ${data["Preferred Plan"]}
+• Start Date: ${formatDate(data["Start Date"])}
+• End Date: ${formatDate(data["End Date"])}
+
+💰 *Amount Payable*: ₹${amount}
+
+🔗 *Pay Securely via UPI*
+${upiLink}
+
+(Works with Google Pay, PhonePe, Paytm & BHIM)
+
+Kindly complete the payment to confirm and reserve your seat.
+
+Warm regards,
+*Study ZONE*`;
+}
+
+/* SEND WHATSAPP */
+function sendWhatsApp(){
+  const msg = buildWhatsAppMessage(selected);
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+
+function sendRowWhatsApp(row){
+  let data={};
+  headers.forEach((h,i)=>data[h]=row[i]||"");
+  const msg = buildWhatsAppMessage(data);
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+
+/* MODAL */
 function openModal(row){
-  selected={};headers.forEach((h,i)=>selected[h]=row[i]||"");
+  selected={};
+  headers.forEach((h,i)=>selected[h]=row[i]||"");
 
   let html="";
   headers.forEach((h,i)=>{
@@ -119,14 +168,10 @@ function openModal(row){
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
-  const name=selected["Full Name"];
-  const branch=selected["Preferred Branch"];
-  const plan=selected["Preferred Plan"];
-  const start=formatDate(selected["Start Date"]);
-  const end=formatDate(selected["End Date"]);
-  const amount=selected["Grand Estimated Cost"];
-  const upi=getUPI(branch);
-  const upiLink=`upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
+  const upi = getUPI(selected["Preferred Branch"]);
+  const amount = selected["Grand Estimated Cost"];
+  const upiLink =
+`https://pay.google.com/gp/p/ui/pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
 
   html+=`
   <div class="payment-box">
@@ -147,36 +192,7 @@ function openModal(row){
 
 function closeModal(){detailModal.style.display="none";}
 
-function sendWhatsApp(){
-  const upi=getUPI(selected["Preferred Branch"]);
-  const amount=selected["Grand Estimated Cost"];
-  const upiLink=`upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
-
-  const msg=
-`Hello ${selected["Full Name"]} 👋
-
-Thank you for choosing *Study ZONE*.
-Your enrollment request has been successfully received.
-
-📌 *Enrollment Summary*
-• Preferred Branch: ${selected["Preferred Branch"]}
-• Preferred Plan: ${selected["Preferred Plan"]}
-• Start Date: ${formatDate(selected["Start Date"])}
-• End Date: ${formatDate(selected["End Date"])}
-
-💰 *Amount Payable*: ₹${amount}
-
-🔗 *Secure UPI Payment Link*
-${upiLink}
-
-Kindly complete the payment to confirm and reserve your seat.
-
-Warm regards,
-*Study ZONE*`;
-
-  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
-}
-
+/* LOAD SHEET */
 Papa.parse(
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
@@ -184,21 +200,28 @@ Papa.parse(
  complete:r=>{
   [headers,...rows]=r.data;
   const idx=k=>headers.findIndex(h=>h.toLowerCase().includes(k));
-  const iDate=idx("timestamp"),iName=idx("name"),
-        iMob=idx("mobile"),iMem=idx("member"),iBr=idx("branch");
+  const iDate=idx("timestamp"), iName=idx("name"),
+        iMob=idx("mobile"), iMem=idx("member"),
+        iBr=idx("branch");
 
   rows.reverse().forEach(row=>{
-    let m=row[iMob]||"",d=m.replace(/\D/g,"");
-    if(d.length===10)d="91"+d;
+    let m=row[iMob]||"", d=m.replace(/\D/g,"");
+    if(d.length===10) d="91"+d;
+
     tableBody.innerHTML+=`
     <tr>
       <td>${formatDate(row[iDate])}</td>
-      <td class="name-link" onclick='openModal(${JSON.stringify(row)})'>${row[iName]}</td>
+      <td class="name-link" onclick='openModal(${JSON.stringify(row)})'>
+        ${row[iName]}
+      </td>
       <td>${m}
         ${d.length===12?`
         <span class="phone-actions">
-          <a class="call" href="tel:+${d}"><i class="fa fa-phone"></i></a>
-          <a class="whatsapp" href="https://wa.me/${d}" target="_blank">
+          <a class="call" href="tel:+${d}">
+            <i class="fa fa-phone"></i>
+          </a>
+          <a class="whatsapp" href="javascript:void(0)"
+             onclick='sendRowWhatsApp(${JSON.stringify(row)})'>
             <i class="fa-brands fa-whatsapp"></i>
           </a>
         </span>`:""}
