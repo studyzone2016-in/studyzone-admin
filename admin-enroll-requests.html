@@ -19,8 +19,10 @@ body {
 h1 {
   text-align: center;
   color: #1f3c88;
+  margin-bottom: 16px;
 }
 
+/* TABLE */
 .table-card {
   background: #fff;
   border-radius: 10px;
@@ -38,11 +40,13 @@ th {
   color: #fff;
   padding: 12px;
   text-align: left;
+  font-size: 14px;
 }
 
 td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
 }
 
 tr:hover {
@@ -56,12 +60,11 @@ tr:hover {
   text-decoration: underline;
 }
 
-/* Phone */
+/* PHONE */
 .phone-actions a {
-  margin-right: 10px;
+  margin-left: 8px;
   font-size: 16px;
 }
-
 .call { color: #1f3c88; }
 .whatsapp { color: #25D366; }
 
@@ -70,30 +73,32 @@ tr:hover {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
 }
 
 .modal-content {
   background: #fff;
-  max-width: 600px;
-  margin: 6% auto;
-  padding: 20px;
+  max-width: 700px;
+  margin: 4% auto;
   border-radius: 10px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 10px;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 20px;
   color: #1f3c88;
+  font-size: 20px;
 }
 
 .close-btn {
@@ -101,21 +106,30 @@ tr:hover {
   font-size: 22px;
 }
 
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+}
+
 .detail-row {
   display: flex;
-  justify-content: space-between;
+  gap: 10px;
   padding: 8px 0;
   border-bottom: 1px dashed #e5e7eb;
 }
 
 .detail-row span {
-  color: #6b7280;
+  min-width: 220px;
   font-weight: 600;
+  color: #6b7280;
 }
 
 @media (max-width: 600px) {
   .detail-row {
     flex-direction: column;
+  }
+  .detail-row span {
+    min-width: unset;
   }
 }
 </style>
@@ -129,8 +143,11 @@ tr:hover {
 <table>
   <thead>
     <tr>
+      <th>Date</th>
       <th>Full Name</th>
       <th>Mobile Number</th>
+      <th>Member Type</th>
+      <th>Preferred Branch</th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -144,7 +161,7 @@ tr:hover {
       <h2>Enrollment Details</h2>
       <span class="close-btn" onclick="closeModal()">×</span>
     </div>
-    <div id="modalBody"></div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
@@ -167,12 +184,12 @@ function openModal(row) {
         </div>`;
     }
   });
-  document.getElementById("modalBody").innerHTML = html;
-  document.getElementById("detailModal").style.display = "block";
+  modalBody.innerHTML = html;
+  detailModal.style.display = "block";
 }
 
 function closeModal() {
-  document.getElementById("detailModal").style.display = "none";
+  detailModal.style.display = "none";
 }
 
 Papa.parse(
@@ -182,28 +199,40 @@ Papa.parse(
   complete: res => {
     [headers, ...rows] = res.data;
 
-    rows.reverse().forEach(r => {
-      const name = r[headers.findIndex(h => h.toLowerCase().includes("name"))];
-      const mobile = r[headers.findIndex(h => h.toLowerCase().includes("mobile"))];
+    const idx = key =>
+      headers.findIndex(h => h.toLowerCase().includes(key));
 
-      let digits = (mobile || "").replace(/\D/g, "");
+    const iDate   = idx("timestamp");
+    const iName   = idx("name");
+    const iMobile = idx("mobile");
+    const iMember = idx("member");
+    const iBranch = idx("branch");
+
+    rows.reverse().forEach(r => {
+      let mobile = r[iMobile] || "";
+      let digits = mobile.replace(/\D/g, "");
       if (digits.length === 10) digits = "91" + digits;
 
       tableBody.innerHTML += `
         <tr>
+          <td>${(r[iDate] || "").split(" ")[0]}</td>
           <td class="name-link" onclick='openModal(${JSON.stringify(r)})'>
-            ${name || ""}
+            ${r[iName] || ""}
           </td>
           <td>
-            ${mobile || ""}
+            ${mobile}
             ${digits.length === 12 ? `
-            <span class="phone-actions">
-              <a class="call" href="tel:+${digits}"><i class="fa-solid fa-phone"></i></a>
-              <a class="whatsapp" href="https://wa.me/${digits}" target="_blank">
-                <i class="fa-brands fa-whatsapp"></i>
-              </a>
-            </span>` : ""}
+              <span class="phone-actions">
+                <a class="call" href="tel:+${digits}">
+                  <i class="fa-solid fa-phone"></i>
+                </a>
+                <a class="whatsapp" href="https://wa.me/${digits}" target="_blank">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </a>
+              </span>` : ""}
           </td>
+          <td>${r[iMember] || ""}</td>
+          <td>${r[iBranch] || ""}</td>
         </tr>`;
     });
   }
