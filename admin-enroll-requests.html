@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
@@ -22,6 +23,7 @@ h1 {
   margin-bottom: 16px;
 }
 
+/* TABLE */
 .table-card {
   background: #fff;
   border-radius: 10px;
@@ -57,6 +59,7 @@ tr:hover {
   text-decoration: underline;
 }
 
+/* PHONE */
 .phone-actions a {
   margin-left: 8px;
   font-size: 16px;
@@ -69,16 +72,16 @@ tr:hover {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.55);
   z-index: 1000;
 }
 
 .modal-content {
   background: #fff;
-  max-width: 750px;
+  max-width: 800px;
   margin: 3% auto;
   border-radius: 10px;
-  max-height: 88vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
@@ -114,9 +117,30 @@ tr:hover {
 }
 
 .detail-row span {
-  min-width: 240px;
+  min-width: 260px;
   font-weight: 600;
   color: #6b7280;
+}
+
+.payment-box {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #eef2ff;
+}
+
+.payment-box h3 {
+  color: #1f3c88;
+  margin-bottom: 10px;
+}
+
+.whatsapp-btn {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 @media (max-width: 600px) {
@@ -167,11 +191,12 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 }
 
 let headers = [];
+let selected = {};
 
-/* ✅ UNIVERSAL DATE FORMATTER — DD MMM YYYY */
-function formatDate(value) {
-  const d = new Date(value);
-  if (isNaN(d)) return value || "—";
+/* DATE FORMATTER */
+function formatDate(val) {
+  const d = new Date(val);
+  if (isNaN(d)) return val || "—";
   return d.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -179,10 +204,8 @@ function formatDate(value) {
   });
 }
 
-/* ✅ APPLY DATE FORMAT FOR SPECIFIC COLUMNS */
 function formatCell(header, value) {
   if (!value) return "—";
-
   const h = header.toLowerCase();
   if (
     h.includes("timestamp") ||
@@ -194,9 +217,18 @@ function formatCell(header, value) {
   return value;
 }
 
-function openModal(row) {
-  let html = "";
+function getUPI(branch) {
+  const b = (branch || "").toLowerCase();
+  if (b.includes("west")) return "9987896069@upi";
+  if (b.includes("east")) return "studyzonedombivli@upi";
+  return "";
+}
 
+function openModal(row) {
+  selected = {};
+  headers.forEach((h, i) => selected[h] = row[i] || "");
+
+  let html = "";
   headers.forEach((h, i) => {
     html += `
       <div class="detail-row">
@@ -205,12 +237,60 @@ function openModal(row) {
       </div>`;
   });
 
+  const name   = selected["Full Name"];
+  const branch = selected["Preferred Branch"];
+  const plan   = selected["Preferred Plan"];
+  const start  = formatCell("Start Date", selected["Start Date"]);
+  const end    = formatCell("End Date", selected["End Date"]);
+  const amount = selected["Grand Estimated Cost"];
+  const upi    = getUPI(branch);
+
+  html += `
+    <div class="payment-box">
+      <h3>Payment & WhatsApp</h3>
+      <p><strong>Amount:</strong> ₹${amount}</p>
+      <p><strong>UPI ID:</strong> ${upi}</p>
+      <div id="qrcode"></div>
+      <br>
+      <button class="whatsapp-btn" onclick="sendWhatsApp()">
+        <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Summary
+      </button>
+    </div>`;
+
   modalBody.innerHTML = html;
+
+  document.getElementById("qrcode").innerHTML = "";
+  new QRCode(document.getElementById("qrcode"), {
+    text: `upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`,
+    width: 180,
+    height: 180
+  });
+
   detailModal.style.display = "block";
 }
 
 function closeModal() {
   detailModal.style.display = "none";
+}
+
+function sendWhatsApp() {
+  const msg =
+`Dear ${selected["Full Name"]},
+
+We have received your enrollment request with the following details:
+
+Preferred Branch: ${selected["Preferred Branch"]}
+Preferred Plan: ${selected["Preferred Plan"]}
+Start Date: ${formatDate(selected["Start Date"])}
+End Date: ${formatDate(selected["End Date"])}
+Grand Estimated Cost: ₹${selected["Grand Estimated Cost"]}
+
+You can book your seat by paying the Grand Estimated Cost using the QR code shared.
+
+Thank you,
+Study ZONE`;
+
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
 }
 
 Papa.parse(
