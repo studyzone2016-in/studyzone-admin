@@ -12,159 +12,50 @@
 :root{
   --brand:#1f3c88;
   --bg:#f4f7fc;
-  --card:#ffffff;
+  --card:#fff;
   --line:#e5e7eb;
   --success:#16a34a;
   --pending:#f59e0b;
   --text:#1f2937;
   --muted:#6b7280;
+  --whatsapp:#25D366;
 }
 
-*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);font-family:"Segoe UI",Arial;color:var(--text);}
+h1{text-align:center;color:var(--brand);font-size:20px;margin-bottom:16px;}
 
-body{
-  margin:0;
-  padding:16px;
-  background:var(--bg);
-  font-family:"Segoe UI",system-ui,Arial;
-  color:var(--text);
-}
-
-h1{
-  text-align:center;
-  color:var(--brand);
-  font-size:20px;
-  margin-bottom:16px;
-}
-
-/* TABLE DESKTOP */
-.table-card{
-  background:var(--card);
-  border-radius:12px;
-  box-shadow:0 10px 25px rgba(0,0,0,.06);
-  overflow:hidden;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th{
-  background:var(--brand);
-  color:#fff;
-  padding:12px;
-  font-size:13px;
-  text-align:left;
-}
-
-td{
-  padding:12px;
-  font-size:14px;
-  border-bottom:1px solid var(--line);
-  vertical-align:middle;
-}
-
+.table-card{background:var(--card);border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.06);overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--brand);color:#fff;padding:12px;font-size:13px;text-align:left;}
+td{padding:12px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:middle;}
 tr:hover{background:#eef3ff}
-
-.name-link{
-  color:var(--brand);
-  font-weight:600;
-  cursor:pointer;
-  text-decoration:underline;
-}
-
-.status-icon{
-  font-size:18px;
-}
+.name-link{color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;}
+.status-icon{font-size:18px}
 .success{color:var(--success)}
 .pending{color:var(--pending)}
+.phone-actions a{margin-left:6px;font-size:16px;text-decoration:none}
+.call{color:var(--brand)}
+.whatsapp{color:var(--whatsapp)}
 
 /* MOBILE CARD VIEW */
 @media(max-width:768px){
-  table, thead, tbody, th, tr {display:block}
+  table,thead,tbody,th,tr,td{display:block}
   thead{display:none}
-
-  tr{
-    background:#fff;
-    margin-bottom:14px;
-    border-radius:12px;
-    box-shadow:0 6px 18px rgba(0,0,0,.08);
-    padding:12px;
-  }
-
-  td{
-    border:none;
-    padding:6px 0;
-    display:flex;
-    justify-content:space-between;
-    font-size:13px;
-  }
-
-  td::before{
-    content:attr(data-label);
-    font-weight:600;
-    color:var(--muted);
-  }
+  tr{background:#fff;margin-bottom:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:12px}
+  td{border:none;padding:6px 0;display:flex;justify-content:space-between;font-size:13px}
+  td::before{content:attr(data-label);font-weight:600;color:var(--muted)}
 }
 
 /* MODAL */
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  z-index:1000;
-}
-
-.modal-content{
-  background:#fff;
-  max-width:800px;
-  margin:4% auto;
-  border-radius:14px;
-  max-height:90vh;
-  display:flex;
-  flex-direction:column;
-}
-
-.modal-header{
-  padding:16px 18px;
-  border-bottom:1px solid var(--line);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.modal-body{
-  padding:18px;
-  overflow-y:auto;
-}
-
-.detail-row{
-  display:flex;
-  gap:12px;
-  padding:8px 0;
-  border-bottom:1px dashed var(--line);
-}
-
-.detail-row span{
-  min-width:240px;
-  font-weight:600;
-  color:var(--muted);
-}
-
-.status-toggle{
-  margin-top:16px;
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#f9fafb;
-}
-
-@media(max-width:600px){
-  .detail-row{flex-direction:column}
-  .detail-row span{min-width:auto}
-}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;}
+.modal-content{background:#fff;max-width:800px;margin:4% auto;border-radius:14px;max-height:90vh;display:flex;flex-direction:column;}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.modal-body{padding:18px;overflow-y:auto;}
+.detail-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);}
+.detail-row span{min-width:240px;font-weight:600;color:var(--muted);}
+.status-toggle{margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f9fafb;}
+@media(max-width:600px){.detail-row{flex-direction:column}.detail-row span{min-width:auto}}
+.whatsapp-btn{margin-top:18px;background:var(--whatsapp);color:#fff;border:none;padding:11px 16px;border-radius:8px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
 </style>
 </head>
 
@@ -182,6 +73,7 @@ tr:hover{background:#eef3ff}
   <th>Mobile</th>
   <th>Member</th>
   <th>Branch</th>
+  <th>WhatsApp</th>
 </tr>
 </thead>
 <tbody id="tableBody"></tbody>
@@ -200,36 +92,46 @@ tr:hover{background:#eef3ff}
 </div>
 
 <script>
-if(sessionStorage.getItem("adminAuth")!=="true"){
-  alert("Unauthorized Access");
-  location.href="index.html";
-}
+if(sessionStorage.getItem("adminAuth")!=="true"){alert("Unauthorized"); location.href="index.html";}
 
 let headers=[], activeRow=null, activeIndex=null;
 
-/* STRICT DATE FORMAT */
-function formatDate(val){
-  if(!val) return "—";
-  const d=new Date(val);
-  if(isNaN(d)) return val;
-  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+/* DATE FORMAT */
+function formatDate(val){const d=new Date(val); return isNaN(d)?val:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}
+
+/* STATUS ICON */
+function statusIcon(v){return v==="Converted"?`<i class="fa-solid fa-thumbs-up status-icon success"></i>`:`<i class="fa-solid fa-hourglass-half status-icon pending"></i>`}
+
+/* NORMALIZE MOBILE */
+function normalizeMobile(raw){if(!raw) return ""; let d=raw.replace(/\D/g,""); if(d.length===10) return "91"+d; if(d.length===12) return d; return "";}
+
+/* WHATSAPP MESSAGE */
+function buildMessage(row){
+  const data={};
+  headers.forEach((h,i)=>data[h]=row[i]||"—");
+  return `Namaste ${data["Full Name"]} 🙏\n\nGreetings from *Study ZONE*.\n\nEnrollment Summary:\n• Preferred Branch: ${data["Preferred Branch"]}\n• Preferred Plan: ${data["Preferred Plan"]}\n• Start Date: ${formatDate(data["Start Date"])}\n• End Date: ${formatDate(data["End Date"])}\n• Total Fees Payable: ₹${data["Grand Estimated Cost"]}\n\nPlease confirm your seat using the QR shared separately.\n\nWarm regards,\n*Study ZONE*`;
 }
 
-function statusIcon(v){
-  return v==="Converted"
-    ? `<i class="fa-solid fa-thumbs-up status-icon success"></i>`
-    : `<i class="fa-solid fa-hourglass-half status-icon pending"></i>`;
+/* SEND WHATSAPP */
+function sendWhatsAppRow(row){
+  const mobile=normalizeMobile(row[headers.findIndex(h=>h.toLowerCase().includes("mobile"))]);
+  if(!mobile){alert("Invalid mobile number"); return;}
+  window.open(`https://wa.me/${mobile}?text=`+encodeURIComponent(buildMessage(row)),"_blank");
 }
 
+function sendWhatsAppPopup(){ 
+  const mobile=normalizeMobile(activeRow[headers.findIndex(h=>h.toLowerCase().includes("mobile"))]);
+  if(!mobile){alert("Invalid mobile number"); return;}
+  window.open(`https://wa.me/${mobile}?text=`+encodeURIComponent(buildMessage(activeRow)),"_blank");
+}
+
+/* MODAL */
 function openModal(row,index){
-  activeRow=row;
-  activeIndex=index;
+  activeRow=row; activeIndex=index;
   let html="";
   headers.forEach((h,i)=>{
-    let v=row[i]||"—";
-    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")){
-      v=formatDate(v);
-    }
+    let v=row[i]||"—"; 
+    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")) v=formatDate(v);
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
@@ -239,11 +141,13 @@ function openModal(row,index){
   html+=`
   <div class="status-toggle">
     <label>
-      <input type="checkbox" ${checked}
-        onchange="toggleStatus(this)">
+      <input type="checkbox" ${checked} onchange="toggleStatus(this)">
       Mark as Converted / Successful
     </label>
-  </div>`;
+  </div>
+  <button class="whatsapp-btn" onclick="sendWhatsAppPopup()">
+    <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Message
+  </button>`;
 
   modalBody.innerHTML=html;
   detailModal.style.display="block";
@@ -252,42 +156,32 @@ function openModal(row,index){
 function toggleStatus(cb){
   const i=headers.findIndex(h=>h.toLowerCase().includes("status"));
   activeRow[i]=cb.checked?"Converted":"Pending";
-  document.querySelector(`tr[data-row="${activeIndex}"] .status-cell`)
-    .innerHTML=statusIcon(activeRow[i]);
+  document.querySelector(`tr[data-row="${activeIndex}"] .status-cell`).innerHTML=statusIcon(activeRow[i]);
 }
 
-function closeModal(){
-  detailModal.style.display="none";
-}
+function closeModal(){detailModal.style.display="none";}
 
-/* LOAD SHEET */
-Papa.parse(
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
+/* LOAD DATA */
+Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
-  download:true,
-  skipEmptyLines:true,
-  complete:res=>{
+  download:true, skipEmptyLines:true, complete:res=>{
     [headers,...rows]=res.data;
-
     const idx=k=>headers.findIndex(h=>h.toLowerCase().includes(k));
-    const iStatus=idx("status"),
-          iDate=idx("timestamp"),
-          iName=idx("name"),
-          iMob=idx("mobile"),
-          iMem=idx("member"),
-          iBr=idx("branch");
+    const iStatus=idx("status"), iDate=idx("timestamp"), iName=idx("name"), iMob=idx("mobile"), iMem=idx("member"), iBr=idx("branch");
 
     rows.reverse().forEach((r,i)=>{
+      const digits=normalizeMobile(r[iMob]);
       tableBody.innerHTML+=`
       <tr data-row="${i}">
         <td class="status-cell" data-label="Status">${statusIcon(r[iStatus])}</td>
         <td data-label="Date">${formatDate(r[iDate])}</td>
-        <td data-label="Name" class="name-link" onclick='openModal(${JSON.stringify(r)},${i})'>
-          ${r[iName]}
-        </td>
+        <td data-label="Name" class="name-link" onclick='openModal(${JSON.stringify(r)},${i})'>${r[iName]}</td>
         <td data-label="Mobile">${r[iMob]}</td>
         <td data-label="Member">${r[iMem]||"—"}</td>
         <td data-label="Branch">${r[iBr]||"—"}</td>
+        <td data-label="WhatsApp">
+          ${digits?`<a class="whatsapp" href="javascript:void(0)" onclick='sendWhatsAppRow(${JSON.stringify(r)})'><i class="fa-brands fa-whatsapp"></i></a>`:"—"}
+        </td>
       </tr>`;
     });
   }
