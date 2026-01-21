@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Study ZONE | Enrollment Requests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+body {
+  font-family: "Segoe UI", system-ui, Arial;
+  background: #f4f7fc;
+  margin: 0;
+  padding: 16px;
+}
+
+h1 {
+  text-align: center;
+  color: #1f3c88;
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #1f3c88;
+  color: #fff;
+  padding: 12px;
+  text-align: left;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover {
+  background: #eef3ff;
+}
+
+.name-link {
+  color: #1f3c88;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Phone */
+.phone-actions a {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.call { color: #1f3c88; }
+.whatsapp { color: #25D366; }
+
+/* MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  max-width: 600px;
+  margin: 6% auto;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #1f3c88;
+}
+
+.close-btn {
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.detail-row span {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .detail-row {
+    flex-direction: column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h1>Enrollment Requests</h1>
+
+<div class="table-card">
+<table>
+  <thead>
+    <tr>
+      <th>Full Name</th>
+      <th>Mobile Number</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="detailModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Enrollment Details</h2>
+      <span class="close-btn" onclick="closeModal()">×</span>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+if (sessionStorage.getItem("adminAuth") !== "true") {
+  alert("Unauthorized Access");
+  location.href = "index.html";
+}
+
+let headers = [];
+
+function openModal(row) {
+  let html = "";
+  headers.forEach((h, i) => {
+    if (row[i]) {
+      html += `
+        <div class="detail-row">
+          <span>${h}</span>
+          <div>${row[i]}</div>
+        </div>`;
+    }
+  });
+  document.getElementById("modalBody").innerHTML = html;
+  document.getElementById("detailModal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("detailModal").style.display = "none";
+}
+
+Papa.parse(
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
+{
+  download: true,
+  complete: res => {
+    [headers, ...rows] = res.data;
+
+    rows.reverse().forEach(r => {
+      const name = r[headers.findIndex(h => h.toLowerCase().includes("name"))];
+      const mobile = r[headers.findIndex(h => h.toLowerCase().includes("mobile"))];
+
+      let digits = (mobile || "").replace(/\D/g, "");
+      if (digits.length === 10) digits = "91" + digits;
+
+      tableBody.innerHTML += `
+        <tr>
+          <td class="name-link" onclick='openModal(${JSON.stringify(r)})'>
+            ${name || ""}
+          </td>
+          <td>
+            ${mobile || ""}
+            ${digits.length === 12 ? `
+            <span class="phone-actions">
+              <a class="call" href="tel:+${digits}"><i class="fa-solid fa-phone"></i></a>
+              <a class="whatsapp" href="https://wa.me/${digits}" target="_blank">
+                <i class="fa-brands fa-whatsapp"></i>
+              </a>
+            </span>` : ""}
+          </td>
+        </tr>`;
+    });
+  }
+});
+</script>
+
+</body>
+</html>
