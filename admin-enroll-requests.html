@@ -15,13 +15,12 @@
   --card:#ffffff;
   --muted:#6b7280;
   --line:#e5e7eb;
-  --whatsapp:#25D366;
+  --success:#16a34a;
+  --pending:#f59e0b;
 }
 
-*{box-sizing:border-box}
-
 body{
-  font-family:"Segoe UI",system-ui,Arial;
+  font-family:"Segoe UI",Arial;
   background:var(--bg);
   margin:0;
   padding:18px;
@@ -31,30 +30,31 @@ h1{
   text-align:center;
   color:var(--brand);
   margin-bottom:18px;
-  font-size:22px;
 }
 
-/* TABLE */
 .table-card{
-  background:var(--card);
+  background:#fff;
   border-radius:10px;
-  box-shadow:0 8px 22px rgba(0,0,0,.06);
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
   overflow:hidden;
 }
 
 table{width:100%;border-collapse:collapse}
+
 th{
   background:var(--brand);
   color:#fff;
   padding:14px 12px;
-  text-align:left;
   font-size:14px;
+  text-align:left;
 }
+
 td{
   padding:13px 12px;
   border-bottom:1px solid var(--line);
   font-size:14px;
 }
+
 tr:hover{background:#eef3ff}
 
 .name-link{
@@ -64,22 +64,19 @@ tr:hover{background:#eef3ff}
   text-decoration:underline;
 }
 
-.phone-actions a{
-  margin-left:8px;
-  font-size:16px;
-  text-decoration:none;
+.status-icon{
+  font-size:18px;
 }
 
-.call{color:var(--brand)}
-.whatsapp{color:var(--whatsapp)}
+.status-success{color:var(--success)}
+.status-pending{color:var(--pending)}
 
-/* MODAL */
 .modal{
   display:none;
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.55);
-  z-index:1000;
+  z-index:999;
 }
 
 .modal-content{
@@ -97,7 +94,6 @@ tr:hover{background:#eef3ff}
   border-bottom:1px solid var(--line);
   display:flex;
   justify-content:space-between;
-  align-items:center;
 }
 
 .modal-body{
@@ -118,18 +114,17 @@ tr:hover{background:#eef3ff}
   color:var(--muted);
 }
 
-.whatsapp-btn{
+.status-toggle{
   margin-top:18px;
-  background:var(--whatsapp);
-  color:#fff;
-  border:none;
-  padding:11px 16px;
+  padding:12px;
+  background:#f9fafb;
   border-radius:8px;
-  font-size:14px;
+  border:1px solid var(--line);
+}
+
+.status-toggle label{
+  font-weight:600;
   cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
 }
 
 @media(max-width:600px){
@@ -147,6 +142,7 @@ tr:hover{background:#eef3ff}
 <table>
 <thead>
 <tr>
+  <th>Status</th>
   <th>Date</th>
   <th>Full Name</th>
   <th>Mobile Number</th>
@@ -170,146 +166,93 @@ tr:hover{background:#eef3ff}
 </div>
 
 <script>
-/* AUTH */
 if(sessionStorage.getItem("adminAuth")!=="true"){
-  alert("Unauthorized Access");
+  alert("Unauthorized");
   location.href="index.html";
 }
 
-let headers=[], selected={};
+let headers=[], selectedRow=null, selectedIndex=null;
 
 /* DATE FORMAT */
-function formatDate(val){
-  const d=new Date(val);
-  if(isNaN(d)) return val||"—";
-  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+function formatDate(v){
+  const d=new Date(v);
+  return isNaN(d)?v:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-/* MOBILE NORMALIZATION (INDIA) */
-function normalizeMobile(raw){
-  if(!raw) return "";
-  let d = raw.replace(/\D/g,"");
-  if(d.length===10) return "91"+d;
-  if(d.length===12) return d;
-  return "";
-}
-
-/* INDIAN PROFESSIONAL MESSAGE */
-function buildWhatsAppMessage(data){
-  return `Namaste ${data["Full Name"]} 🙏
-
-Greetings from *Study ZONE*.
-
-We have received your enrollment request. Please find the details below for your reference:
-
-📌 *Enrollment Summary*
-• Preferred Branch: ${data["Preferred Branch"]}
-• Preferred Plan: ${data["Preferred Plan"]}
-• Start Date: ${formatDate(data["Start Date"])}
-• End Date: ${formatDate(data["End Date"])}
-• Total Fees Payable: ₹${data["Grand Estimated Cost"]}
-
-To confirm your seat, kindly complete the payment using the QR code shared separately.
-
-For any assistance, feel free to reach out to us.
-
-Warm regards,  
-*Study ZONE*  
-Academic Support Team`;
-}
-
-/* SEND WHATSAPP (POPUP) */
-function sendWhatsApp(){
-  const mobile = normalizeMobile(selected["Mobile Number"]);
-  if(!mobile){ alert("Invalid mobile number"); return; }
-
-  const msg = buildWhatsAppMessage(selected);
-  window.open(
-    `https://wa.me/${mobile}?text=`+encodeURIComponent(msg),
-    "_blank"
-  );
-}
-
-/* SEND WHATSAPP (TABLE ROW) */
-function sendRowWhatsApp(row){
-  let data={};
-  headers.forEach((h,i)=>data[h]=row[i]||"");
-
-  const mobile = normalizeMobile(data["Mobile Number"]);
-  if(!mobile){ alert("Invalid mobile number"); return; }
-
-  const msg = buildWhatsAppMessage(data);
-  window.open(
-    `https://wa.me/${mobile}?text=`+encodeURIComponent(msg),
-    "_blank"
-  );
+/* STATUS ICON */
+function statusIcon(val){
+  return val==="Converted"
+    ? `<i class="fa-solid fa-thumbs-up status-icon status-success"></i>`
+    : `<i class="fa-solid fa-hourglass-half status-icon status-pending"></i>`;
 }
 
 /* MODAL */
-function openModal(row){
-  selected={};
-  headers.forEach((h,i)=>selected[h]=row[i]||"");
+function openModal(row,index){
+  selectedRow=row;
+  selectedIndex=index;
 
   let html="";
   headers.forEach((h,i)=>{
-    const v=h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")
-      ?formatDate(row[i]):(row[i]||"—");
+    let v=row[i]||"—";
+    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp"))
+      v=formatDate(v);
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
+  const isConverted=row[headers.indexOf("Status")]==="Converted";
+
   html+=`
-    <button class="whatsapp-btn" onclick="sendWhatsApp()">
-      <i class="fa-brands fa-whatsapp"></i>
-      Send WhatsApp Message
-    </button>`;
+    <div class="status-toggle">
+      <label>
+        <input type="checkbox" ${isConverted?"checked":""}
+          onchange="toggleStatus(this)">
+        Mark as Converted / Successful
+      </label>
+    </div>`;
 
   modalBody.innerHTML=html;
   detailModal.style.display="block";
+}
+
+function toggleStatus(cb){
+  const statusIndex=headers.indexOf("Status");
+  selectedRow[statusIndex]=cb.checked?"Converted":"Pending";
+
+  const statusCell=document.querySelector(
+    `tr[data-row="${selectedIndex}"] .status-cell`
+  );
+  statusCell.innerHTML=statusIcon(selectedRow[statusIndex]);
 }
 
 function closeModal(){
   detailModal.style.display="none";
 }
 
-/* LOAD GOOGLE SHEET */
+/* LOAD DATA */
 Papa.parse(
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
   download:true,
-  skipEmptyLines:true,
   complete:res=>{
     [headers,...rows]=res.data;
 
     const idx=k=>headers.findIndex(h=>h.toLowerCase().includes(k));
-    const iDate=idx("timestamp"),
+    const iStatus=idx("status"),
+          iDate=idx("timestamp"),
           iName=idx("name"),
           iMob=idx("mobile"),
           iMem=idx("member"),
-          iBr =idx("branch");
+          iBr=idx("branch");
 
-    rows.reverse().forEach(row=>{
-      let raw=row[iMob]||"";
-      let digits=normalizeMobile(raw);
-
+    rows.reverse().forEach((row,i)=>{
       tableBody.innerHTML+=`
-      <tr>
+      <tr data-row="${i}">
+        <td class="status-cell">${statusIcon(row[iStatus])}</td>
         <td>${formatDate(row[iDate])}</td>
-        <td class="name-link" onclick='openModal(${JSON.stringify(row)})'>
+        <td class="name-link" onclick='openModal(${JSON.stringify(row)},${i})'>
           ${row[iName]}
         </td>
-        <td>
-          ${raw}
-          ${digits?`
-          <span class="phone-actions">
-            <a class="call" href="tel:+${digits}">
-              <i class="fa-solid fa-phone"></i>
-            </a>
-            <a class="whatsapp" href="javascript:void(0)"
-               onclick='sendRowWhatsApp(${JSON.stringify(row)})'>
-              <i class="fa-brands fa-whatsapp"></i>
-            </a>
-          </span>`:""}
-        </td>
+        <td>${row[iMob]}</td>
         <td>${row[iMem]||"—"}</td>
         <td>${row[iBr]||"—"}</td>
       </tr>`;
