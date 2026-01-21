@@ -10,146 +10,53 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-body {
-  font-family: "Segoe UI", system-ui, Arial;
-  background: #f4f7fc;
-  margin: 0;
-  padding: 16px;
+body{
+  font-family:Segoe UI,Arial;
+  background:#f4f7fc;
+  margin:0;
+  padding:16px;
 }
+h1{text-align:center;color:#1f3c88;margin-bottom:16px}
 
-h1 {
-  text-align: center;
-  color: #1f3c88;
-  margin-bottom: 16px;
+table{width:100%;border-collapse:collapse;background:#fff}
+th{background:#1f3c88;color:#fff;padding:12px;text-align:left}
+td{padding:12px;border-bottom:1px solid #e5e7eb}
+tr:hover{background:#eef3ff}
+.name-link{color:#1f3c88;font-weight:600;cursor:pointer;text-decoration:underline}
+
+.phone-actions a{margin-left:6px;font-size:16px}
+.call{color:#1f3c88}
+.whatsapp{color:#25D366}
+
+.modal{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);z-index:1000
 }
-
-/* TABLE */
-.table-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+.modal-content{
+  background:#fff;max-width:820px;margin:3% auto;
+  border-radius:10px;max-height:90vh;
+  display:flex;flex-direction:column
 }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
+.modal-header{
+  padding:16px;border-bottom:1px solid #e5e7eb;
+  display:flex;justify-content:space-between;align-items:center
 }
+.modal-body{padding:16px;overflow-y:auto}
+.close-btn{font-size:22px;cursor:pointer}
 
-th {
-  background: #1f3c88;
-  color: #fff;
-  padding: 12px;
-  text-align: left;
+.detail-row{
+  display:flex;gap:12px;
+  padding:8px 0;border-bottom:1px dashed #e5e7eb
 }
+.detail-row span{min-width:260px;font-weight:600;color:#6b7280}
 
-td {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
+.payment-box{
+  margin-top:20px;padding-top:15px;border-top:2px solid #eef2ff
 }
-
-tr:hover {
-  background: #eef3ff;
-}
-
-.name-link {
-  color: #1f3c88;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-/* PHONE */
-.phone-actions a {
-  margin-left: 8px;
-  font-size: 16px;
-}
-.call { color: #1f3c88; }
-.whatsapp { color: #25D366; }
-
-/* MODAL */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #fff;
-  max-width: 800px;
-  margin: 3% auto;
-  border-radius: 10px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  color: #1f3c88;
-}
-
-.close-btn {
-  cursor: pointer;
-  font-size: 22px;
-}
-
-.modal-body {
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.detail-row {
-  display: flex;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px dashed #e5e7eb;
-}
-
-.detail-row span {
-  min-width: 260px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.payment-box {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 2px solid #eef2ff;
-}
-
-.payment-box h3 {
-  color: #1f3c88;
-  margin-bottom: 10px;
-}
-
-.whatsapp-btn {
-  background: #25D366;
-  color: #fff;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-@media (max-width: 600px) {
-  .detail-row {
-    flex-direction: column;
-  }
-  .detail-row span {
-    min-width: unset;
-  }
+.whatsapp-btn{
+  background:#25D366;color:#fff;border:none;
+  padding:10px 14px;border-radius:6px;
+  font-size:14px;cursor:pointer
 }
 </style>
 </head>
@@ -158,20 +65,18 @@ tr:hover {
 
 <h1>Enrollment Requests</h1>
 
-<div class="table-card">
 <table>
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Full Name</th>
-      <th>Mobile Number</th>
-      <th>Member Type</th>
-      <th>Preferred Branch</th>
-    </tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
+<thead>
+<tr>
+  <th>Date</th>
+  <th>Full Name</th>
+  <th>Mobile</th>
+  <th>Member Type</th>
+  <th>Preferred Branch</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
 </table>
-</div>
 
 <!-- MODAL -->
 <div class="modal" id="detailModal">
@@ -185,159 +90,124 @@ tr:hover {
 </div>
 
 <script>
-if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Unauthorized Access");
-  location.href = "index.html";
+if(sessionStorage.getItem("adminAuth")!=="true"){
+  alert("Unauthorized Access");location.href="index.html";
 }
 
-let headers = [];
-let selected = {};
+let headers=[],selected={};
 
-/* DATE FORMATTER */
-function formatDate(val) {
-  const d = new Date(val);
-  if (isNaN(d)) return val || "—";
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+function formatDate(val){
+  const d=new Date(val);
+  if(isNaN(d))return val||"—";
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-function formatCell(header, value) {
-  if (!value) return "—";
-  const h = header.toLowerCase();
-  if (
-    h.includes("timestamp") ||
-    h.includes("start date") ||
-    h.includes("end date")
-  ) {
-    return formatDate(value);
-  }
-  return value;
-}
-
-function getUPI(branch) {
-  const b = (branch || "").toLowerCase();
-  if (b.includes("west")) return "9987896069@upi";
-  if (b.includes("east")) return "studyzonedombivli@upi";
+function getUPI(branch){
+  const b=(branch||"").toLowerCase();
+  if(b.includes("west"))return "9987896069@upi";
+  if(b.includes("east"))return "studyzonedombivli@upi";
   return "";
 }
 
-function openModal(row) {
-  selected = {};
-  headers.forEach((h, i) => selected[h] = row[i] || "");
+function openModal(row){
+  selected={};headers.forEach((h,i)=>selected[h]=row[i]||"");
 
-  let html = "";
-  headers.forEach((h, i) => {
-    html += `
-      <div class="detail-row">
-        <span>${h}</span>
-        <div>${formatCell(h, row[i])}</div>
-      </div>`;
+  let html="";
+  headers.forEach((h,i)=>{
+    const v=h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")
+      ?formatDate(row[i]):(row[i]||"—");
+    html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
-  const name   = selected["Full Name"];
-  const branch = selected["Preferred Branch"];
-  const plan   = selected["Preferred Plan"];
-  const start  = formatCell("Start Date", selected["Start Date"]);
-  const end    = formatCell("End Date", selected["End Date"]);
-  const amount = selected["Grand Estimated Cost"];
-  const upi    = getUPI(branch);
+  const name=selected["Full Name"];
+  const branch=selected["Preferred Branch"];
+  const plan=selected["Preferred Plan"];
+  const start=formatDate(selected["Start Date"]);
+  const end=formatDate(selected["End Date"]);
+  const amount=selected["Grand Estimated Cost"];
+  const upi=getUPI(branch);
+  const upiLink=`upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
 
-  html += `
-    <div class="payment-box">
-      <h3>Payment & WhatsApp</h3>
-      <p><strong>Amount:</strong> ₹${amount}</p>
-      <p><strong>UPI ID:</strong> ${upi}</p>
-      <div id="qrcode"></div>
-      <br>
-      <button class="whatsapp-btn" onclick="sendWhatsApp()">
-        <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Summary
-      </button>
-    </div>`;
+  html+=`
+  <div class="payment-box">
+    <h3>Payment</h3>
+    <p><b>Amount Payable:</b> ₹${amount}</p>
+    <p><b>UPI ID:</b> ${upi}</p>
+    <div id="qrcode"></div><br>
+    <button class="whatsapp-btn" onclick="sendWhatsApp()">
+      <i class="fa-brands fa-whatsapp"></i> Send Payment Message
+    </button>
+  </div>`;
 
-  modalBody.innerHTML = html;
-
-  document.getElementById("qrcode").innerHTML = "";
-  new QRCode(document.getElementById("qrcode"), {
-    text: `upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`,
-    width: 180,
-    height: 180
-  });
-
-  detailModal.style.display = "block";
+  modalBody.innerHTML=html;
+  document.getElementById("qrcode").innerHTML="";
+  new QRCode("qrcode",{text:upiLink,width:180,height:180});
+  detailModal.style.display="block";
 }
 
-function closeModal() {
-  detailModal.style.display = "none";
-}
+function closeModal(){detailModal.style.display="none";}
 
-function sendWhatsApp() {
-  const msg =
-`Dear ${selected["Full Name"]},
+function sendWhatsApp(){
+  const upi=getUPI(selected["Preferred Branch"]);
+  const amount=selected["Grand Estimated Cost"];
+  const upiLink=`upi://pay?pa=${upi}&pn=Study%20ZONE&am=${amount}&cu=INR`;
 
-We have received your enrollment request with the following details:
+  const msg=
+`Hello ${selected["Full Name"]} 👋
 
-Preferred Branch: ${selected["Preferred Branch"]}
-Preferred Plan: ${selected["Preferred Plan"]}
-Start Date: ${formatDate(selected["Start Date"])}
-End Date: ${formatDate(selected["End Date"])}
-Grand Estimated Cost: ₹${selected["Grand Estimated Cost"]}
+Thank you for choosing *Study ZONE*.
+Your enrollment request has been successfully received.
 
-You can book your seat by paying the Grand Estimated Cost using the QR code shared.
+📌 *Enrollment Summary*
+• Preferred Branch: ${selected["Preferred Branch"]}
+• Preferred Plan: ${selected["Preferred Plan"]}
+• Start Date: ${formatDate(selected["Start Date"])}
+• End Date: ${formatDate(selected["End Date"])}
 
-Thank you,
-Study ZONE`;
+💰 *Amount Payable*: ₹${amount}
 
-  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+🔗 *Secure UPI Payment Link*
+${upiLink}
+
+Kindly complete the payment to confirm and reserve your seat.
+
+Warm regards,
+*Study ZONE*`;
+
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
 Papa.parse(
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
-  download: true,
-  skipEmptyLines: true,
-  complete: res => {
-    [headers, ...rows] = res.data;
+ download:true,skipEmptyLines:true,
+ complete:r=>{
+  [headers,...rows]=r.data;
+  const idx=k=>headers.findIndex(h=>h.toLowerCase().includes(k));
+  const iDate=idx("timestamp"),iName=idx("name"),
+        iMob=idx("mobile"),iMem=idx("member"),iBr=idx("branch");
 
-    const idx = key =>
-      headers.findIndex(h => h.toLowerCase().includes(key));
-
-    const iDate   = idx("timestamp");
-    const iName   = idx("name");
-    const iMobile = idx("mobile");
-    const iMember = idx("member");
-    const iBranch = idx("branch");
-
-    rows.reverse().forEach(r => {
-      let mobile = r[iMobile] || "";
-      let digits = mobile.replace(/\D/g, "");
-      if (digits.length === 10) digits = "91" + digits;
-
-      tableBody.innerHTML += `
-        <tr>
-          <td>${formatDate(r[iDate])}</td>
-          <td class="name-link" onclick='openModal(${JSON.stringify(r)})'>
-            ${r[iName] || ""}
-          </td>
-          <td>
-            ${mobile}
-            ${digits.length === 12 ? `
-              <span class="phone-actions">
-                <a class="call" href="tel:+${digits}">
-                  <i class="fa-solid fa-phone"></i>
-                </a>
-                <a class="whatsapp" href="https://wa.me/${digits}" target="_blank">
-                  <i class="fa-brands fa-whatsapp"></i>
-                </a>
-              </span>` : ""}
-          </td>
-          <td>${r[iMember] || "—"}</td>
-          <td>${r[iBranch] || "—"}</td>
-        </tr>`;
-    });
-  }
+  rows.reverse().forEach(row=>{
+    let m=row[iMob]||"",d=m.replace(/\D/g,"");
+    if(d.length===10)d="91"+d;
+    tableBody.innerHTML+=`
+    <tr>
+      <td>${formatDate(row[iDate])}</td>
+      <td class="name-link" onclick='openModal(${JSON.stringify(row)})'>${row[iName]}</td>
+      <td>${m}
+        ${d.length===12?`
+        <span class="phone-actions">
+          <a class="call" href="tel:+${d}"><i class="fa fa-phone"></i></a>
+          <a class="whatsapp" href="https://wa.me/${d}" target="_blank">
+            <i class="fa-brands fa-whatsapp"></i>
+          </a>
+        </span>`:""}
+      </td>
+      <td>${row[iMem]||"—"}</td>
+      <td>${row[iBr]||"—"}</td>
+    </tr>`;
+  });
+ }
 });
 </script>
 
