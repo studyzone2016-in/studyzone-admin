@@ -24,6 +24,7 @@
 body{margin:0;padding:16px;background:var(--bg);font-family:"Segoe UI",Arial;color:var(--text);}
 h1{text-align:center;color:var(--brand);font-size:20px;margin-bottom:16px;}
 
+/* TABLE - DESKTOP */
 .table-card{background:var(--card);border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.06);overflow:hidden;}
 table{width:100%;border-collapse:collapse;}
 th{background:var(--brand);color:#fff;padding:12px;font-size:13px;text-align:left;}
@@ -92,7 +93,7 @@ tr:hover{background:#eef3ff}
 </div>
 
 <script>
-if(sessionStorage.getItem("adminAuth")!=="true"){alert("Unauthorized"); location.href="index.html";}
+if(sessionStorage.getItem("adminAuth")!=="true"){alert("Unauthorized Access"); location.href="index.html";}
 
 let headers=[], activeRow=null, activeIndex=null;
 
@@ -105,11 +106,29 @@ function statusIcon(v){return v==="Converted"?`<i class="fa-solid fa-thumbs-up s
 /* NORMALIZE MOBILE */
 function normalizeMobile(raw){if(!raw) return ""; let d=raw.replace(/\D/g,""); if(d.length===10) return "91"+d; if(d.length===12) return d; return "";}
 
-/* WHATSAPP MESSAGE */
+/* WHATSAPP MESSAGE - PROFESSIONAL INDIAN STYLE */
 function buildMessage(row){
-  const data={};
+  const data = {};
   headers.forEach((h,i)=>data[h]=row[i]||"—");
-  return `Namaste ${data["Full Name"]} 🙏\n\nGreetings from *Study ZONE*.\n\nEnrollment Summary:\n• Preferred Branch: ${data["Preferred Branch"]}\n• Preferred Plan: ${data["Preferred Plan"]}\n• Start Date: ${formatDate(data["Start Date"])}\n• End Date: ${formatDate(data["End Date"])}\n• Total Fees Payable: ₹${data["Grand Estimated Cost"]}\n\nPlease confirm your seat using the QR shared separately.\n\nWarm regards,\n*Study ZONE*`;
+  return `Namaste ${data["Full Name"]} 🙏
+
+Greetings from Study ZONE.
+
+We have received your enrollment request. Please find the details below for your reference:
+
+📌 Enrollment Summary
+* Preferred Branch: ${data["Preferred Branch"]}
+* Preferred Plan: ${data["Preferred Plan"]}
+* Start Date: ${formatDate(data["Start Date"])}
+* End Date: ${formatDate(data["End Date"])}
+* Total Fees Payable: ₹${data["Grand Estimated Cost"]}
+
+To confirm your seat, kindly complete the payment using the QR code shared separately.
+
+For any assistance, feel free to reach out to us.
+
+Warm regards,  
+Study ZONE`;
 }
 
 /* SEND WHATSAPP */
@@ -125,43 +144,27 @@ function sendWhatsAppPopup(){
   window.open(`https://wa.me/${mobile}?text=`+encodeURIComponent(buildMessage(activeRow)),"_blank");
 }
 
-/* MODAL */
+/* MODAL - EXCLUDE TIMESTAMP & STATUS */
 function openModal(row,index){
   activeRow=row; activeIndex=index;
   let html="";
   headers.forEach((h,i)=>{
+    const lower=h.toLowerCase();
+    if(lower.includes("timestamp")||lower.includes("status")) return; // skip
     let v=row[i]||"—"; 
-    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")) v=formatDate(v);
+    if(lower.includes("date")) v=formatDate(v);
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
-  const statusIndex=headers.findIndex(h=>h.toLowerCase().includes("status"));
-  const checked=activeRow[statusIndex]==="Converted"?"checked":"";
-
-  html+=`
-  <div class="status-toggle">
-    <label>
-      <input type="checkbox" ${checked} onchange="toggleStatus(this)">
-      Mark as Converted / Successful
-    </label>
-  </div>
-  <button class="whatsapp-btn" onclick="sendWhatsAppPopup()">
-    <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Message
-  </button>`;
+  html+=`<button class="whatsapp-btn" onclick="sendWhatsAppPopup()"><i class="fa-brands fa-whatsapp"></i> Send WhatsApp Message</button>`;
 
   modalBody.innerHTML=html;
   detailModal.style.display="block";
 }
 
-function toggleStatus(cb){
-  const i=headers.findIndex(h=>h.toLowerCase().includes("status"));
-  activeRow[i]=cb.checked?"Converted":"Pending";
-  document.querySelector(`tr[data-row="${activeIndex}"] .status-cell`).innerHTML=statusIcon(activeRow[i]);
-}
-
 function closeModal(){detailModal.style.display="none";}
 
-/* LOAD DATA */
+/* LOAD SHEET */
 Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
   download:true, skipEmptyLines:true, complete:res=>{
