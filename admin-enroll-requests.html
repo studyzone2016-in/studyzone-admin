@@ -168,7 +168,7 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 
 let headers = [];
 
-/* 🔹 DATE FORMATTER — DD MMM YYYY */
+/* ✅ UNIVERSAL DATE FORMATTER — DD MMM YYYY */
 function formatDate(value) {
   const d = new Date(value);
   if (isNaN(d)) return value || "—";
@@ -179,16 +179,32 @@ function formatDate(value) {
   });
 }
 
+/* ✅ APPLY DATE FORMAT FOR SPECIFIC COLUMNS */
+function formatCell(header, value) {
+  if (!value) return "—";
+
+  const h = header.toLowerCase();
+  if (
+    h.includes("timestamp") ||
+    h.includes("start date") ||
+    h.includes("end date")
+  ) {
+    return formatDate(value);
+  }
+  return value;
+}
+
 function openModal(row) {
   let html = "";
+
   headers.forEach((h, i) => {
-    const val = row[i] && row[i].trim() !== "" ? row[i] : "—";
     html += `
       <div class="detail-row">
         <span>${h}</span>
-        <div>${val}</div>
+        <div>${formatCell(h, row[i])}</div>
       </div>`;
   });
+
   modalBody.innerHTML = html;
   detailModal.style.display = "block";
 }
