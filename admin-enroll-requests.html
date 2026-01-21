@@ -13,46 +13,56 @@
   --brand:#1f3c88;
   --bg:#f4f7fc;
   --card:#ffffff;
-  --muted:#6b7280;
   --line:#e5e7eb;
   --success:#16a34a;
   --pending:#f59e0b;
+  --text:#1f2937;
+  --muted:#6b7280;
 }
 
+*{box-sizing:border-box}
+
 body{
-  font-family:"Segoe UI",Arial;
-  background:var(--bg);
   margin:0;
-  padding:18px;
+  padding:16px;
+  background:var(--bg);
+  font-family:"Segoe UI",system-ui,Arial;
+  color:var(--text);
 }
 
 h1{
   text-align:center;
   color:var(--brand);
-  margin-bottom:18px;
+  font-size:20px;
+  margin-bottom:16px;
 }
 
+/* TABLE DESKTOP */
 .table-card{
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 8px 20px rgba(0,0,0,.06);
+  background:var(--card);
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,.06);
   overflow:hidden;
 }
 
-table{width:100%;border-collapse:collapse}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
 
 th{
   background:var(--brand);
   color:#fff;
-  padding:14px 12px;
-  font-size:14px;
+  padding:12px;
+  font-size:13px;
   text-align:left;
 }
 
 td{
-  padding:13px 12px;
-  border-bottom:1px solid var(--line);
+  padding:12px;
   font-size:14px;
+  border-bottom:1px solid var(--line);
+  vertical-align:middle;
 }
 
 tr:hover{background:#eef3ff}
@@ -67,23 +77,51 @@ tr:hover{background:#eef3ff}
 .status-icon{
   font-size:18px;
 }
+.success{color:var(--success)}
+.pending{color:var(--pending)}
 
-.status-success{color:var(--success)}
-.status-pending{color:var(--pending)}
+/* MOBILE CARD VIEW */
+@media(max-width:768px){
+  table, thead, tbody, th, tr {display:block}
+  thead{display:none}
 
+  tr{
+    background:#fff;
+    margin-bottom:14px;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+    padding:12px;
+  }
+
+  td{
+    border:none;
+    padding:6px 0;
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+  }
+
+  td::before{
+    content:attr(data-label);
+    font-weight:600;
+    color:var(--muted);
+  }
+}
+
+/* MODAL */
 .modal{
   display:none;
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.55);
-  z-index:999;
+  z-index:1000;
 }
 
 .modal-content{
   background:#fff;
-  max-width:820px;
-  margin:3% auto;
-  border-radius:12px;
+  max-width:800px;
+  margin:4% auto;
+  border-radius:14px;
   max-height:90vh;
   display:flex;
   flex-direction:column;
@@ -94,6 +132,7 @@ tr:hover{background:#eef3ff}
   border-bottom:1px solid var(--line);
   display:flex;
   justify-content:space-between;
+  align-items:center;
 }
 
 .modal-body{
@@ -103,28 +142,23 @@ tr:hover{background:#eef3ff}
 
 .detail-row{
   display:flex;
-  gap:14px;
-  padding:9px 0;
+  gap:12px;
+  padding:8px 0;
   border-bottom:1px dashed var(--line);
 }
 
 .detail-row span{
-  min-width:260px;
+  min-width:240px;
   font-weight:600;
   color:var(--muted);
 }
 
 .status-toggle{
-  margin-top:18px;
+  margin-top:16px;
   padding:12px;
-  background:#f9fafb;
-  border-radius:8px;
   border:1px solid var(--line);
-}
-
-.status-toggle label{
-  font-weight:600;
-  cursor:pointer;
+  border-radius:10px;
+  background:#f9fafb;
 }
 
 @media(max-width:600px){
@@ -145,9 +179,9 @@ tr:hover{background:#eef3ff}
   <th>Status</th>
   <th>Date</th>
   <th>Full Name</th>
-  <th>Mobile Number</th>
-  <th>Member Type</th>
-  <th>Preferred Branch</th>
+  <th>Mobile</th>
+  <th>Member</th>
+  <th>Branch</th>
 </tr>
 </thead>
 <tbody id="tableBody"></tbody>
@@ -167,72 +201,71 @@ tr:hover{background:#eef3ff}
 
 <script>
 if(sessionStorage.getItem("adminAuth")!=="true"){
-  alert("Unauthorized");
+  alert("Unauthorized Access");
   location.href="index.html";
 }
 
-let headers=[], selectedRow=null, selectedIndex=null;
+let headers=[], activeRow=null, activeIndex=null;
 
-/* DATE FORMAT */
-function formatDate(v){
-  const d=new Date(v);
-  return isNaN(d)?v:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+/* STRICT DATE FORMAT */
+function formatDate(val){
+  if(!val) return "—";
+  const d=new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-/* STATUS ICON */
-function statusIcon(val){
-  return val==="Converted"
-    ? `<i class="fa-solid fa-thumbs-up status-icon status-success"></i>`
-    : `<i class="fa-solid fa-hourglass-half status-icon status-pending"></i>`;
+function statusIcon(v){
+  return v==="Converted"
+    ? `<i class="fa-solid fa-thumbs-up status-icon success"></i>`
+    : `<i class="fa-solid fa-hourglass-half status-icon pending"></i>`;
 }
 
-/* MODAL */
 function openModal(row,index){
-  selectedRow=row;
-  selectedIndex=index;
-
+  activeRow=row;
+  activeIndex=index;
   let html="";
   headers.forEach((h,i)=>{
     let v=row[i]||"—";
-    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp"))
+    if(h.toLowerCase().includes("date")||h.toLowerCase().includes("timestamp")){
       v=formatDate(v);
+    }
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
 
-  const isConverted=row[headers.indexOf("Status")]==="Converted";
+  const statusIndex=headers.findIndex(h=>h.toLowerCase().includes("status"));
+  const checked=activeRow[statusIndex]==="Converted"?"checked":"";
 
   html+=`
-    <div class="status-toggle">
-      <label>
-        <input type="checkbox" ${isConverted?"checked":""}
-          onchange="toggleStatus(this)">
-        Mark as Converted / Successful
-      </label>
-    </div>`;
+  <div class="status-toggle">
+    <label>
+      <input type="checkbox" ${checked}
+        onchange="toggleStatus(this)">
+      Mark as Converted / Successful
+    </label>
+  </div>`;
 
   modalBody.innerHTML=html;
   detailModal.style.display="block";
 }
 
 function toggleStatus(cb){
-  const statusIndex=headers.indexOf("Status");
-  selectedRow[statusIndex]=cb.checked?"Converted":"Pending";
-
-  const statusCell=document.querySelector(
-    `tr[data-row="${selectedIndex}"] .status-cell`
-  );
-  statusCell.innerHTML=statusIcon(selectedRow[statusIndex]);
+  const i=headers.findIndex(h=>h.toLowerCase().includes("status"));
+  activeRow[i]=cb.checked?"Converted":"Pending";
+  document.querySelector(`tr[data-row="${activeIndex}"] .status-cell`)
+    .innerHTML=statusIcon(activeRow[i]);
 }
 
 function closeModal(){
   detailModal.style.display="none";
 }
 
-/* LOAD DATA */
+/* LOAD SHEET */
 Papa.parse(
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
   download:true,
+  skipEmptyLines:true,
   complete:res=>{
     [headers,...rows]=res.data;
 
@@ -244,17 +277,17 @@ Papa.parse(
           iMem=idx("member"),
           iBr=idx("branch");
 
-    rows.reverse().forEach((row,i)=>{
+    rows.reverse().forEach((r,i)=>{
       tableBody.innerHTML+=`
       <tr data-row="${i}">
-        <td class="status-cell">${statusIcon(row[iStatus])}</td>
-        <td>${formatDate(row[iDate])}</td>
-        <td class="name-link" onclick='openModal(${JSON.stringify(row)},${i})'>
-          ${row[iName]}
+        <td class="status-cell" data-label="Status">${statusIcon(r[iStatus])}</td>
+        <td data-label="Date">${formatDate(r[iDate])}</td>
+        <td data-label="Name" class="name-link" onclick='openModal(${JSON.stringify(r)},${i})'>
+          ${r[iName]}
         </td>
-        <td>${row[iMob]}</td>
-        <td>${row[iMem]||"—"}</td>
-        <td>${row[iBr]||"—"}</td>
+        <td data-label="Mobile">${r[iMob]}</td>
+        <td data-label="Member">${r[iMem]||"—"}</td>
+        <td data-label="Branch">${r[iBr]||"—"}</td>
       </tr>`;
     });
   }
