@@ -22,7 +22,6 @@ h1 {
   margin-bottom: 16px;
 }
 
-/* TABLE */
 .table-card {
   background: #fff;
   border-radius: 10px;
@@ -40,13 +39,11 @@ th {
   color: #fff;
   padding: 12px;
   text-align: left;
-  font-size: 14px;
 }
 
 td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
-  font-size: 14px;
 }
 
 tr:hover {
@@ -60,7 +57,6 @@ tr:hover {
   text-decoration: underline;
 }
 
-/* PHONE */
 .phone-actions a {
   margin-left: 8px;
   font-size: 16px;
@@ -79,10 +75,10 @@ tr:hover {
 
 .modal-content {
   background: #fff;
-  max-width: 700px;
-  margin: 4% auto;
+  max-width: 750px;
+  margin: 3% auto;
   border-radius: 10px;
-  max-height: 85vh;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
 }
@@ -98,7 +94,6 @@ tr:hover {
 .modal-header h2 {
   margin: 0;
   color: #1f3c88;
-  font-size: 20px;
 }
 
 .close-btn {
@@ -113,13 +108,13 @@ tr:hover {
 
 .detail-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 0;
   border-bottom: 1px dashed #e5e7eb;
 }
 
 .detail-row span {
-  min-width: 220px;
+  min-width: 240px;
   font-weight: 600;
   color: #6b7280;
 }
@@ -173,16 +168,26 @@ if (sessionStorage.getItem("adminAuth") !== "true") {
 
 let headers = [];
 
+/* 🔹 DATE FORMATTER — DD MMM YYYY */
+function formatDate(value) {
+  const d = new Date(value);
+  if (isNaN(d)) return value || "—";
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
 function openModal(row) {
   let html = "";
   headers.forEach((h, i) => {
-    if (row[i]) {
-      html += `
-        <div class="detail-row">
-          <span>${h}</span>
-          <div>${row[i]}</div>
-        </div>`;
-    }
+    const val = row[i] && row[i].trim() !== "" ? row[i] : "—";
+    html += `
+      <div class="detail-row">
+        <span>${h}</span>
+        <div>${val}</div>
+      </div>`;
   });
   modalBody.innerHTML = html;
   detailModal.style.display = "block";
@@ -196,6 +201,7 @@ Papa.parse(
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
 {
   download: true,
+  skipEmptyLines: true,
   complete: res => {
     [headers, ...rows] = res.data;
 
@@ -215,7 +221,7 @@ Papa.parse(
 
       tableBody.innerHTML += `
         <tr>
-          <td>${(r[iDate] || "").split(" ")[0]}</td>
+          <td>${formatDate(r[iDate])}</td>
           <td class="name-link" onclick='openModal(${JSON.stringify(r)})'>
             ${r[iName] || ""}
           </td>
@@ -231,8 +237,8 @@ Papa.parse(
                 </a>
               </span>` : ""}
           </td>
-          <td>${r[iMember] || ""}</td>
-          <td>${r[iBranch] || ""}</td>
+          <td>${r[iMember] || "—"}</td>
+          <td>${r[iBranch] || "—"}</td>
         </tr>`;
     });
   }
