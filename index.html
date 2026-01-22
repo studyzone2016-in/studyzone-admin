@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Study ZONE | Admin Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="css/universal.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
     :root {
@@ -12,26 +13,40 @@
       --accent: #2563eb;
       --bg-body: #f4f6fb;
       --card-bg: #ffffff;
-      --border: #cbd5e1;
+      --border: #e2e8f0;
       --text-muted: #64748b;
+      --radius: 16px;
     }
 
     body {
-      font-family: "Segoe UI", Tahoma, sans-serif;
+      font-family: "Inter", "Segoe UI", sans-serif;
       background: var(--bg-body);
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
     }
 
-    .container { max-width: 420px; margin: 0 auto; }
+    .container { 
+      width: 100%; 
+      max-width: 420px; 
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { color: var(--primary); margin: 0; font-size: 24px; font-weight: 800; }
+    header p { color: var(--text-muted); font-size: 13px; margin: 5px 0 0; }
 
     .card {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e2e8f0;
-      margin-bottom: 20px;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
     }
 
     label { 
@@ -39,73 +54,99 @@
       font-weight: 700; 
       color: var(--primary); 
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
     }
 
-    input {
+    /* LOGIN SCREEN */
+    #loginCard { margin-top: 50px; }
+    input[type="password"] {
       width: 100%;
-      padding: 12px;
-      margin: 8px 0 16px 0;
-      font-size: 15px;
+      padding: 14px;
+      margin: 10px 0 15px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    /* GRID NAVIGATION */
+    #linksCard { display: none; }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .nav-item {
+      background: var(--card-bg);
+      text-decoration: none;
+      padding: 20px 10px;
+      border-radius: var(--radius);
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-item i { font-size: 24px; color: var(--accent); }
+    .nav-item span { font-size: 12px; font-weight: 700; color: var(--primary); }
+    .nav-item:active { transform: scale(0.95); background: #f0f7ff; }
+
+    /* CALCULATOR */
+    .calc-card { background: var(--primary); color: white; border: none; }
+    .calc-card label { color: rgba(255,255,255,0.8); }
+    
+    .calc-inputs { display: flex; gap: 10px; margin-top: 12px; }
+    .calc-inputs input {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      width: 100%;
       outline: none;
     }
+    input::-webkit-calendar-picker-indicator { filter: invert(1); }
 
-    input:focus { border-color: var(--accent); }
-
-    /* CALCULATOR DISPLAY */
-    .calc-container {
-      background: #f0f7ff;
-      border: 2px solid var(--accent);
-      padding: 20px;
-      border-radius: 10px;
+    .calc-display {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
       text-align: center;
-      margin-top: 10px;
     }
 
     .calc-result {
       display: block;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 800;
-      color: var(--accent);
-      margin-top: 5px;
+      color: #ffffff;
+      margin-top: 2px;
     }
 
-    /* DASHBOARD ELEMENTS */
-    #linksCard { display: none; }
-    
-    .nav-links a {
-      display: block;
-      text-decoration: none;
-      background: #f8fafc;
-      color: var(--primary);
-      padding: 14px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      text-align: center;
-      font-weight: 600;
-      border: 1px solid #e2e8f0;
-      transition: all 0.2s;
-    }
-
-    .nav-links a:hover { background: #eff6ff; border-color: var(--accent); }
-
-    button {
+    button.primary-btn {
       width: 100%;
-      padding: 13px;
+      padding: 14px;
       background: var(--primary);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-weight: 600;
+      border-radius: 10px;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    .logout-btn {
-      background: #ef4444;
+    .logout-link {
+      text-align: center;
       margin-top: 10px;
+      color: #ef4444;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -113,49 +154,63 @@
 <body>
 
 <div class="container">
-  <h1 style="text-align:center; color:var(--primary); margin-bottom: 5px;">Study ZONE</h1>
-  <p style="text-align:center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Admin Management Portal</p>
+  <header>
+    <h1>Study ZONE</h1>
+    <p>Admin Management Portal</p>
+  </header>
 
   <div class="card" id="loginCard">
-    <label>Authentication Required</label>
+    <label>Authentication</label>
     <input type="password" id="password" placeholder="Enter Admin Password">
-    <button onclick="login()">Login</button>
+    <button class="primary-btn" onclick="login()">Login</button>
   </div>
 
   <div id="linksCard">
     
-    <div class="card">
-      <label>Quick Navigation</label>
-      <div class="nav-links" style="margin-top:15px;">
-        <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
-        <a href="seat-occupancy.html">💺 Seat Occupancy</a>
-        <a href="upcoming-expiry-subscriptions.html">⏰ Expiry List</a>
-        <a href="active-members.html">👥 Active Members</a>
-      </div>
+    <label>Management Tasks</label>
+    <div class="nav-grid">
+      <a href="admin-enroll-requests.html" class="nav-item">
+        <i class="fas fa-file-signature"></i>
+        <span>Enrollments</span>
+      </a>
+      <a href="seat-occupancy.html" class="nav-item">
+        <i class="fas fa-chair"></i>
+        <span>Occupancy</span>
+      </a>
+      <a href="upcoming-expiry-subscriptions.html" class="nav-item">
+        <i class="fas fa-hourglass-end"></i>
+        <span>Expiries</span>
+      </a>
+      <a href="active-members.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Members</span>
+      </a>
     </div>
 
-    <div class="card">
-      <label>📅 Subscription Calculator</label>
-      <p style="font-size: 12px; color: var(--text-muted); margin: 5px 0 15px 0;">Inclusive logic: 1st Jan + 30 Days = 30th Jan</p>
+    <div style="margin-top: 25px;"></div>
+
+    <div class="card calc-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <label>Subscription Calculator</label>
+        <span style="font-size: 9px; opacity: 0.7; font-weight: bold;">INCLUSIVE</span>
+      </div>
       
-      <div style="display: flex; gap: 10px;">
+      <div class="calc-inputs">
         <div style="flex: 2;">
-          <label>Start Date</label>
           <input type="date" id="startDate" onchange="runCalc()">
         </div>
         <div style="flex: 1;">
-          <label>Days</label>
           <input type="number" id="numDays" value="30" oninput="runCalc()">
         </div>
       </div>
 
-      <div class="calc-container">
-        <label style="color: var(--text-muted);">Subscription Ends On</label>
+      <div class="calc-display">
+        <div style="font-size: 11px; opacity: 0.8; font-weight: bold;">EXPIRY DATE</div>
         <span class="calc-result" id="expiryResult">-- --- ----</span>
       </div>
     </div>
 
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <div class="logout-link" onclick="logout()">Logout Session</div>
   </div>
 </div>
 
@@ -197,7 +252,7 @@
     expiryDate.setDate(startDate.getDate() + (totalDays - 1));
 
     const options = { day: '2-digit', month: 'short', year: 'numeric' };
-    resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options);
+    resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options).toUpperCase();
   }
 
   if (sessionStorage.getItem("adminAuth") === "true") {
