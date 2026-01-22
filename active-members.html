@@ -1,180 +1,268 @@
-<link rel="stylesheet" href="css/universal.css">
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Study ZONE | Active Members</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Study ZONE | Active Members</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/universal.css">
+  
+  <style>
+    /* INDUSTRY STANDARD RESET & BASE */
+    :root {
+      --primary: #2563eb;
+      --success: #22c55e;
+      --wa-green: #25D366;
+      --bg-body: #f8fafc;
+      --text-main: #1e293b;
+      --border-color: #e2e8f0;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    }
 
-<style>
-body { font-family: Arial, sans-serif; margin: 10px; }
+    body { 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+    }
 
-/* TOP BAR */
-.top-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
+    /* HEADER SECTION */
+    .header-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
 
-/* ✅ RESPONSIVE FILTER GRID */
-.filters {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
-}
+    .back-btn {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
 
-@media (min-width: 768px) {
-  .filters {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    align-items: center;
-  }
-}
+    .back-btn:hover { background: #f1f5f9; }
 
-.dropdown { position: relative; width: 100%; }
+    h3 { margin: 0; font-size: 1.5rem; font-weight: 700; }
 
-.drop-btn, select, input[type="text"] {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 13px;
-}
+    /* TOOLBAR & FILTERS */
+    .toolbar {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
 
-.drop-btn::after {
-  content: "▾";
-  float: right;
-}
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
 
-.drop-list {
-  display: none;
-  position: absolute;
-  top: 105%;
-  left: 0;
-  z-index: 999;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 6px 14px rgba(0,0,0,.12);
-  max-height: 220px;
-  overflow-y: auto;
-  width: 100%;
-}
+    .dropdown { position: relative; }
 
-.drop-list label {
-  display: block;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
+    .label-tag {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
 
-.drop-list label:hover { background: #f4f6f8; }
+    .drop-btn, select, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+    }
 
-/* COUNT BOX */
-.count-box {
-  grid-column: span 2;
-  background: #f2f2f2;
-  border: 1px solid #ccc;
-  padding: 6px;
-  font-weight: bold;
-  border-radius: 4px;
-  text-align: center;
-}
+    .drop-btn:hover, select:hover { border-color: #cbd5e1; }
 
-@media (min-width: 768px) {
-  .count-box { grid-column: auto; }
-}
+    .drop-list {
+      display: none;
+      position: absolute;
+      top: 110%;
+      left: 0;
+      z-index: 999;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      max-height: 250px;
+      overflow-y: auto;
+      width: 100%;
+    }
 
-/* TABLE */
-.table-wrap { overflow-x: auto; border: 1px solid #ccc; }
+    .drop-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
-table {
-  border-collapse: collapse;
-  min-width: 900px;
-  width: 100%;
-}
+    .drop-list label:hover { background: #f8fafc; }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 6px;
-  font-size: 13px;
-  text-align: center;
-  white-space: nowrap;
-}
+    .count-box {
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      padding: 10px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
 
-th { background: #f2f2f2; }
+    /* TABLE STYLING */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
 
-.call-btn { background: #4CAF50; color: #fff; border: none; padding:4px 8px; }
-.wa-btn { background: #25D366; color: #fff; border: none; padding:4px 8px; }
-.disabled { opacity: .4; pointer-events: none; }
-</style>
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 850px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 14px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background-color: #fbfcfe; }
+
+    /* ACTION BUTTONS */
+    .btn-group { display: flex; gap: 6px; justify-content: start; }
+
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: opacity 0.2s;
+    }
+
+    .call-btn { background: #e0f2fe; color: #0369a1; }
+    .wa-btn { background: #dcfce7; color: #15803d; }
+    
+    .action-btn:hover { opacity: 0.8; }
+    .disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .header-area { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="top-bar">
-  <button onclick="history.back()">⬅ Back</button>
+<div class="header-area">
+  <button class="back-btn" onclick="history.back()">← Back</button>
   <h3>Active Members</h3>
-</div>
-
-<!-- FILTERS -->
-<div class="filters">
-
-  <div class="dropdown">
-    <div class="drop-btn" onclick="toggleDrop('feesList')">Fees Status</div>
-    <div class="drop-list" id="feesList"></div>
-  </div>
-
-  <div class="dropdown">
-    <div class="drop-btn" onclick="toggleDrop('centerList')">Center</div>
-    <div class="drop-list" id="centerList"></div>
-  </div>
-
-  <div class="dropdown">
-    <div class="drop-btn" onclick="toggleDrop('planList')">Plan</div>
-    <div class="drop-list" id="planList"></div>
-  </div>
-
-  <select id="sortBy" onchange="render()">
-    <option value="">Sort By</option>
-    <option value="joinAsc">Joining Date ↑</option>
-    <option value="joinDesc">Joining Date ↓</option>
-    <option value="expAsc">Access Expiry ↑</option>
-    <option value="expDesc">Access Expiry ↓</option>
-  </select>
-
-  <input type="text" id="nameSearch" placeholder="Search Full Name">
-
   <div class="count-box">
-    Total: <span id="resultCount">0</span>
+    Total Active: <span id="resultCount">0</span>
   </div>
-
 </div>
 
-<!-- TABLE -->
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-  <th>Full Name</th>
-  <th>Center</th>
-  <th>Plan</th>
-  <th>Joining Date</th>
-  <th>Access Expiry</th>
-  <th>Call</th>
-  <th>WhatsApp</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
+<div class="toolbar">
+  <div class="filters">
+    
+    <div class="dropdown">
+      <span class="label-tag">Fees Status</span>
+      <div class="drop-btn" onclick="toggleDrop('feesList')">Select Status</div>
+      <div class="drop-list" id="feesList"></div>
+    </div>
+
+    <div class="dropdown">
+      <span class="label-tag">Center</span>
+      <div class="drop-btn" onclick="toggleDrop('centerList')">All Centers</div>
+      <div class="drop-list" id="centerList"></div>
+    </div>
+
+    <div class="dropdown">
+      <span class="label-tag">Plan</span>
+      <div class="drop-btn" onclick="toggleDrop('planList')">All Plans</div>
+      <div class="drop-list" id="planList"></div>
+    </div>
+
+    <div>
+      <span class="label-tag">Sort By</span>
+      <select id="sortBy" onchange="render()">
+        <option value="">Default</option>
+        <option value="joinAsc">Joining (Oldest)</option>
+        <option value="joinDesc">Joining (Newest)</option>
+        <option value="expAsc">Expiry (Soonest)</option>
+        <option value="expDesc">Expiry (Latest)</option>
+      </select>
+    </div>
+
+    <div>
+      <span class="label-tag">Search</span>
+      <input type="text" id="nameSearch" placeholder="Enter name...">
+    </div>
+
+  </div>
+</div>
+
+<div class="table-container">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Center</th>
+          <th>Plan</th>
+          <th>Joining Date</th>
+          <th>Access Expiry</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-const CSV_URL =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+// Logic remains consistent with your provided CSV handling
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
 let allRows=[], idxGlobal=null;
 
@@ -242,12 +330,13 @@ function selected(id){
 }
 
 function render(){
+  const tableBody = document.getElementById("tableBody");
   tableBody.innerHTML="";
   const f=selected("feesList"),
         c=selected("centerList"),
         p=selected("planList"),
-        q=nameSearch.value.toLowerCase(),
-        s=sortBy.value;
+        q=document.getElementById("nameSearch").value.toLowerCase(),
+        s=document.getElementById("sortBy").value;
 
   let data=allRows.filter(r=>{
     if(f.length && !f.includes(r[idxGlobal.fees])) return false;
@@ -266,21 +355,25 @@ function render(){
     });
   }
 
-  resultCount.innerText=data.length;
+  document.getElementById("resultCount").innerText=data.length;
 
   data.forEach(r=>{
     const ph=normalizePhone(r[idxGlobal.phone]);
-    const msg=encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idxGlobal.expiry]} - after 10:00 PM`);
+    const msg=encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idxGlobal.expiry]}`);
 
     tableBody.innerHTML+=`
     <tr>
-      <td>${r[idxGlobal.name]}</td>
+      <td style="font-weight:600; color:var(--primary)">${r[idxGlobal.name]}</td>
       <td>${r[idxGlobal.center]}</td>
-      <td>${r[idxGlobal.plan]}</td>
+      <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:12px;">${r[idxGlobal.plan]}</span></td>
       <td>${r[idxGlobal.join]}</td>
       <td>${r[idxGlobal.expiry]}</td>
-      <td>${ph?`<button class="call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="call-btn disabled">Call</button>`}</td>
-      <td>${ph?`<button class="wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="wa-btn disabled">WhatsApp</button>`}</td>
+      <td>
+        <div class="btn-group">
+          ${ph?`<button class="action-btn call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="action-btn disabled">Call</button>`}
+          ${ph?`<button class="action-btn wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="action-btn disabled">WhatsApp</button>`}
+        </div>
+      </td>
     </tr>`;
   });
 }
@@ -288,7 +381,7 @@ function render(){
 document.addEventListener("click",e=>{
   if(!e.target.closest(".dropdown")) closeAll();
 });
-nameSearch.oninput=render;
+document.getElementById("nameSearch").oninput=render;
 
 function parseCSV(t){
   const r=[],row=[],c={v:""},q={v:false};
