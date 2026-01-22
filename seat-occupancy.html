@@ -1,88 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Study ZONE | Seat Occupancy</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Study ZONE | Seat Occupancy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/universal.css">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-<style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f5f9ff;
-  margin: 0;
-  padding: 15px;
-}
+  <style>
+    /* UI CORE THEME */
+    :root {
+      --primary: #1e293b;
+      --accent: #2563eb;
+      --bg-body: #f8fafc;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
 
-.top-bar { margin-bottom: 12px; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: #334155;
+      margin: 0;
+      padding: 20px;
+    }
 
-.back-btn {
-  background: #1f3c88;
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-}
+    /* TOP BAR */
+    .header-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-h1 {
-  text-align: center;
-  color: #1f3c88;
-}
+    .back-btn {
+      background: #ffffff;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-.table-wrapper { overflow-x: auto; }
+    .back-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
 
-table {
-  width: 100%;
-  min-width: 700px;
-  border-collapse: collapse;
-  background: #fff;
-}
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.025em;
+    }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
+    /* TABLE CONTAINER */
+    .data-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      max-width: 1200px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
 
-th {
-  background: #1f3c88;
-  color: #fff;
-}
-</style>
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 75vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      color: #475569;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    
+    tr:nth-child(even) { background-color: #fcfdfe; }
+    tr:hover { background-color: #f1f5f9; }
+
+    /* STATUS STYLING */
+    .status-pill {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-occupied { background: #fee2e2; color: #b91c1c; }
+    .status-available { background: #dcfce7; color: #15803d; }
+
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      h1 { font-size: 1.2rem; }
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="top-bar">
+<div class="header-section">
   <button class="back-btn" onclick="location.href='index.html'">← Back</button>
+  <h1>Seat Occupancy</h1>
+  <div style="width: 80px;"></div> </div>
+
+<div class="data-card">
+  <div class="table-wrapper">
+    <table id="occupancyTable">
+      <thead>
+        <tr id="tableHeader"></tr>
+      </thead>
+      <tbody id="tableBody">
+        </tbody>
+    </table>
+  </div>
 </div>
 
-<h1>Seat Occupancy</h1>
 
-<div class="table-wrapper">
-<table>
-<thead><tr id="tableHeader"></tr></thead>
-<tbody id="tableBody"></tbody>
-</table>
-</div>
 
 <script>
-if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Unauthorized Access");
-  location.href = "index.html";
-}
-
-Papa.parse(
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",
-{
-  download: true,
-  complete: res => {
-    const [header, ...rows] = res.data;
-    header.forEach(h => tableHeader.innerHTML += `<th>${h}</th>`);
-    rows.reverse().forEach(r => {
-      tableBody.innerHTML += `<tr>${r.map(c=>`<td>${c||""}</td>`).join("")}</tr>`;
-    });
+  // SECURE AUTH CHECK
+  if (sessionStorage.getItem("adminAuth") !== "true") {
+    document.body.innerHTML = "<div style='text-align:center; padding:50px;'><h3>Redirecting to Secure Login...</h3></div>";
+    setTimeout(() => { location.href = "index.html"; }, 1000);
   }
-});
+
+  // FETCH & RENDER DATA
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
+
+  Papa.parse(CSV_URL, {
+    download: true,
+    complete: res => {
+      const [header, ...rows] = res.data;
+      const tHeader = document.getElementById('tableHeader');
+      const tBody = document.getElementById('tableBody');
+
+      // Build Headers
+      header.forEach(h => {
+        tHeader.innerHTML += `<th>${h}</th>`;
+      });
+
+      // Build Rows (Reversed to show latest entries first)
+      rows.reverse().forEach(r => {
+        if (r.length <= 1) return; // Skip empty rows
+        
+        const rowHTML = r.map(cell => {
+          let content = cell || "";
+          
+          // Apply automatic "Pills" for status indicators
+          let lowerCell = content.toLowerCase();
+          if (lowerCell === 'occupied' || lowerCell === 'full') {
+            return `<td><span class="status-pill status-occupied">${content}</span></td>`;
+          } else if (lowerCell === 'available' || lowerCell === 'vacant' || lowerCell === 'empty') {
+            return `<td><span class="status-pill status-available">${content}</span></td>`;
+          }
+          
+          return `<td>${content}</td>`;
+        }).join("");
+
+        tBody.innerHTML += `<tr>${rowHTML}</tr>`;
+      });
+    }
+  });
 </script>
 
 </body>
