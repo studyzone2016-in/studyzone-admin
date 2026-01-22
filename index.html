@@ -7,27 +7,22 @@
   <link rel="stylesheet" href="css/universal.css">
 
   <style>
-    /* UI CORE THEME */
+    /* UI THEME MATCHING PREVIOUS FILES */
     :root {
       --primary: #1f3c88;
-      --primary-hover: #162d66;
+      --accent: #2563eb;
       --bg-body: #f4f6fb;
       --card-bg: #ffffff;
-      --text-main: #334155;
-      --accent: #2563eb;
       --border: #cbd5e1;
+      --text-muted: #64748b;
     }
 
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Segoe UI", Tahoma, sans-serif;
       background: var(--bg-body);
       margin: 0;
       padding: 20px;
-      color: var(--text-main);
     }
-
-    h1 { text-align: center; color: var(--primary); margin-bottom: 5px; font-weight: 800; }
-    .sub-title { text-align: center; font-size: 14px; color: #64748b; margin-bottom: 25px; }
 
     .container { max-width: 420px; margin: 0 auto; }
 
@@ -40,7 +35,13 @@
       margin-bottom: 20px;
     }
 
-    label { font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+    label { 
+      font-size: 11px; 
+      font-weight: 700; 
+      color: var(--primary); 
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
     input {
       width: 100%;
@@ -53,58 +54,33 @@
       outline: none;
     }
 
-    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    input:focus { border-color: var(--accent); }
 
-    button {
-      width: 100%;
-      padding: 13px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* CALCULATOR SPECIFIC STYLES */
-    .calc-box {
+    /* CALCULATOR DISPLAY */
+    .calc-container {
       background: #f0f7ff;
       border: 2px solid var(--accent);
-      padding: 15px;
-      border-radius: 8px;
+      padding: 20px;
+      border-radius: 10px;
       text-align: center;
       margin-top: 10px;
-      position: relative;
     }
 
     .calc-result {
       display: block;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 800;
       color: var(--accent);
-      margin: 5px 0;
-    }
-
-    .copy-btn {
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 11px;
-      text-decoration: underline;
-      cursor: pointer;
-      width: auto;
-      padding: 0;
       margin-top: 5px;
     }
 
-    /* NAVIGATION LINKS */
-    #linksCard { display: none; } /* Hidden until login */
-
+    /* DASHBOARD ELEMENTS */
+    #linksCard { display: none; }
+    
     .nav-links a {
       display: block;
       text-decoration: none;
-      background: #f1f5f9;
+      background: #f8fafc;
       color: var(--primary);
       padding: 14px;
       border-radius: 8px;
@@ -112,22 +88,38 @@
       text-align: center;
       font-weight: 600;
       border: 1px solid #e2e8f0;
+      transition: all 0.2s;
     }
 
-    .logout { background: #ef4444; margin-top: 10px; }
+    .nav-links a:hover { background: #eff6ff; border-color: var(--accent); }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
 <body>
 
-<h1>Study ZONE</h1>
-<div class="sub-title">Administrative Dashboard</div>
-
 <div class="container">
+  <h1 style="text-align:center; color:var(--primary); margin-bottom: 5px;">Study ZONE</h1>
+  <p style="text-align:center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Admin Management Portal</p>
 
   <div class="card" id="loginCard">
-    <label>Admin Password</label>
-    <input type="password" id="password" placeholder="Enter password...">
+    <label>Authentication Required</label>
+    <input type="password" id="password" placeholder="Enter Admin Password">
     <button onclick="login()">Login</button>
   </div>
 
@@ -135,104 +127,91 @@
     
     <div class="card">
       <label>Quick Navigation</label>
-      <div class="nav-links" style="margin-top: 15px;">
-        <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
+      <div class="nav-links" style="margin-top:15px;">
         <a href="seat-occupancy.html">💺 Seat Occupancy</a>
-        <a href="upcoming-expiry-subscriptions.html">⏰ Upcoming Expiry</a>
         <a href="active-members.html">👥 Active Members</a>
+        <a href="upcoming-expiry-subscriptions.html">⏰ Expiry List</a>
       </div>
     </div>
 
     <div class="card">
-      <label>📅 Subscription Date Calculator</label>
-      <div style="margin-top: 15px;">
-        <div style="display: flex; gap: 10px;">
-          <div style="flex: 2;">
-            <label style="font-size: 11px;">Start Date</label>
-            <input type="date" id="startDate" onchange="calculateExpiry()">
-          </div>
-          <div style="flex: 1;">
-            <label style="font-size: 11px;">Days</label>
-            <input type="number" id="numDays" value="30" oninput="calculateExpiry()">
-          </div>
+      <label>📅 Subscription Calculator</label>
+      <p style="font-size: 12px; color: var(--text-muted); margin: 5px 0 15px 0;">Calculates expiry including the start date.</p>
+      
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 2;">
+          <label>Start Date</label>
+          <input type="date" id="startDate" onchange="runCalc()">
         </div>
+        <div style="flex: 1;">
+          <label>Days</label>
+          <input type="number" id="numDays" value="30" oninput="runCalc()">
+        </div>
+      </div>
 
-        <div class="calc-box">
-          <span style="font-size: 11px; color: #64748b; font-weight: 700;">EXPIRY DATE</span>
-          <span class="calc-result" id="expiryResult">-- --- ----</span>
-          <button class="copy-btn" onclick="copyDate()">Copy Date</button>
-        </div>
+      <div class="calc-container">
+        <label style="color: var(--text-muted);">Subscription Ends On</label>
+        <span class="calc-result" id="expiryResult">-- --- ----</span>
       </div>
     </div>
 
-    <button class="logout" onclick="logout()">Logout</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
-
 </div>
 
 <script>
-const loginCard = document.getElementById("loginCard");
-const linksCard = document.getElementById("linksCard");
-const passwordInput = document.getElementById("password");
-
-/* Login function */
-function login() {
-  if (passwordInput.value === "Chinu") {
-    sessionStorage.setItem("adminAuth", "true");
-    showDashboard();
-  } else {
-    alert("Incorrect Password");
+  // Auth Logic
+  function login() {
+    const pass = document.getElementById("password").value;
+    if (pass === "Chinu") {
+      sessionStorage.setItem("adminAuth", "true");
+      showDashboard();
+    } else {
+      alert("Invalid Password");
+    }
   }
-}
 
-function showDashboard() {
-  loginCard.style.display = "none";
-  linksCard.style.display = "block";
-  // Default to today
-  document.getElementById('startDate').valueAsDate = new Date();
-  calculateExpiry();
-}
+  function showDashboard() {
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("linksCard").style.display = "block";
+    document.getElementById('startDate').valueAsDate = new Date();
+    runCalc();
+  }
 
-function logout() {
-  sessionStorage.removeItem("adminAuth");
-  location.reload();
-}
+  function logout() {
+    sessionStorage.clear();
+    location.reload();
+  }
 
-/* CALCULATION LOGIC */
-function calculateExpiry() {
-  const startVal = document.getElementById('startDate').value;
-  const daysVal = document.getElementById('numDays').value;
-  const resultDisplay = document.getElementById('expiryResult');
+  // Inclusive Calculation Logic
+  function runCalc() {
+    const startVal = document.getElementById('startDate').value;
+    const daysVal = document.getElementById('numDays').value;
+    const resultDisplay = document.getElementById('expiryResult');
 
-  if (!startVal || !daysVal) return;
+    if (!startVal || !daysVal) return;
 
-  const startDate = new Date(startVal);
-  const numDays = parseInt(daysVal);
-  
-  const expiryDate = new Date(startDate);
-  expiryDate.setDate(startDate.getDate() + numDays);
+    const startDate = new Date(startVal);
+    const totalDays = parseInt(daysVal);
+    
+    // Formula: End Date = Start + (Days - 1)
+    const expiryDate = new Date(startDate);
+    expiryDate.setDate(startDate.getDate() + (totalDays - 1));
 
-  // Format: 30 Jan 2026
-  const options = { day: '2-digit', month: 'short', year: 'numeric' };
-  const formattedDate = expiryDate.toLocaleDateString('en-GB', options);
-  
-  resultDisplay.innerText = formattedDate;
-}
+    // Formatting as DD-MMM-YYYY
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options);
+  }
 
-function copyDate() {
-  const text = document.getElementById('expiryResult').innerText;
-  navigator.clipboard.writeText(text);
-  alert("Date Copied: " + text);
-}
+  // Auto-Login Check
+  if (sessionStorage.getItem("adminAuth") === "true") {
+    showDashboard();
+  }
 
-/* Auto-check auth */
-if (sessionStorage.getItem("adminAuth") === "true") {
-  showDashboard();
-}
-
-// Enter key for password
-passwordInput.addEventListener("keypress", (e) => { if (e.key === "Enter") login(); });
+  // Handle Enter Key
+  document.getElementById("password").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") login();
+  });
 </script>
-
 </body>
 </html>
