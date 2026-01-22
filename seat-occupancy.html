@@ -2,19 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Seat Occupancy</title>
+  <title>Study ZONE | Seat Management</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/universal.css">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    /* UI CORE THEME */
+    /* UI CORE THEME (Aligned with previous files) */
     :root {
       --primary: #1e293b;
       --accent: #2563eb;
+      --success: #22c55e;
+      --danger: #ef4444;
       --bg-body: #f8fafc;
       --border: #e2e8f0;
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     body {
@@ -25,15 +27,13 @@
       padding: 20px;
     }
 
-    /* TOP BAR */
+    /* HEADER AREA */
     .header-section {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
+      align-items: center;
       max-width: 1200px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 0 auto 24px auto;
     }
 
     .back-btn {
@@ -44,87 +44,103 @@
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
       display: flex;
       align-items: center;
       gap: 8px;
+      text-decoration: none;
     }
 
-    .back-btn:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+    /* SEARCH & FILTER BAR */
+    .search-container {
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--primary);
-      letter-spacing: -0.025em;
-    }
-
-    /* TABLE CONTAINER */
-    .data-card {
-      background: #ffffff;
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      box-shadow: var(--shadow);
+      box-shadow: var(--card-shadow);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus { border-color: var(--accent); }
+
+    /* SEAT GRID SYSTEM */
+    .seat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
       max-width: 1200px;
       margin: 0 auto;
-      overflow: hidden;
     }
 
-    .table-wrapper {
-      overflow-x: auto;
-      max-height: 75vh;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 800px;
-      text-align: left;
-    }
-
-    th {
-      background: #f8fafc;
-      color: #64748b;
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
+    .seat-card {
+      background: white;
+      border-radius: 12px;
       padding: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      border-bottom: 2px solid var(--border);
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    td {
-      padding: 14px 16px;
+    .seat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .seat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .seat-number {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .status-occupied { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .status-available { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+
+    .subscriber-name {
       font-size: 14px;
-      border-bottom: 1px solid var(--border);
-      color: #475569;
-    }
-
-    tr:last-child td { border-bottom: none; }
-    
-    tr:nth-child(even) { background-color: #fcfdfe; }
-    tr:hover { background-color: #f1f5f9; }
-
-    /* STATUS STYLING */
-    .status-pill {
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 12px;
       font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    
-    .status-occupied { background: #fee2e2; color: #b91c1c; }
-    .status-available { background: #dcfce7; color: #15803d; }
+
+    .seat-footer {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: auto;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 8px;
+    }
+
+    /* LOADING STATE */
+    #loader { text-align: center; padding: 50px; font-weight: 600; color: var(--accent); }
 
     @media (max-width: 600px) {
-      body { padding: 12px; }
-      h1 { font-size: 1.2rem; }
+      .seat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .header-section { flex-direction: column; gap: 15px; align-items: flex-start; }
     }
   </style>
 </head>
@@ -132,68 +148,94 @@
 <body>
 
 <div class="header-section">
-  <button class="back-btn" onclick="location.href='index.html'">← Back</button>
+  <a href="index.html" class="back-btn">← Back</a>
   <h1>Seat Occupancy</h1>
-  <div style="width: 80px;"></div> </div>
-
-<div class="data-card">
-  <div class="table-wrapper">
-    <table id="occupancyTable">
-      <thead>
-        <tr id="tableHeader"></tr>
-      </thead>
-      <tbody id="tableBody">
-        </tbody>
-    </table>
+  <div id="stat-summary" style="font-size: 14px; font-weight: 600; color: var(--accent);">
+    Loading seats...
   </div>
 </div>
 
+<div class="search-container">
+  <input type="text" id="searchInput" class="search-input" placeholder="Search Seat No or Student Name...">
+</div>
 
+<div id="loader">Fetching latest data...</div>
+<div class="seat-grid" id="seatGrid"></div>
 
 <script>
-  // SECURE AUTH CHECK
+  // AUTH GUARD
   if (sessionStorage.getItem("adminAuth") !== "true") {
-    document.body.innerHTML = "<div style='text-align:center; padding:50px;'><h3>Redirecting to Secure Login...</h3></div>";
-    setTimeout(() => { location.href = "index.html"; }, 1000);
+    location.href = "index.html";
   }
 
-  // FETCH & RENDER DATA
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
+
+  let allSeats = [];
 
   Papa.parse(CSV_URL, {
     download: true,
     complete: res => {
+      document.getElementById('loader').style.display = 'none';
       const [header, ...rows] = res.data;
-      const tHeader = document.getElementById('tableHeader');
-      const tBody = document.getElementById('tableBody');
+      
+      // Identify column indexes based on common headers
+      const idx = {
+        seat: header.findIndex(h => h.toLowerCase().includes('seat')),
+        name: header.findIndex(h => h.toLowerCase().includes('name') || h.toLowerCase().includes('subscriber')),
+        status: header.findIndex(h => h.toLowerCase().includes('status')),
+        center: header.findIndex(h => h.toLowerCase().includes('center'))
+      };
 
-      // Build Headers
-      header.forEach(h => {
-        tHeader.innerHTML += `<th>${h}</th>`;
-      });
+      allSeats = rows.filter(r => r.length > 1).map(r => ({
+        seatNo: r[idx.seat] || 'N/A',
+        name: r[idx.name] || 'Available',
+        status: r[idx.status] || '',
+        center: r[idx.center] || '',
+        rawData: r
+      }));
 
-      // Build Rows (Reversed to show latest entries first)
-      rows.reverse().forEach(r => {
-        if (r.length <= 1) return; // Skip empty rows
-        
-        const rowHTML = r.map(cell => {
-          let content = cell || "";
-          
-          // Apply automatic "Pills" for status indicators
-          let lowerCell = content.toLowerCase();
-          if (lowerCell === 'occupied' || lowerCell === 'full') {
-            return `<td><span class="status-pill status-occupied">${content}</span></td>`;
-          } else if (lowerCell === 'available' || lowerCell === 'vacant' || lowerCell === 'empty') {
-            return `<td><span class="status-pill status-available">${content}</span></td>`;
-          }
-          
-          return `<td>${content}</td>`;
-        }).join("");
-
-        tBody.innerHTML += `<tr>${rowHTML}</tr>`;
-      });
+      renderSeats(allSeats);
     }
   });
+
+  function renderSeats(data) {
+    const grid = document.getElementById('seatGrid');
+    const summary = document.getElementById('stat-summary');
+    grid.innerHTML = '';
+
+    data.forEach(seat => {
+      const isOccupied = seat.name.toLowerCase() !== 'available' && seat.name !== '';
+      const statusClass = isOccupied ? 'status-occupied' : 'status-available';
+      const displayName = isOccupied ? seat.name : 'Empty Seat';
+
+      const card = document.createElement('div');
+      card.className = 'seat-card';
+      card.innerHTML = `
+        <div class="seat-header">
+          <span class="seat-number">#${seat.seatNo}</span>
+          <div class="status-dot ${statusClass}"></div>
+        </div>
+        <div class="subscriber-name">${displayName}</div>
+        <div class="seat-footer">
+          ${seat.center ? `📍 ${seat.center}` : 'Study Zone'}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    const occupiedCount = data.filter(s => s.name.toLowerCase() !== 'available' && s.name !== '').length;
+    summary.innerHTML = `Occupied: ${occupiedCount} | Total: ${data.length}`;
+  }
+
+  // REAL-TIME SEARCH LOGIC
+  document.getElementById('searchInput').oninput = function() {
+    const val = this.value.toLowerCase();
+    const filtered = allSeats.filter(s => 
+      s.seatNo.toLowerCase().includes(val) || 
+      s.name.toLowerCase().includes(val)
+    );
+    renderSeats(filtered);
+  };
 </script>
 
 </body>
