@@ -1,148 +1,233 @@
-<link rel="stylesheet" href="css/universal.css">
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Study ZONE | Subscription Expiry Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Study ZONE | Subscription Expiry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/universal.css">
 
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f6fb;
-    padding: 10px;
-  }
+  <style>
+    /* UI CORE THEME */
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #22c55e;
+      --wa-green: #25D366;
+      --bg-body: #f1f5f9;
+      --text-main: #334155;
+      --border: #e2e8f0;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
 
-  .back-btn {
-    display: inline-block;
-    margin-bottom: 8px;
-    background: #333;
-    color: #fff;
-    padding: 6px 10px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 13px;
-  }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      padding: 16px;
+      line-height: 1.5;
+    }
 
-  .controls {
-    background: #fff;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    margin-bottom: 10px;
-    font-size: 14px;
-  }
+    /* HEADER & BACK BUTTON */
+    .nav-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
 
-  .controls div {
-    margin-bottom: 10px;
-  }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      background: white;
+      color: var(--text-main);
+      padding: 8px 14px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
 
-  label {
-    margin-right: 12px;
-    white-space: nowrap;
-  }
+    .back-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-  select {
-    padding: 6px;
-    font-size: 14px;
-  }
+    h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
 
-  .table-wrap {
-    overflow: auto;
-    max-height: 70vh;
-    border: 1px solid #ccc;
-    background: #fff;
-  }
+    /* FILTERS PANEL */
+    .controls-card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
 
-  table {
-    border-collapse: collapse;
-    min-width: 900px;
-    font-size: 14px;
-  }
+    .filter-group { display: flex; flex-direction: column; gap: 8px; }
 
-  th, td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    white-space: nowrap;
-  }
+    .filter-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
 
-  th {
-    background: #007bff;
-    color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
+    select, .checkbox-group {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background: #f8fafc;
+      outline: none;
+    }
 
-  tr:nth-child(even) {
-    background: #f9f9f9;
-  }
+    .checkbox-group {
+      max-height: 100px;
+      overflow-y: auto;
+      background: white;
+      padding: 8px;
+    }
 
-  .call-btn {
-    color: #007bff;
-    font-weight: bold;
-    text-decoration: none;
-  }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      cursor: pointer;
+      font-size: 13px;
+    }
 
-  .wa-btn {
-    color: #25D366;
-    font-weight: bold;
-    text-decoration: none;
-  }
-</style>
+    /* DATA TABLE */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 65vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:hover { background-color: #f1f5f9; }
+
+    /* ACTION BUTTONS */
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      transition: transform 0.1s;
+    }
+
+    .btn-action:active { transform: scale(0.95); }
+
+    .call-btn { background: #eff6ff; color: var(--primary); }
+    .wa-btn { background: #f0fdf4; color: #16a34a; }
+
+    .badge-plan {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 600px) {
+      .controls-card { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 
 <body>
 
-<a href="index.html" class="back-btn">← Back</a>
+<div class="nav-header">
+  <a href="index.html" class="back-btn">← Back</a>
+  <h2>Subscription Expiry</h2>
+</div>
 
-<!-- FILTERS -->
-<div class="controls">
+<div class="controls-card">
 
-  <!-- 1. Expiry -->
-  <div>
-    <strong>Expiry Date:</strong>
+  <div class="filter-group">
+    <span class="filter-label">Expiry Date</span>
     <select id="expiryFilter">
-      <option value="ALL">All</option>
+      <option value="ALL">All Expiries</option>
     </select>
   </div>
 
-  <!-- 2. Center -->
-  <div>
-    <strong>Center:</strong><br>
-    <span id="centerFilter"></span>
+  <div class="filter-group">
+    <span class="filter-label">Centers</span>
+    <div class="checkbox-group" id="centerFilter"></div>
   </div>
 
-  <!-- 3. Plan toggle -->
-  <div>
-    <strong>Show Plan Column:</strong>
+  <div class="filter-group">
+    <span class="filter-label">Table Settings</span>
     <select id="planToggle">
-      <option value="NO">No</option>
-      <option value="YES">Yes</option>
+      <option value="NO">Hide Plan Column</option>
+      <option value="YES">Show Plan Column</option>
     </select>
   </div>
 
 </div>
 
-<!-- TABLE -->
-<div class="table-wrap">
-<table>
-  <thead>
-    <tr>
-      <th>Subscriber Name</th>
-      <th id="planHeader" style="display:none;">Plan</th>
-      <th>Phone</th>
-      <th>Call</th>
-      <th>WhatsApp</th>
-    </tr>
-  </thead>
-  <tbody id="tbody"></tbody>
-</table>
+<div class="table-container">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Subscriber Name</th>
+          <th id="planHeader" style="display:none;">Plan</th>
+          <th>Phone Number</th>
+          <th>Quick Call</th>
+          <th>WhatsApp Alert</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-const csvUrl =
-'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
 function parseCSV(line){
   const out=[], q=false; let cur='',qt=false;
@@ -206,12 +291,9 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
 
   data.sort((a,b)=>a.date-b.date);
 
-  [...expiries].sort((a,b)=>parseDate(a)-parseDate(b))
-    .forEach(e=>{
-      expiryFilter.insertAdjacentHTML('beforeend',
-        `<option value="${e}">${e}</option>`
-      );
-    });
+  [...expiries].sort((a,b)=>parseDate(a)-parseDate(b)).forEach(e=>{
+    expiryFilter.insertAdjacentHTML('beforeend', `<option value="${e}">${e}</option>`);
+  });
 
   [...centers].sort().forEach(c=>{
     centerBox.insertAdjacentHTML('beforeend',
@@ -227,28 +309,33 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
 });
 
 function render(){
-  const selCenters=[...centerBox.querySelectorAll('input:checked')]
-    .map(x=>x.value);
+  const selCenters=[...centerBox.querySelectorAll('input:checked')].map(x=>x.value);
   const selExpiry=expiryFilter.value;
-
   const showPlan = planToggle.value === 'YES';
+  
   planHeader.style.display = showPlan ? 'table-cell' : 'none';
-
   tbody.innerHTML='';
+  
   data.filter(r=>
     (selCenters.length===0||selCenters.includes(r.center)) &&
     (selExpiry==='ALL'||r.expiry===selExpiry)
   ).forEach(r=>{
     tbody.insertAdjacentHTML('beforeend',`
       <tr>
-        <td>${r.name}</td>
-        <td style="display:${showPlan?'table-cell':'none'}">${r.plan}</td>
-        <td>${r.phone}</td>
-        <td><a class="call-btn" href="tel:${r.phone}">📞 Call</a></td>
-        <td><a class="wa-btn" target="_blank"
-          href="https://wa.me/${r.phone}?text=${encodeURIComponent(
-            `🔔 Renewal Alert: Access Ends on ${r.expiry} - after 10:00 PM`
-          )}">💬 WhatsApp</a></td>
+        <td style="font-weight:600; color:#1e293b;">${r.name}</td>
+        <td style="display:${showPlan?'table-cell':'none'}">
+          <span class="badge-plan">${r.plan}</span>
+        </td>
+        <td style="color:#64748b; font-family:monospace;">${r.phone}</td>
+        <td>
+          <a class="btn-action call-btn" href="tel:${r.phone}">📞 Call</a>
+        </td>
+        <td>
+          <a class="btn-action wa-btn" target="_blank"
+            href="https://wa.me/91${r.phone}?text=${encodeURIComponent(
+              `🔔 Renewal Alert: Access Ends on ${r.expiry} - Study ZONE`
+            )}">💬 WhatsApp</a>
+        </td>
       </tr>
     `);
   });
