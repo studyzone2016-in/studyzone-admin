@@ -2,88 +2,399 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Active Members | Study ZONE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study ZONE | Active Members</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="css/universal.css">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  
   <style>
-    .search-area { margin-bottom: 20px; display: flex; gap: 10px; }
-    input[type="text"] { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; }
-    input:focus { border-color: var(--accent); }
-    .wa-btn { background: var(--wa-green); color: white; border: none; }
-    .call-btn { background: var(--brand-light); color: var(--brand); border: 1px solid var(--border); }
+    /* INDUSTRY STANDARD RESET & BASE */
+    :root {
+      --primary: #2563eb;
+      --success: #22c55e;
+      --wa-green: #25D366;
+      --bg-body: #f8fafc;
+      --text-main: #1e293b;
+      --border-color: #e2e8f0;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    }
+
+    body { 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* HEADER SECTION */
+    .header-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .back-btn {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover { background: #f1f5f9; }
+
+    h3 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+
+    /* TOOLBAR & FILTERS */
+    .toolbar {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .dropdown { position: relative; }
+
+    .label-tag {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .drop-btn, select, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .drop-btn:hover, select:hover { border-color: #cbd5e1; }
+
+    .drop-list {
+      display: none;
+      position: absolute;
+      top: 110%;
+      left: 0;
+      z-index: 999;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      max-height: 250px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .drop-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .drop-list label:hover { background: #f8fafc; }
+
+    .count-box {
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      padding: 10px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    /* TABLE STYLING */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 850px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 14px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background-color: #fbfcfe; }
+
+    /* ACTION BUTTONS */
+    .btn-group { display: flex; gap: 6px; justify-content: start; }
+
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: opacity 0.2s;
+    }
+
+    .call-btn { background: #e0f2fe; color: #0369a1; }
+    .wa-btn { background: #dcfce7; color: #15803d; }
+    
+    .action-btn:hover { opacity: 0.8; }
+    .disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .header-area { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
   </style>
 </head>
+
 <body>
 
 <div class="header-area">
-  <a href="index.html" class="btn btn-back">← Back</a>
-  <h3 style="margin:0">Active Members</h3>
-  <div class="badge" id="memberCount" style="background:var(--brand-light); color:var(--brand)">Counting...</div>
-</div>
-
-<div class="card" style="margin-bottom:20px;">
-  <div class="search-area">
-    <input type="text" id="searchInput" placeholder="Search by name or branch..." oninput="filterTable()">
+  <button class="back-btn" onclick="history.back()">← Back</button>
+  <h3>Active Members</h3>
+  <div class="count-box">
+    Total Active: <span id="resultCount">0</span>
   </div>
 </div>
 
-<div class="card" style="padding:0; overflow-x:auto;">
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Branch</th>
-        <th>Plan</th>
-        <th>Expiry</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="memberTable"></tbody>
-  </table>
+<div class="toolbar">
+  <div class="filters">
+    
+    <div class="dropdown">
+      <span class="label-tag">Fees Status</span>
+      <div class="drop-btn" onclick="toggleDrop('feesList')">Select Status</div>
+      <div class="drop-list" id="feesList"></div>
+    </div>
+
+    <div class="dropdown">
+      <span class="label-tag">Center</span>
+      <div class="drop-btn" onclick="toggleDrop('centerList')">All Centers</div>
+      <div class="drop-list" id="centerList"></div>
+    </div>
+
+    <div class="dropdown">
+      <span class="label-tag">Plan</span>
+      <div class="drop-btn" onclick="toggleDrop('planList')">All Plans</div>
+      <div class="drop-list" id="planList"></div>
+    </div>
+
+    <div>
+      <span class="label-tag">Sort By</span>
+      <select id="sortBy" onchange="render()">
+        <option value="">Default</option>
+        <option value="joinAsc">Joining (Oldest)</option>
+        <option value="joinDesc">Joining (Newest)</option>
+        <option value="expAsc">Expiry (Soonest)</option>
+        <option value="expDesc">Expiry (Latest)</option>
+      </select>
+    </div>
+
+    <div>
+      <span class="label-tag">Search</span>
+      <input type="text" id="nameSearch" placeholder="Enter name...">
+    </div>
+
+  </div>
+</div>
+
+<div class="table-container">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Center</th>
+          <th>Plan</th>
+          <th>Joining Date</th>
+          <th>Access Expiry</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-if(sessionStorage.getItem("adminAuth")!=="true") location.href="index.html";
+// Logic remains consistent with your provided CSV handling
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let allMembers = [];
+let allRows=[], idxGlobal=null;
 
-Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=1865917409&single=true&output=csv", {
-  download: true, header: true, complete: res => {
-    allMembers = res.data.filter(r => r.Name);
-    renderTable(allMembers);
-  }
+function normalizePhone(raw){
+  if(!raw) return null;
+  let p=raw.replace(/\D/g,"");
+  if(p.startsWith("91") && p.length>10) p=p.slice(-10);
+  return /^\d{10}$/.test(p)?p:null;
+}
+
+function toDate(v){
+  if(!v) return new Date(0);
+  const [d,m,y]=v.split("-");
+  return new Date(`20${y}`,m-1,d);
+}
+
+fetch(CSV_URL)
+.then(r=>r.text())
+.then(csv=>{
+  const rows=parseCSV(csv);
+  const headers=rows.shift();
+
+  idxGlobal={
+    fees:headers.indexOf("Fees Status"),
+    center:headers.indexOf("Center"),
+    plan:headers.indexOf("Plan"),
+    name:headers.indexOf("Full Name"),
+    phone:headers.indexOf("Phone"),
+    join:headers.indexOf("Joining Date (DD-MM-YY)"),
+    expiry:headers.indexOf("Access Expiry (DD-MM-YY)")
+  };
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  allRows=rows.filter(r=>toDate(r[idxGlobal.expiry])>=today);
+
+  buildDropdown("feesList",idxGlobal.fees);
+  buildDropdown("centerList",idxGlobal.center);
+  buildDropdown("planList",idxGlobal.plan);
+  render();
 });
 
-function renderTable(data) {
-  const body = document.getElementById("memberTable");
-  body.innerHTML = "";
-  document.getElementById("memberCount").innerText = `Total: ${data.length}`;
+function toggleDrop(id){
+  const el=document.getElementById(id);
+  const open=el.style.display==="block";
+  closeAll();
+  if(!open) el.style.display="block";
+}
 
-  data.forEach(m => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="font-weight:600">${m.Name}</td>
-      <td>${m.Branch || 'Main'}</td>
-      <td><span class="badge" style="background:#f1f5f9; color:var(--text)">${m.Plan || 'Basic'}</span></td>
-      <td style="color:var(--danger); font-weight:600">${m.Expiry || '--'}</td>
-      <td style="display:flex; gap:5px;">
-        <a href="tel:${m.Mobile}" class="btn call-btn" style="padding:6px 10px;"><i class="fa fa-phone"></i></a>
-        <a href="https://wa.me/91${m.Mobile}" class="btn wa-btn" style="padding:6px 10px;"><i class="fab fa-whatsapp"></i></a>
-      </td>
-    `;
-    body.appendChild(tr);
+function closeAll(){
+  document.querySelectorAll(".drop-list").forEach(d=>d.style.display="none");
+}
+
+function buildDropdown(id,col){
+  const box=document.getElementById(id);
+  [...new Set(allRows.map(r=>r[col]).filter(Boolean))].forEach(v=>{
+    const l=document.createElement("label");
+    l.innerHTML=`<input type="checkbox" value="${v}"> ${v}`;
+    l.querySelector("input").onchange=render;
+    box.appendChild(l);
   });
 }
 
-function filterTable() {
-  const term = document.getElementById("searchInput").value.toLowerCase();
-  const filtered = allMembers.filter(m => 
-    m.Name.toLowerCase().includes(term) || 
-    m.Branch.toLowerCase().includes(term)
-  );
-  renderTable(filtered);
+function selected(id){
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value);
+}
+
+function render(){
+  const tableBody = document.getElementById("tableBody");
+  tableBody.innerHTML="";
+  const f=selected("feesList"),
+        c=selected("centerList"),
+        p=selected("planList"),
+        q=document.getElementById("nameSearch").value.toLowerCase(),
+        s=document.getElementById("sortBy").value;
+
+  let data=allRows.filter(r=>{
+    if(f.length && !f.includes(r[idxGlobal.fees])) return false;
+    if(c.length && !c.includes(r[idxGlobal.center])) return false;
+    if(p.length && !p.includes(r[idxGlobal.plan])) return false;
+    if(q && !r[idxGlobal.name].toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if(s){
+    data.sort((a,b)=>{
+      if(s==="joinAsc") return toDate(a[idxGlobal.join])-toDate(b[idxGlobal.join]);
+      if(s==="joinDesc") return toDate(b[idxGlobal.join])-toDate(a[idxGlobal.join]);
+      if(s==="expAsc") return toDate(a[idxGlobal.expiry])-toDate(b[idxGlobal.expiry]);
+      if(s==="expDesc") return toDate(b[idxGlobal.expiry])-toDate(a[idxGlobal.expiry]);
+    });
+  }
+
+  document.getElementById("resultCount").innerText=data.length;
+
+  data.forEach(r=>{
+    const ph=normalizePhone(r[idxGlobal.phone]);
+    const msg=encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idxGlobal.expiry]}`);
+
+    tableBody.innerHTML+=`
+    <tr>
+      <td style="font-weight:600; color:var(--primary)">${r[idxGlobal.name]}</td>
+      <td>${r[idxGlobal.center]}</td>
+      <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:12px;">${r[idxGlobal.plan]}</span></td>
+      <td>${r[idxGlobal.join]}</td>
+      <td>${r[idxGlobal.expiry]}</td>
+      <td>
+        <div class="btn-group">
+          ${ph?`<button class="action-btn call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="action-btn disabled">Call</button>`}
+          ${ph?`<button class="action-btn wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="action-btn disabled">WhatsApp</button>`}
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".dropdown")) closeAll();
+});
+document.getElementById("nameSearch").oninput=render;
+
+function parseCSV(t){
+  const r=[],row=[],c={v:""},q={v:false};
+  for(let x of t){
+    if(x=='"') q.v=!q.v;
+    else if(x==","&&!q.v){row.push(c.v);c.v="";}
+    else if(x=="\n"&&!q.v){row.push(c.v);r.push([...row]);row.length=0;c.v="";}
+    else c.v+=x;
+  }
+  row.push(c.v); r.push([...row]);
+  return r;
 }
 </script>
+
 </body>
 </html>
