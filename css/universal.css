@@ -1,179 +1,55 @@
-/* =========================================================
-   UNIVERSAL HARD OVERRIDE THEME
-   NOTHING ESCAPES THIS FILE
-========================================================= */
-
-/* ---------- ROOT TOKENS ---------- */
 :root {
-  --font-main: "Segoe UI", Arial, sans-serif;
-
-  --bg-main: #f6f3ee;
-  --bg-surface: #faf8f5;
-  --bg-muted: #eef2f7;
-
-  --primary: #3b5b8a;
-  --primary-dark: #2f4a72;
-  --secondary: #6c7d95;
-  --accent: #5aa9a1;
-
-  --text-main: #2e2e2e;
-  --text-muted: #6b6b6b;
-  --text-invert: #f5f7fb;
-
-  --border-soft: #d6d6d6;
-  --border-focus: #9bb0d3;
-
-  --success: #4c8c6a;
-  --warning: #d9a441;
-  --danger: #c94a4a;
+  --brand: #1f3c88;
+  --accent: #2563eb;
+  --bg: #f0f2f5;
+  --text: #1a202c;
+  --text-light: #718096;
+  --white: #ffffff;
+  --radius: 12px;
 }
 
-/* ---------- ABSOLUTE FONT & COLOR LOCK ---------- */
-html, body,
-div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6,
-p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed,
-figure, figcaption, footer, header, hgroup,
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video,
-input, textarea, select, button {
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.6; }
 
-  font-family: var(--font-main) !important;
-  color: var(--text-main) !important;
+/* Dashboard Grid Layout */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 10px;
 }
 
-/* ---------- BODY ---------- */
-body {
-  background: var(--bg-main) !important;
-  margin: 0 !important;
-  line-height: 1.55 !important;
+/* Clearer Action Cards */
+.action-card {
+  background: var(--white);
+  padding: 20px 15px;
+  border-radius: var(--radius);
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* ---------- HEADINGS ---------- */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--primary) !important;
-  font-weight: 600 !important;
+.action-card:active { transform: scale(0.95); }
+
+.action-card i { 
+  font-size: 24px; 
+  color: var(--brand); 
+  display: block; 
+  margin-bottom: 8px; 
 }
 
-/* ---------- LINKS ---------- */
-a, a:visited {
-  color: var(--primary) !important;
-  text-decoration: none !important;
+.action-card span { 
+  font-weight: 700; 
+  font-size: 13px; 
+  color: var(--text); 
+  display: block;
 }
 
-a:hover, a:active {
-  color: var(--primary-dark) !important;
-  text-decoration: underline !important;
-}
-
-/* ---------- SURFACES ---------- */
-section, article, aside, nav,
-.card, .container, .box, .panel {
-  background: var(--bg-surface) !important;
-  border-radius: 12px !important;
-}
-
-/* ---------- FORMS ---------- */
-input, textarea, select {
-  background: #fdfdfc !important;
-  border: 1px solid var(--border-soft) !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  font-size: 14px !important;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #9a9a9a !important;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none !important;
-  border-color: var(--border-focus) !important;
-  box-shadow: 0 0 0 2px rgba(155,176,211,0.25) !important;
-}
-
-/* ---------- DROPDOWNS ---------- */
-select {
-  appearance: none !important;
-  background-color: #fdfdfc !important;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--primary) 50%),
-    linear-gradient(135deg, var(--primary) 50%, transparent 50%);
-  background-position:
-    calc(100% - 20px) center,
-    calc(100% - 15px) center;
-  background-size: 5px 5px !important;
-  background-repeat: no-repeat !important;
-}
-
-/* ---------- BUTTONS ---------- */
-button,
-input[type="button"],
-input[type="submit"],
-input[type="reset"] {
-  background: var(--primary) !important;
-  color: var(--text-invert) !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 10px 16px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-}
-
-button:hover,
-input[type="submit"]:hover {
-  background: var(--primary-dark) !important;
-}
-
-/* ---------- TABLES ---------- */
-table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  background: var(--bg-surface) !important;
-}
-
-th {
-  background: var(--bg-muted) !important;
-  color: var(--primary) !important;
-  padding: 12px !important;
-}
-
-td {
-  padding: 10px !important;
-  border-top: 1px solid var(--border-soft) !important;
-}
-
-tr:hover td {
-  background: #f1f4f8 !important;
-}
-
-/* ---------- BADGES / ALERTS ---------- */
-.success { background: #e6f3ec !important; color: var(--success) !important; }
-.warning { background: #fff5df !important; color: var(--warning) !important; }
-.error,
-.danger  { background: #fdeaea !important; color: var(--danger) !important; }
-
-/* ---------- DISABLED ---------- */
-button:disabled,
-input:disabled {
-  background: #cfcfcf !important;
-  color: #7a7a7a !important;
-  cursor: not-allowed !important;
-}
-
-/* ---------- MOBILE ---------- */
-@media (max-width: 600px) {
-  body { font-size: 14px !important; }
-  button { width: 100% !important; }
+/* Highlighted Calculator Section */
+.utility-card {
+  background: var(--brand);
+  color: white;
+  padding: 20px;
+  border-radius: var(--radius);
+  margin: 10px;
 }
