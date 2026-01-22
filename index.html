@@ -1,98 +1,153 @@
-<link rel="stylesheet" href="css/universal.css">
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Study ZONE | Admin Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Study ZONE | Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/universal.css">
 
-<style>
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #f4f6fb;
-  margin: 0;
-  padding: 20px;
-}
+  <style>
+    /* UI CORE THEME */
+    :root {
+      --primary: #1f3c88;
+      --primary-hover: #162d66;
+      --bg-body: #f4f6fb;
+      --card-bg: #ffffff;
+      --text-main: #334155;
+      --accent: #2563eb;
+      --border: #cbd5e1;
+    }
 
-h1 {
-  text-align: center;
-  color: #1f3c88;
-  margin-bottom: 10px;
-}
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg-body);
+      margin: 0;
+      padding: 20px;
+      color: var(--text-main);
+    }
 
-.sub-title {
-  text-align: center;
-  font-size: 14px;
-  color: #555;
-}
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 5px;
+      font-weight: 800;
+    }
 
-.container {
-  max-width: 420px;
-  margin: 25px auto;
-}
+    .sub-title {
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 25px;
+    }
 
-.card {
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
-}
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+    }
 
-label {
-  font-size: 14px;
-}
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
 
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
+    /* FORM STYLES */
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
 
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 16px;
-  background: #1f3c88;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-}
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 16px 0;
+      font-size: 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
 
-button:hover {
-  background: #162d66;
-}
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
 
-.links {
-  display: none;
-}
+    button {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-.links a {
-  display: block;
-  text-decoration: none;
-  background: #eef3ff;
-  color: #1f3c88;
-  padding: 14px;
-  border-radius: 6px;
-  margin-top: 12px;
-  text-align: center;
-  font-weight: 600;
-}
+    button:hover { background: var(--primary-hover); }
 
-.logout {
-  background: #dc3545;
-  margin-top: 18px;
-}
+    /* CALCULATOR STYLES */
+    .calc-box {
+      background: #f8fafc;
+      border: 1px dashed var(--accent);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      margin-top: 10px;
+    }
 
-.logout:hover {
-  background: #b02a37;
-}
-</style>
+    .calc-result {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 5px;
+    }
+
+    /* NAV LINKS */
+    .links { display: none; }
+
+    .links a {
+      display: block;
+      text-decoration: none;
+      background: #f1f5f9;
+      color: var(--primary);
+      padding: 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      text-align: center;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+
+    .links a:hover {
+      background: #eef3ff;
+      border-color: var(--accent);
+    }
+
+    .logout {
+      background: #ef4444;
+      margin-top: 10px;
+    }
+
+    .logout:hover { background: #dc2626; }
+
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 20px 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -102,43 +157,74 @@ button:hover {
 
 <div class="container">
 
-  <!-- Login Card -->
   <div class="card" id="loginCard">
-    <label><strong>Admin Password</strong></label>
-    <input type="password" id="password" placeholder="Enter password">
-    <button onclick="login()">Login</button>
+    <label>Admin Password</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button onclick="login()">Login to Dashboard</button>
   </div>
 
-  <!-- Navigation Card -->
-  <div class="card links" id="linksCard">
-    <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
-    <a href="seat-occupancy.html">💺 Seat Occupancy</a>
-    <a href="upcoming-expiry-subscriptions.html">⏰ Upcoming Expiry Subscriptions</a>
-    <a href="active-members.html">👥 Active Members</a>
+  <div class="links" id="linksCard">
+    
+    <div class="card">
+      <label>Quick Navigation</label>
+      <div style="margin-top: 15px;">
+        <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
+        <a href="seat-occupancy.html">💺 Seat Occupancy</a>
+        <a href="upcoming-expiry-subscriptions.html">⏰ Upcoming Expiry</a>
+        <a href="active-members.html">👥 Active Members</a>
+      </div>
+    </div>
 
-    <button class="logout" onclick="logout()">Logout</button>
+    <div class="card">
+      <label>📅 Subscription Calculator</label>
+      <div style="margin-top: 15px;">
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 2;">
+            <label style="font-size: 11px;">Start Date</label>
+            <input type="date" id="startDate" onchange="calculateExpiry()">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 11px;">Days</label>
+            <input type="number" id="numDays" value="30" oninput="calculateExpiry()">
+          </div>
+        </div>
+
+        <div class="calc-box">
+          <span style="font-size: 12px; color: #64748b; font-weight: 600;">EXPIRES ON</span>
+          <span class="calc-result" id="expiryResult">-- --- ----</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="logout" onclick="logout()">Logout Session</button>
   </div>
 
 </div>
 
 <script>
-/* Elements */
 const loginCard = document.getElementById("loginCard");
 const linksCard = document.getElementById("linksCard");
 const passwordInput = document.getElementById("password");
 
-/* Login */
+/* Login Logic */
 function login() {
   if (passwordInput.value === "Chinu") {
     sessionStorage.setItem("adminAuth", "true");
-    loginCard.style.display = "none";
-    linksCard.style.display = "block";
+    showDashboard();
   } else {
     alert("Incorrect Password");
   }
 }
 
-/* Logout */
+function showDashboard() {
+  loginCard.style.display = "none";
+  linksCard.style.display = "block";
+  // Set default start date to today
+  document.getElementById('startDate').valueAsDate = new Date();
+  calculateExpiry();
+}
+
+/* Logout Logic */
 function logout() {
   sessionStorage.removeItem("adminAuth");
   linksCard.style.display = "none";
@@ -146,11 +232,42 @@ function logout() {
   passwordInput.value = "";
 }
 
-/* Auto-login if session exists */
-if (sessionStorage.getItem("adminAuth") === "true") {
-  loginCard.style.display = "none";
-  linksCard.style.display = "block";
+/* Date Calculator Logic */
+function calculateExpiry() {
+  const startVal = document.getElementById('startDate').value;
+  const daysVal = document.getElementById('numDays').value;
+  const resultDisplay = document.getElementById('expiryResult');
+
+  if (!startVal || !daysVal) {
+    resultDisplay.innerText = "-- --- ----";
+    return;
+  }
+
+  const startDate = new Date(startVal);
+  const numDays = parseInt(daysVal);
+  
+  // Calculate new date
+  const expiryDate = new Date(startDate);
+  expiryDate.setDate(startDate.getDate() + numDays);
+
+  // Format the date (Ex: 30 Jan 2026)
+  const options = { day: '2-digit', month: 'short', year: 'numeric' };
+  const formattedDate = expiryDate.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
+  
+  resultDisplay.innerText = formattedDate;
 }
+
+/* Auto-login */
+if (sessionStorage.getItem("adminAuth") === "true") {
+  showDashboard();
+}
+
+/* Enter Key Support */
+passwordInput.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    login();
+  }
+});
 </script>
 
 </body>
