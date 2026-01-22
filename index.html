@@ -2,211 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Admin Dashboard</title>
+  <title>Study ZONE | Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/universal.css">
-
   <style>
-    :root {
-      --primary: #1f3c88;
-      --accent: #2563eb;
-      --bg-body: #f4f6fb;
-      --card-bg: #ffffff;
-      --border: #cbd5e1;
-      --text-muted: #64748b;
-    }
-
-    body {
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: var(--bg-body);
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container { max-width: 420px; margin: 0 auto; }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e2e8f0;
-      margin-bottom: 20px;
-    }
-
-    label { 
-      font-size: 11px; 
-      font-weight: 700; 
-      color: var(--primary); 
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0 16px 0;
-      font-size: 15px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-sizing: border-box;
-      outline: none;
-    }
-
-    input:focus { border-color: var(--accent); }
-
-    /* CALCULATOR DISPLAY */
-    .calc-container {
-      background: #f0f7ff;
-      border: 2px solid var(--accent);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .calc-result {
-      display: block;
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: var(--accent);
-      margin-top: 5px;
-    }
-
-    /* DASHBOARD ELEMENTS */
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    .container { width: 100%; max-width: 400px; }
+    .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .nav-grid a { background: var(--brand-light); color: var(--brand); text-decoration: none; padding: 15px 10px; border-radius: var(--radius); text-align: center; font-weight: 700; font-size: 13px; border: 1px solid var(--border); }
+    input { width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid var(--border); border-radius: 8px; }
+    .calc-box { background: var(--brand-light); border: 2px solid var(--brand); padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
     #linksCard { display: none; }
-    
-    .nav-links a {
-      display: block;
-      text-decoration: none;
-      background: #f8fafc;
-      color: var(--primary);
-      padding: 14px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      text-align: center;
-      font-weight: 600;
-      border: 1px solid #e2e8f0;
-      transition: all 0.2s;
-    }
-
-    .nav-links a:hover { background: #eff6ff; border-color: var(--accent); }
-
-    button {
-      width: 100%;
-      padding: 13px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .logout-btn {
-      background: #ef4444;
-      margin-top: 10px;
-    }
   </style>
 </head>
-
 <body>
-
 <div class="container">
-  <h1 style="text-align:center; color:var(--primary); margin-bottom: 5px;">Study ZONE</h1>
-  <p style="text-align:center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Admin Management Portal</p>
+  <div style="text-align:center; margin-bottom:20px;">
+    <h1 style="color:var(--brand); margin:0;">Study ZONE</h1>
+    <small style="color:var(--text-muted)">Admin Management Portal</small>
+  </div>
 
   <div class="card" id="loginCard">
-    <label>Authentication Required</label>
-    <input type="password" id="password" placeholder="Enter Admin Password">
-    <button onclick="login()">Login</button>
+    <label style="font-size:12px; font-weight:700">PASSWORD</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="login()">Access Dashboard</button>
   </div>
 
   <div id="linksCard">
-    
-    <div class="card">
+    <div class="card" style="margin-bottom:15px;">
       <label>Quick Navigation</label>
-      <div class="nav-links" style="margin-top:15px;">
-        <a href="admin-enroll-requests.html">📋 Enrollment Requests</a>
-        <a href="seat-occupancy.html">💺 Seat Occupancy</a>
-        <a href="upcoming-expiry-subscriptions.html">⏰ Expiry List</a>
-        <a href="active-members.html">👥 Active Members</a>
+      <div class="nav-grid">
+        <a href="admin-enroll-requests.html">📋 Requests</a>
+        <a href="seat-occupancy.html">💺 Seats</a>
+        <a href="upcoming-expiry-subscriptions.html">⏰ Expiry</a>
+        <a href="active-members.html">👥 Members</a>
       </div>
     </div>
 
     <div class="card">
-      <label>📅 Subscription Calculator</label>
-      <p style="font-size: 12px; color: var(--text-muted); margin: 5px 0 15px 0;">Inclusive logic: 1st Jan + 30 Days = 30th Jan</p>
-      
-      <div style="display: flex; gap: 10px;">
-        <div style="flex: 2;">
-          <label>Start Date</label>
-          <input type="date" id="startDate" onchange="runCalc()">
-        </div>
-        <div style="flex: 1;">
-          <label>Days</label>
-          <input type="number" id="numDays" value="30" oninput="runCalc()">
-        </div>
+      <label>📅 Date Calculator (Inclusive)</label>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <input type="date" id="startDate" onchange="runCalc()" style="margin:0">
+        <input type="number" id="numDays" value="30" oninput="runCalc()" style="margin:0; width:80px;">
       </div>
-
-      <div class="calc-container">
-        <label style="color: var(--text-muted);">Subscription Ends On</label>
-        <span class="calc-result" id="expiryResult">-- --- ----</span>
+      <div class="calc-box">
+        <small style="color:var(--text-muted); font-weight:700">EXPIRY DATE</small>
+        <div id="expiryResult" style="font-size:1.5rem; font-weight:800; color:var(--brand)">-- --- ----</div>
       </div>
     </div>
-
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="btn" style="width:100%; margin-top:10px; color:var(--danger)" onclick="logout()">Logout</button>
   </div>
 </div>
 
 <script>
   function login() {
-    const pass = document.getElementById("password").value;
-    if (pass === "Chinu") {
+    if(document.getElementById("password").value === "Chinu") {
       sessionStorage.setItem("adminAuth", "true");
-      showDashboard();
-    } else {
-      alert("Invalid Password");
-    }
+      show();
+    } else alert("Invalid Access");
   }
-
-  function showDashboard() {
-    document.getElementById("loginCard").style.display = "none";
-    document.getElementById("linksCard").style.display = "block";
+  function show() {
+    document.getElementById("loginCard").style.display="none";
+    document.getElementById("linksCard").style.display="block";
     document.getElementById('startDate').valueAsDate = new Date();
     runCalc();
   }
-
-  function logout() {
-    sessionStorage.clear();
-    location.reload();
-  }
-
+  function logout() { sessionStorage.clear(); location.reload(); }
   function runCalc() {
-    const startVal = document.getElementById('startDate').value;
-    const daysVal = document.getElementById('numDays').value;
-    const resultDisplay = document.getElementById('expiryResult');
-
-    if (!startVal || !daysVal) return;
-
-    const startDate = new Date(startVal);
-    const totalDays = parseInt(daysVal);
-    
-    // Inclusive Logic: Start + (Days - 1)
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(startDate.getDate() + (totalDays - 1));
-
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
-    resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options);
+    const s = new Date(document.getElementById('startDate').value);
+    const d = parseInt(document.getElementById('numDays').value);
+    if(!s || isNaN(d)) return;
+    const e = new Date(s); e.setDate(s.getDate() + (d - 1));
+    document.getElementById('expiryResult').innerText = e.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   }
-
-  if (sessionStorage.getItem("adminAuth") === "true") {
-    showDashboard();
-  }
-
-  document.getElementById("password").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") login();
-  });
+  if(sessionStorage.getItem("adminAuth")==="true") show();
 </script>
 </body>
 </html>
