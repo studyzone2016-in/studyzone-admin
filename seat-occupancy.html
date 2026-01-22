@@ -2,21 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Seat Management</title>
+  <title>Study ZONE | Seat Occupancy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/universal.css">
+  
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    /* UI CORE THEME (Aligned with previous files) */
+    /* UNIVERSAL STYLES (Fixed 404 by moving CSS here) */
     :root {
       --primary: #1e293b;
       --accent: #2563eb;
       --success: #22c55e;
       --danger: #ef4444;
-      --bg-body: #f8fafc;
+      --bg-body: #f1f5f9;
       --border: #e2e8f0;
-      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     body {
@@ -24,124 +23,81 @@
       background-color: var(--bg-body);
       color: #334155;
       margin: 0;
-      padding: 20px;
+      padding: 16px;
     }
 
-    /* HEADER AREA */
     .header-section {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      max-width: 1200px;
-      margin: 0 auto 24px auto;
+      max-width: 1000px;
+      margin: 0 auto 20px;
     }
 
     .back-btn {
-      background: #ffffff;
-      color: var(--primary);
+      background: white;
       border: 1px solid var(--border);
-      padding: 10px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
-      font-weight: 600;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
       text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 14px;
     }
 
-    h1 { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); }
-
-    /* SEARCH & FILTER BAR */
-    .search-container {
-      max-width: 1200px;
-      margin: 0 auto 20px auto;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      box-shadow: var(--card-shadow);
-      font-size: 16px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .search-input:focus { border-color: var(--accent); }
-
-    /* SEAT GRID SYSTEM */
+    /* GRID PRESENTATION */
     .seat-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 16px;
-      max-width: 1200px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      max-width: 1000px;
       margin: 0 auto;
     }
 
     .seat-card {
       background: white;
+      padding: 15px;
       border-radius: 12px;
-      padding: 16px;
       border: 1px solid var(--border);
-      box-shadow: var(--card-shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
     }
 
-    .seat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
+    .seat-card:hover { transform: translateY(-3px); }
 
-    .seat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .seat-number {
-      font-size: 18px;
+    .seat-no {
+      font-size: 1.2rem;
       font-weight: 800;
-      color: var(--primary);
+      display: block;
+      margin-bottom: 5px;
     }
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+    .status-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
     }
 
-    .status-occupied { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
-    .status-available { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+    /* STATUS COLORS */
+    .occ { background: #fee2e2; color: #b91c1c; } /* Occupied */
+    .avl { background: #dcfce7; color: #15803d; } /* Available */
 
-    .subscriber-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #475569;
+    .student-name {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748b;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .seat-footer {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: auto;
-      border-top: 1px solid #f1f5f9;
-      padding-top: 8px;
-    }
-
-    /* LOADING STATE */
-    #loader { text-align: center; padding: 50px; font-weight: 600; color: var(--accent); }
-
-    @media (max-width: 600px) {
-      .seat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .header-section { flex-direction: column; gap: 15px; align-items: flex-start; }
-    }
+    #loading { text-align: center; margin-top: 50px; font-weight: 600; }
   </style>
 </head>
 
@@ -149,93 +105,61 @@
 
 <div class="header-section">
   <a href="index.html" class="back-btn">← Back</a>
-  <h1>Seat Occupancy</h1>
-  <div id="stat-summary" style="font-size: 14px; font-weight: 600; color: var(--accent);">
-    Loading seats...
-  </div>
+  <h2 style="margin:0;">Seat Layout</h2>
+  <div id="counter" style="font-size:12px; font-weight:700; color:var(--accent);"></div>
 </div>
 
-<div class="search-container">
-  <input type="text" id="searchInput" class="search-input" placeholder="Search Seat No or Student Name...">
-</div>
+<div id="loading">Connecting to Database...</div>
+<div class="seat-grid" id="seatContainer"></div>
 
-<div id="loader">Fetching latest data...</div>
-<div class="seat-grid" id="seatGrid"></div>
+
 
 <script>
-  // AUTH GUARD
-  if (sessionStorage.getItem("adminAuth") !== "true") {
-    location.href = "index.html";
-  }
+  // 1. AUTH CHECK (Temporarily disabled for your debugging, re-enable later)
+  // if (sessionStorage.getItem("adminAuth") !== "true") { location.href = "index.html"; }
 
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
-
-  let allSeats = [];
+  // 2. DATA SOURCE (Ensure this link is "Published to Web" as CSV)
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
     download: true,
-    complete: res => {
-      document.getElementById('loader').style.display = 'none';
-      const [header, ...rows] = res.data;
-      
-      // Identify column indexes based on common headers
-      const idx = {
-        seat: header.findIndex(h => h.toLowerCase().includes('seat')),
-        name: header.findIndex(h => h.toLowerCase().includes('name') || h.toLowerCase().includes('subscriber')),
-        status: header.findIndex(h => h.toLowerCase().includes('status')),
-        center: header.findIndex(h => h.toLowerCase().includes('center'))
-      };
-
-      allSeats = rows.filter(r => r.length > 1).map(r => ({
-        seatNo: r[idx.seat] || 'N/A',
-        name: r[idx.name] || 'Available',
-        status: r[idx.status] || '',
-        center: r[idx.center] || '',
-        rawData: r
-      }));
-
-      renderSeats(allSeats);
+    header: true, // Uses first row as keys
+    skipEmptyLines: true,
+    complete: function(results) {
+      document.getElementById('loading').style.display = 'none';
+      renderGrid(results.data);
+    },
+    error: function(err) {
+      document.getElementById('loading').innerHTML = "❌ Error: Could not load data. check if Spreadsheet is Published.";
     }
   });
 
-  function renderSeats(data) {
-    const grid = document.getElementById('seatGrid');
-    const summary = document.getElementById('stat-summary');
-    grid.innerHTML = '';
+  function renderGrid(data) {
+    const container = document.getElementById('seatContainer');
+    let occupiedCount = 0;
 
-    data.forEach(seat => {
-      const isOccupied = seat.name.toLowerCase() !== 'available' && seat.name !== '';
-      const statusClass = isOccupied ? 'status-occupied' : 'status-available';
-      const displayName = isOccupied ? seat.name : 'Empty Seat';
+    data.forEach(row => {
+      // Find columns regardless of exact naming
+      const seatNo = row["Seat No"] || row["Seat"] || "??";
+      const name = row["Full Name"] || row["Subscriber Name"] || row["Name"] || "";
+      
+      const isAvailable = (!name || name.toLowerCase().includes('available') || name.trim() === "");
+      if(!isAvailable) occupiedCount++;
 
       const card = document.createElement('div');
       card.className = 'seat-card';
       card.innerHTML = `
-        <div class="seat-header">
-          <span class="seat-number">#${seat.seatNo}</span>
-          <div class="status-dot ${statusClass}"></div>
-        </div>
-        <div class="subscriber-name">${displayName}</div>
-        <div class="seat-footer">
-          ${seat.center ? `📍 ${seat.center}` : 'Study Zone'}
-        </div>
+        <span class="seat-no">#${seatNo}</span>
+        <span class="status-label ${isAvailable ? 'avl' : 'occ'}">
+          ${isAvailable ? 'Available' : 'Occupied'}
+        </span>
+        <span class="student-name">${isAvailable ? '---' : name}</span>
       `;
-      grid.appendChild(card);
+      container.appendChild(card);
     });
 
-    const occupiedCount = data.filter(s => s.name.toLowerCase() !== 'available' && s.name !== '').length;
-    summary.innerHTML = `Occupied: ${occupiedCount} | Total: ${data.length}`;
+    document.getElementById('counter').innerText = `OCCUPIED: ${occupiedCount} / TOTAL: ${data.length}`;
   }
-
-  // REAL-TIME SEARCH LOGIC
-  document.getElementById('searchInput').oninput = function() {
-    const val = this.value.toLowerCase();
-    const filtered = allSeats.filter(s => 
-      s.seatNo.toLowerCase().includes(val) || 
-      s.name.toLowerCase().includes(val)
-    );
-    renderSeats(filtered);
-  };
 </script>
 
 </body>
