@@ -4,17 +4,14 @@
   <meta charset="UTF-8">
   <title>Study ZONE | Seat Occupancy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
   <style>
-    /* UNIVERSAL STYLES (Fixed 404 by moving CSS here) */
     :root {
       --primary: #1e293b;
       --accent: #2563eb;
       --success: #22c55e;
       --danger: #ef4444;
-      --bg-body: #f1f5f9;
+      --bg-body: #f8fafc;
       --border: #e2e8f0;
     }
 
@@ -46,7 +43,6 @@
       font-size: 14px;
     }
 
-    /* GRID PRESENTATION */
     .seat-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -62,84 +58,59 @@
       border: 1px solid var(--border);
       text-align: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: transform 0.2s;
     }
 
-    .seat-card:hover { transform: translateY(-3px); }
-
-    .seat-no {
-      font-size: 1.2rem;
-      font-weight: 800;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .status-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 20px;
-    }
-
-    /* STATUS COLORS */
-    .occ { background: #fee2e2; color: #b91c1c; } /* Occupied */
-    .avl { background: #dcfce7; color: #15803d; } /* Available */
-
-    .student-name {
-      display: block;
-      margin-top: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #64748b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .seat-no { font-size: 1.2rem; font-weight: 800; display: block; margin-bottom: 5px; color: var(--primary); }
+    .status-label { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; }
+    .occ { background: #fee2e2; color: #b91c1c; }
+    .avl { background: #dcfce7; color: #15803d; }
+    .student-name { display: block; margin-top: 10px; font-size: 13px; font-weight: 500; color: #64748b; }
 
     #loading { text-align: center; margin-top: 50px; font-weight: 600; }
+    #counter { background: white; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; }
   </style>
 </head>
-
 <body>
 
 <div class="header-section">
   <a href="index.html" class="back-btn">← Back</a>
   <h2 style="margin:0;">Seat Layout</h2>
-  <div id="counter" style="font-size:12px; font-weight:700; color:var(--accent);"></div>
+  <div id="counter">Counting...</div>
 </div>
 
 <div id="loading">Connecting to Database...</div>
 <div class="seat-grid" id="seatContainer"></div>
 
-
-
 <script>
-  // 1. AUTH CHECK (Temporarily disabled for your debugging, re-enable later)
-  // if (sessionStorage.getItem("adminAuth") !== "true") { location.href = "index.html"; }
+  // 1. AUTH CHECK
+  if (sessionStorage.getItem("adminAuth") !== "true") {
+      alert("Unauthorized access. Redirecting...");
+      location.href = "index.html";
+  }
 
-  // 2. DATA SOURCE (Ensure this link is "Published to Web" as CSV)
+  // 2. DATA SOURCE (Ensure gid=1348530041 is correct for the Occupancy tab)
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
     download: true,
-    header: true, // Uses first row as keys
+    header: true,
     skipEmptyLines: true,
     complete: function(results) {
       document.getElementById('loading').style.display = 'none';
       renderGrid(results.data);
     },
-    error: function(err) {
-      document.getElementById('loading').innerHTML = "❌ Error: Could not load data. check if Spreadsheet is Published.";
+    error: function() {
+      document.getElementById('loading').innerHTML = "❌ Error: Could not fetch data. Verify spreadsheet sharing.";
     }
   });
 
   function renderGrid(data) {
     const container = document.getElementById('seatContainer');
     let occupiedCount = 0;
+    container.innerHTML = ""; 
 
     data.forEach(row => {
-      // Find columns regardless of exact naming
+      // Robust header detection
       const seatNo = row["Seat No"] || row["Seat"] || "??";
       const name = row["Full Name"] || row["Subscriber Name"] || row["Name"] || "";
       
@@ -158,9 +129,8 @@
       container.appendChild(card);
     });
 
-    document.getElementById('counter').innerText = `OCCUPIED: ${occupiedCount} / TOTAL: ${data.length}`;
+    document.getElementById('counter').innerText = `Occupied: ${occupiedCount} / Total: ${data.length}`;
   }
 </script>
-
 </body>
 </html>
