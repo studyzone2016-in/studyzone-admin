@@ -11,20 +11,12 @@
 
 <style>
 :root{
-  --brand:#1f3c88;
-  --bg:#f4f7fc;
-  --card:#fff;
-  --line:#e5e7eb;
-  --success:#16a34a;
-  --pending:#f59e0b;
-  --text:#1f2937;
-  --muted:#6b7280;
-  --whatsapp:#25D366;
+  --brand:#1f3c88; --bg:#f4f7fc; --card:#fff; --line:#e5e7eb;
+  --success:#16a34a; --pending:#f59e0b; --text:#1f2937;
+  --muted:#6b7280; --whatsapp:#25D366;
 }
-
 body{margin:0;padding:16px;background:var(--bg);font-family:"Segoe UI",Arial;color:var(--text);}
 h1{text-align:center;color:var(--brand);font-size:20px;margin-bottom:16px;}
-
 .table-card{background:var(--card);border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.06);overflow:hidden;}
 table{width:100%;border-collapse:collapse;}
 th{background:var(--brand);color:#fff;padding:12px;font-size:13px;text-align:left;}
@@ -32,12 +24,8 @@ td{padding:12px;font-size:14px;border-bottom:1px solid var(--line);vertical-alig
 tr:hover{background:#eef3ff}
 .name-link{color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;}
 .status-icon{font-size:18px}
-.success{color:var(--success)}
-.pending{color:var(--pending)}
-.phone-actions a{margin-left:6px;font-size:16px;text-decoration:none}
-.call{color:var(--brand)}
+.success{color:var(--success)} .pending{color:var(--pending)}
 .whatsapp{color:var(--whatsapp)}
-
 @media(max-width:768px){
   table,thead,tbody,th,tr,td{display:block}
   thead{display:none}
@@ -45,7 +33,6 @@ tr:hover{background:#eef3ff}
   td{border:none;padding:6px 0;display:flex;justify-content:space-between;font-size:13px}
   td::before{content:attr(data-label);font-weight:600;color:var(--muted)}
 }
-
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;}
 .modal-content{background:#fff;max-width:800px;margin:4% auto;border-radius:14px;max-height:90vh;display:flex;flex-direction:column;}
 .modal-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
@@ -56,22 +43,15 @@ tr:hover{background:#eef3ff}
 .whatsapp-btn{margin-top:18px;background:var(--whatsapp);color:#fff;border:none;padding:11px 16px;border-radius:8px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
 </style>
 </head>
-
 <body>
 
 <h1>Enrollment Requests</h1>
-
 <div class="table-card">
 <table>
 <thead>
 <tr>
-  <th>Status</th>
-  <th>Date</th>
-  <th>Full Name</th>
-  <th>Mobile</th>
-  <th>Member</th>
-  <th>Branch</th>
-  <th>WhatsApp</th>
+  <th>Status</th><th>Date</th><th>Full Name</th><th>Mobile</th>
+  <th>Member</th><th>Branch</th><th>WhatsApp</th>
 </tr>
 </thead>
 <tbody id="tableBody"></tbody>
@@ -89,38 +69,31 @@ tr:hover{background:#eef3ff}
 </div>
 
 <script>
-if(sessionStorage.getItem("adminAuth")!=="true"){alert("Unauthorized Access"); location.href="index.html";}
-
 let headers=[], activeRow=null;
 
-/* DATE FORMAT */
+/* Helpers */
 function formatDate(val){const d=new Date(val); return isNaN(d)?val:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});}
-
-/* STATUS ICON */
 function statusIcon(v){return v==="Converted"?`<i class="fa-solid fa-thumbs-up status-icon success"></i>`:`<i class="fa-solid fa-hourglass-half status-icon pending"></i>`}
-
-/* NORMALIZE MOBILE */
 function normalizeMobile(raw){if(!raw) return ""; let d=raw.replace(/\D/g,""); if(d.length===10) return "91"+d; if(d.length===12) return d; return "";}
 
-/* GENERATE QR BASE64 */
+/* QR Base64 */
 function generateUPIBase64(amount){
   return new Promise(resolve=>{
-    const upiId="yourupiid@bank"; // replace with actual UPI ID
+    const upiId="yourupiid@bank"; // replace with your UPI ID
     const upiUrl=`upi://pay?pa=${upiId}&pn=StudyZONE&am=${amount}&cu=INR`;
-    const qrCanvas=document.createElement("canvas");
-    new QRCode(qrCanvas,{text:upiUrl,width:180,height:180});
-    setTimeout(()=>resolve(qrCanvas.querySelector("canvas").toDataURL("image/png")),500);
+    const qrDiv=document.createElement("div");
+    new QRCode(qrDiv,{text:upiUrl,width:180,height:180});
+    setTimeout(()=>resolve(qrDiv.querySelector("canvas").toDataURL("image/png")),500);
   });
 }
 
-/* WHATSAPP MESSAGE */
+/* WhatsApp Message */
 async function buildMessage(row){
   const data={}; headers.forEach((h,i)=>data[h]=row[i]||"—");
   const amount=data["Grand Estimated Cost"];
   const upiId="yourupiid@bank";
   const upiUrl=`upi://pay?pa=${upiId}&pn=StudyZONE&am=${amount}&cu=INR`;
   const qrBase64=await generateUPIBase64(amount);
-
   return `Namaste ${data["Full Name"]} 🙏
 
 Greetings from Study ZONE.
@@ -135,21 +108,20 @@ Greetings from Study ZONE.
 To confirm your seat, kindly complete the payment using the UPI link below:
 ${upiUrl}
 
-Or scan this QR code:
+Or scan this QR code (copy link into browser to view):
 ${qrBase64}
 
 Warm regards,
 Study ZONE`;
 }
 
-/* SEND WHATSAPP */
+/* WhatsApp Send */
 async function sendWhatsAppRow(row){
   const mobile=normalizeMobile(row[headers.findIndex(h=>h.toLowerCase().includes("mobile"))]);
   if(!mobile){alert("Invalid mobile number"); return;}
   const msg=await buildMessage(row);
   window.open(`https://wa.me/${mobile}?text=`+encodeURIComponent(msg),"_blank");
 }
-
 async function sendWhatsAppPopup(){ 
   const mobile=normalizeMobile(activeRow[headers.findIndex(h=>h.toLowerCase().includes("mobile"))]);
   if(!mobile){alert("Invalid mobile number"); return;}
@@ -157,29 +129,25 @@ async function sendWhatsAppPopup(){
   window.open(`https://wa.me/${mobile}?text=`+encodeURIComponent(msg),"_blank");
 }
 
-/* MODAL */
+/* Modal */
 async function openModal(row){
   activeRow=row;
   let html="";
   headers.forEach((h,i)=>{
     const lower=h.toLowerCase();
     if(lower.includes("timestamp")||lower.includes("status")) return;
-    let v=row[i]||"—"; 
-    if(lower.includes("date")) v=formatDate(v);
+    let v=row[i]||"—"; if(lower.includes("date")) v=formatDate(v);
     html+=`<div class="detail-row"><span>${h}</span><div>${v}</div></div>`;
   });
-
   const amount=row[headers.findIndex(h=>h.toLowerCase().includes("grand"))];
   const qrBase64=await generateUPIBase64(amount);
   html+=`<div style="margin-top:16px"><strong>Payment QR:</strong><br><img src="${qrBase64}" width="180"></div>`;
-
   html+=`<button class="whatsapp-btn" onclick="sendWhatsAppPopup()"><i class="fa-brands fa-whatsapp"></i> Send WhatsApp Message</button>`;
-
   modalBody.innerHTML=html;
   detailModal.style.display="block";
 }
-
 function closeModal(){detailModal.style.display="none";}
 
-/* LOAD SHEET */
-Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUq
+/* Load Sheet */
+Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv",{
+  download:true, skipEmptyLines
