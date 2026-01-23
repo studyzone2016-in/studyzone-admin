@@ -186,7 +186,6 @@
 </div>
 
 <div class="controls-card">
-
   <div class="filter-group">
     <span class="filter-label">Expiry Date</span>
     <select id="expiryFilter">
@@ -206,7 +205,6 @@
       <option value="YES">Show Plan Column</option>
     </select>
   </div>
-
 </div>
 
 <div class="table-container">
@@ -273,7 +271,12 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
     const d=parseDate(c[idx.expiry]);
     if(!d) return;
 
-    const phone=(c[idx.phone]||'').replace(/\D/g,'');
+    // Logic: Remove all non-digits, then remove '91' prefix if it exists
+    let phone=(c[idx.phone]||'').replace(/\D/g,'');
+    if(phone.startsWith('91') && phone.length > 10) {
+        phone = phone.substring(2);
+    }
+    
     if(phone.length<10) return;
 
     centers.add(c[idx.center]);
@@ -285,7 +288,7 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
       date:d,
       name:c[idx.name]||'',
       plan:c[idx.plan]||'',
-      phone
+      phone: phone
     });
   });
 
@@ -332,7 +335,7 @@ function render(){
         </td>
         <td>
           <a class="btn-action wa-btn" target="_blank"
-            href="https://wa.me/91${r.phone}?text=${encodeURIComponent(
+            href="https://wa.me/${r.phone}?text=${encodeURIComponent(
               `🔔 Renewal Alert: Access Ends on ${r.expiry} - Study ZONE`
             )}">💬 WhatsApp</a>
         </td>
