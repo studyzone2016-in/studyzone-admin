@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Study ZONE | Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" href="css/universal.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
@@ -96,28 +95,49 @@
     .nav-item span { font-size: 12px; font-weight: 700; color: var(--primary); }
     .nav-item:active { transform: scale(0.95); background: #f0f7ff; }
 
-    /* CALCULATOR */
+    /* CALCULATOR - REFINED ALIGNMENT */
     .calc-card { background: var(--primary); color: white; border: none; }
     .calc-card label { color: rgba(255,255,255,0.8); }
     
-    .calc-inputs { display: flex; gap: 10px; margin-top: 12px; }
+    .calc-inputs { 
+      display: flex; 
+      gap: 10px; 
+      margin-top: 12px; 
+      align-items: flex-start;
+    }
+
     .calc-inputs input {
       background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.25);
       color: white;
-      padding: 10px;
+      padding: 0 12px; /* Controlled horizontal padding */
+      height: 45px;    /* Locked height for perfect alignment */
       border-radius: 8px;
       width: 100%;
       outline: none;
+      font-size: 15px;
+      font-weight: 600;
+      box-sizing: border-box; /* Crucial for border alignment */
+      transition: border 0.2s;
     }
-    input::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+    .calc-inputs input:focus {
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    /* Dark mode calendar icon fix */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
 
     .calc-display {
-      background: rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.15);
       border-radius: 12px;
       padding: 15px;
       margin-top: 15px;
       text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     .calc-result {
@@ -141,7 +161,7 @@
 
     .logout-link {
       text-align: center;
-      margin-top: 10px;
+      margin-top: 25px;
       color: #ef4444;
       font-size: 13px;
       font-weight: 600;
@@ -187,25 +207,25 @@
       </a>
     </div>
 
-    <div style="margin-top: 25px;"></div>
+    <div style="margin-top: 20px;"></div>
 
     <div class="card calc-card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <label>Subscription Calculator</label>
-        <span style="font-size: 9px; opacity: 0.7; font-weight: bold;">INCLUSIVE</span>
+        <span style="font-size: 9px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">INCLUSIVE</span>
       </div>
       
       <div class="calc-inputs">
-        <div style="flex: 2;">
+        <div style="flex: 1.5;">
           <input type="date" id="startDate" onchange="runCalc()">
         </div>
         <div style="flex: 1;">
-          <input type="number" id="numDays" value="30" oninput="runCalc()">
+          <input type="number" id="numDays" value="30" placeholder="Days" oninput="runCalc()">
         </div>
       </div>
 
       <div class="calc-display">
-        <div style="font-size: 11px; opacity: 0.8; font-weight: bold;">EXPIRY DATE</div>
+        <div style="font-size: 11px; opacity: 0.8; font-weight: bold; margin-bottom: 5px;">EXPIRY DATE</div>
         <span class="calc-result" id="expiryResult">-- --- ----</span>
       </div>
     </div>
@@ -242,7 +262,10 @@
     const daysVal = document.getElementById('numDays').value;
     const resultDisplay = document.getElementById('expiryResult');
 
-    if (!startVal || !daysVal) return;
+    if (!startVal || !daysVal) {
+      resultDisplay.innerText = "-- --- ----";
+      return;
+    }
 
     const startDate = new Date(startVal);
     const totalDays = parseInt(daysVal);
@@ -255,10 +278,12 @@
     resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options).toUpperCase();
   }
 
+  // Auth Check
   if (sessionStorage.getItem("adminAuth") === "true") {
     showDashboard();
   }
 
+  // Enter Key Listener
   document.getElementById("password").addEventListener("keypress", function(e) {
     if (e.key === "Enter") login();
   });
