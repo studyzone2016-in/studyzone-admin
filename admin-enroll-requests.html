@@ -25,21 +25,18 @@ body{margin:0;padding:12px;background:var(--bg);font-family:"Inter", "Segoe UI",
 header{display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:0 5px;}
 h1{font-size:18px; color:var(--brand); margin:0;}
 
-/* TABLE STYLING */
 .table-card{background:var(--card); border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.05); overflow:hidden;}
 table{width:100%; border-collapse:collapse;}
 th{background:#f8fafc; color:var(--muted); padding:12px; font-size:11px; text-transform:uppercase; letter-spacing:1px; text-align:left; border-bottom:2px solid var(--line);}
 td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
 
-/* ACTIONS */
 .status-pill{padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; text-transform:uppercase;}
 .pill-wait{background:#fef3c7; color:#92400e;}
 .pill-converted{background:#dcfce7; color:#166534;}
 
 .name-link{color:var(--brand); font-weight:700; cursor:pointer; text-decoration:none; border-bottom:1px dashed var(--brand);}
-.phone-link{color:var(--accent); text-decoration:none; font-weight:600; display:flex; align-items:center; gap:5px;}
+.phone-link{color:var(--brand); text-decoration:none; font-weight:600; display:flex; align-items:center; gap:5px;}
 
-/* MODAL / POPUP */
 .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; backdrop-filter:blur(4px);}
 .modal-content{background:#fff; max-width:450px; margin:5vh auto; border-radius:20px; position:relative; overflow:hidden; animation: slideUp 0.3s ease-out;}
 @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
@@ -51,7 +48,6 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
 .detail-label{font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:2px;}
 .detail-value{font-size:15px; color:var(--text); font-weight:500;}
 
-/* CHIP SELECTION */
 .status-selector{margin-top:10px; display:flex; gap:10px;}
 .chip{padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--line); transition:0.2s;}
 .chip.active-wait{background:#f59e0b; color:white; border-color:#f59e0b;}
@@ -82,11 +78,10 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
                 <th>Status</th>
                 <th>Date</th>
                 <th>Subscriber Name</th>
-                <th>Mobile (Click to Call)</th>
+                <th>Mobile</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
 </div>
 
@@ -113,10 +108,10 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
 </div>
 
 <script>
-// Authentication Check
+// Authentication
 if(sessionStorage.getItem("adminAuth")!=="true"){ location.href="index.html"; }
 
-let headers = [], fullData = [], activeIdx = null;
+let fullData = [], activeIdx = null;
 
 function normalizeMobile(r){
     if(!r) return "";
@@ -124,9 +119,19 @@ function normalizeMobile(r){
     return d.length === 10 ? "91" + d : d;
 }
 
-function formatDate(v){
+// Format: DD Mmm YYYY
+function formatDateProfessional(v){
     const d = new Date(v);
-    return isNaN(d) ? v : d.toLocaleDateString("en-GB", {day:"2-digit", month:"short"});
+    if(isNaN(d)) return v;
+    return d.toLocaleDateString("en-GB", {day:"2-digit", month:"short", year:"numeric"});
+}
+
+function calculateDays(start, end) {
+    const s = new Date(start);
+    const e = new Date(end);
+    if(isNaN(s) || isNaN(e)) return 0;
+    const diffTime = Math.abs(e - s);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive of start day
 }
 
 function closeModal(){ document.getElementById('detailModal').style.display='none'; }
@@ -150,7 +155,6 @@ function openRequest(idx){
     const status = row["Status"];
     document.getElementById('chipWait').className = status === 'Wait' ? 'chip active-wait' : 'chip';
     document.getElementById('chipDone').className = status === 'Converted' ? 'chip active-done' : 'chip';
-
     document.getElementById('detailModal').style.display = 'block';
 }
 
@@ -161,38 +165,40 @@ function updateStatusUI(newStatus) {
     document.getElementById('chipDone').className = newStatus === 'Converted' ? 'chip active-done' : 'chip';
 }
 
-// Fix 2: Professional WhatsApp Template Integration
 function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const mobile = normalizeMobile(row["Mobile Number"]);
     
-    // Mapping spreadsheet data to template placeholders
-    const name = row["Full Name"] ? row["Full Name"].toUpperCase() : "STUDENT";
-    const branch = row["Preferred Branch"] || "Study ZONE Branch";
-    const plan = row["Preferred Plan"] || "Selected Plan";
-    const sDate = row["Start Date"] || "TBD";
-    const eDate = row["End Date"] || "TBD";
-    const fees = row["Total Fees Payable"] || "0";
+    // Calculations
+    const days = calculateDays(row["Start Date"], row["End Date"]);
+    const estCost = parseInt(row["Total Fees Payable"]) || 0;
+    const regFee = 100; // Define your fixed Reg Fee here or pull from row
+    const grandTotal = estCost + regFee;
 
-    const msg = `Namaste ${name} 🙏
+    const msg = `Namaste *${row["Full Name"].toUpperCase()}* 🙏
 
-Greetings from Study ZONE.
+Greetings from *Study ZONE*. 
 
-We have received your enrollment request. Please find the details below for your reference:
+We have successfully received your enrollment request. Here is your summary:
 
-📌 Enrollment Summary
-* Preferred Branch: ${branch}
-* Preferred Plan: ${plan}
-* Start Date: ${sDate}
-* End Date: ${eDate}
-* Total Fees Payable: ₹${fees}
+📌 *ENROLLMENT DETAILS*
+• *Preferred Branch:* ${row["Preferred Branch"] || "MIDC"}
+• *Preferred Plan:* ${row["Preferred Plan"] || "Full Day"}
+• *Start Date:* ${formatDateProfessional(row["Start Date"])}
+• *End Date:* ${formatDateProfessional(row["End Date"])}
+• *Total Days:* ${days} Days
 
-To confirm your seat, kindly complete the payment using the QR code shared separately.
+💰 *FEES BREAKDOWN*
+• Estimated Cost: ₹${estCost}
+• Registration Fee: ₹${regFee}
+• *Grand Total Payable: ₹${grandTotal}*
 
-For any assistance, feel free to reach out to us.
+To confirm your seat, please complete the payment using our official UPI QR code.
 
-Warm regards,  
-Study ZONE`;
+For assistance, reply to this chat.
+
+Warm regards,
+*Study ZONE Management*`;
 
     window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`, "_blank");
 }
@@ -202,12 +208,10 @@ function renderTable() {
     body.innerHTML = "";
     fullData.forEach((row, i) => {
         const statusClass = row["Status"] === "Converted" ? "pill-converted" : "pill-wait";
-        const statusText = row["Status"] === "Converted" ? "Converted" : "In Wait";
-        
         body.innerHTML += `
             <tr>
-                <td data-label="Status"><span class="status-pill ${statusClass}">${statusText}</span></td>
-                <td data-label="Date">${formatDate(row["Timestamp"])}</td>
+                <td data-label="Status"><span class="status-pill ${statusClass}">${row["Status"] || "Wait"}</span></td>
+                <td data-label="Date">${formatDateProfessional(row["Timestamp"])}</td>
                 <td data-label="Subscriber"><a class="name-link" onclick="openRequest(${i})">${row["Full Name"]}</a></td>
                 <td data-label="Mobile">
                     <a href="tel:${row["Mobile Number"]}" class="phone-link">
