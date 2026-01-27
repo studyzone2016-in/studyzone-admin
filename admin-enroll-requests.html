@@ -1,116 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Study ZONE | Requests Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-<style>
-:root{
-  --brand:#1f3c88;
-  --bg:#f4f7fc;
-  --card:#fff;
-  --line:#e5e7eb;
-  --success:#16a34a;
-  --pending:#f59e0b;
-  --text:#1f2937;
-  --muted:#6b7280;
-  --whatsapp:#25D366;
-}
-
-body{margin:0;padding:12px;background:var(--bg);font-family:"Inter", "Segoe UI", sans-serif;color:var(--text);}
-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:0 5px;}
-h1{font-size:18px; color:var(--brand); margin:0;}
-
-.table-card{background:var(--card); border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.05); overflow:hidden;}
-table{width:100%; border-collapse:collapse;}
-th{background:#f8fafc; color:var(--muted); padding:12px; font-size:11px; text-transform:uppercase; letter-spacing:1px; text-align:left; border-bottom:2px solid var(--line);}
-td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
-
-.status-pill{padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; text-transform:uppercase;}
-.pill-wait{background:#fef3c7; color:#92400e;}
-.pill-converted{background:#dcfce7; color:#166534;}
-
-.name-link{color:var(--brand); font-weight:700; cursor:pointer; text-decoration:none; border-bottom:1px dashed var(--brand);}
-.phone-link{color:var(--brand); text-decoration:none; font-weight:600; display:flex; align-items:center; gap:5px;}
-
-.modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; backdrop-filter:blur(4px);}
-.modal-content{background:#fff; max-width:450px; margin:5vh auto; border-radius:20px; position:relative; overflow:hidden; animation: slideUp 0.3s ease-out;}
-@keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
-
-.modal-header{padding:20px; background:var(--brand); color:#fff; display:flex; justify-content:space-between; align-items:center;}
-.modal-body{padding:20px; max-height:70vh; overflow-y:auto;}
-
-.detail-item{margin-bottom:15px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;}
-.detail-label{font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:2px;}
-.detail-value{font-size:15px; color:var(--text); font-weight:500;}
-
-.status-selector{margin-top:10px; display:flex; gap:10px;}
-.chip{padding:8px 16px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--line); transition:0.2s;}
-.chip.active-wait{background:#f59e0b; color:white; border-color:#f59e0b;}
-.chip.active-done{background:var(--success); color:white; border-color:var(--success);}
-
-.wa-action-btn{width:100%; background:var(--whatsapp); color:white; border:none; padding:14px; border-radius:12px; font-weight:700; margin-top:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;}
-
-@media(max-width:600px){
-    table thead{display:none;}
-    table tr{display:block; padding:15px; border-bottom:8px solid var(--bg);}
-    table td{display:flex; justify-content:space-between; padding:5px 0; border:none;}
-    table td::before{content:attr(data-label); font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;}
-}
-</style>
-</head>
-
-<body>
-
-<header>
-    <h1>Enrollment Requests</h1>
-    <a href="index.html" style="text-decoration:none; font-size:12px; font-weight:700; color:var(--muted);"><i class="fa-solid fa-arrow-left"></i> BACK</a>
-</header>
-
-<div class="table-card">
-    <table>
-        <thead>
-            <tr>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Subscriber Name</th>
-                <th>Mobile Number</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
-</div>
-
-<div class="modal" id="detailModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="modalName" style="margin:0; font-size:18px;">Details</h2>
-            <span style="cursor:pointer; font-size:24px;" onclick="closeModal()">×</span>
-        </div>
-        <div class="modal-body">
-            <div id="modalDetailsContainer"></div>
-            
-            <label class="detail-label">Update Status</label>
-            <div class="status-selector">
-                <div class="chip" id="chipWait" onclick="updateStatusUI('Wait')">In Wait</div>
-                <div class="chip" id="chipDone" onclick="updateStatusUI('Converted')">Converted</div>
-            </div>
-
-            <button class="wa-action-btn" onclick="sendWhatsAppPopup()">
-                <i class="fa-brands fa-whatsapp"></i> Send Professional Message
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
+// Authentication Check
 if(sessionStorage.getItem("adminAuth")!=="true"){ location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
+
+// --- CONFIGURATION ---
+const MY_UPI_ID = "studyezonedombivli@upi";
+const MY_NAME = "Study ZONE Dombivali";
+// ---------------------
 
 function normalizeMobile(r){
     if(!r) return "";
@@ -145,7 +41,6 @@ function openRequest(idx){
     const status = row["Status"] || "Wait";
     document.getElementById('chipWait').className = status === 'Wait' ? 'chip active-wait' : 'chip';
     document.getElementById('chipDone').className = status === 'Converted' ? 'chip active-done' : 'chip';
-
     document.getElementById('detailModal').style.display = 'block';
 }
 
@@ -160,10 +55,7 @@ function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const mobile = normalizeMobile(row["Mobile Number"]);
     
-    // Pick values and clean up formatting
-    const rawName = row["Full Name"] || "Student";
-    const name = rawName.trim().toUpperCase(); // .trim() removes extra spaces
-    
+    const name = (row["Full Name"] || "Student").trim().toUpperCase();
     const branch = row["Preferred Branch"] || "—";
     const plan = row["Preferred Plan"] || "—";
     const startDate = formatTrendDate(row["Start Date"]);
@@ -172,6 +64,11 @@ function sendWhatsAppPopup() {
     const estCost = row["Estimated Cost"] || "0";
     const regFee = row["Registration Fees"] || "0";
     const grandTotal = row["Grand Estimated Cost"] || "0";
+
+    // GENERATE SECURE UPI QR LINK
+    // This encodes: upi://pay?pa=ID&pn=NAME&am=AMOUNT&cu=INR
+    const upiString = `upi://pay?pa=${MY_UPI_ID}&pn=${encodeURIComponent(MY_NAME)}&am=${grandTotal}&cu=INR`;
+    const qrImageUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(upiString)}&choe=UTF-8`;
 
     const msg = `Namaste *${name}* 🙏
 
@@ -186,12 +83,14 @@ We have received your enrollment request. Please find your summary below:
 • *No. of Days to Book:* ${days}
 • *End Date:* ${endDate}
 
-💰 *FEE STRUCTURE*
+💳 *FEE STRUCTURE*
 • Estimated Cost: ₹${estCost}
 • Registration Fees: ₹${regFee}
 • *Grand Estimated Cost: ₹${grandTotal}*
 
-To confirm your seat, kindly complete the payment using our official QR code.
+✅ *SCAN TO PAY SAFELY*
+Click the link below to view your personalized QR Code and pay via GPay/PhonePe/Paytm:
+${qrImageUrl}
 
 For any assistance, feel free to reach out to us.
 
@@ -207,12 +106,10 @@ function renderTable() {
     fullData.forEach((row, i) => {
         const statusVal = row["Status"] || "Wait";
         const statusClass = statusVal === "Converted" ? "pill-converted" : "pill-wait";
-        const ts = formatTrendDate(row["Timestamp"]);
-        
         body.innerHTML += `
             <tr>
                 <td data-label="Status"><span class="status-pill ${statusClass}">${statusVal}</span></td>
-                <td data-label="Date">${ts}</td>
+                <td data-label="Date">${formatTrendDate(row["Timestamp"])}</td>
                 <td data-label="Subscriber"><a class="name-link" onclick="openRequest(${i})">${row["Full Name"] || "Unnamed"}</a></td>
                 <td data-label="Mobile">
                     <a href="tel:${row["Mobile Number"]}" class="phone-link">
@@ -232,7 +129,3 @@ Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A
         renderTable();
     }
 });
-</script>
-
-</body>
-</html>
