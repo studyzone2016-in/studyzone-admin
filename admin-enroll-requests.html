@@ -116,11 +116,6 @@ if(sessionStorage.getItem("adminAuth")!=="true"){ location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
 
-// --- CONFIGURATION ---
-const MY_UPI_ID = "studyezonedombivli@upi";
-const MY_NAME = "Study ZONE Dombivali";
-// ---------------------
-
 function normalizeMobile(r){
     if(!r) return "";
     let d = r.toString().replace(/\D/g,"");
@@ -168,10 +163,7 @@ function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const mobile = normalizeMobile(row["Mobile Number"]);
     
-    // Pick values and clean up formatting
-    const rawName = row["Full Name"] || "Student";
-    const name = rawName.trim().toUpperCase(); 
-    
+    const name = (row["Full Name"] || "Student").trim().toUpperCase();
     const branch = row["Preferred Branch"] || "—";
     const plan = row["Preferred Plan"] || "—";
     const startDate = formatTrendDate(row["Start Date"]);
@@ -180,10 +172,6 @@ function sendWhatsAppPopup() {
     const estCost = row["Estimated Cost"] || "0";
     const regFee = row["Registration Fees"] || "0";
     const grandTotal = row["Grand Estimated Cost"] || "0";
-
-    // GENERATE SECURE UPI QR LINK (Google Charts API)
-    const upiString = `upi://pay?pa=${MY_UPI_ID}&pn=${encodeURIComponent(MY_NAME)}&am=${grandTotal}&cu=INR`;
-    const qrImageUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(upiString)}&choe=UTF-8`;
 
     const msg = `Namaste *${name}* 🙏
 
@@ -203,9 +191,7 @@ We have received your enrollment request. Please find your summary below:
 • Registration Fees: ₹${regFee}
 • *Grand Estimated Cost: ₹${grandTotal}*
 
-✅ *SCAN TO PAY SAFELY*
-Click the link below to view your personalized QR Code and pay via GPay/PhonePe/Paytm:
-${qrImageUrl}
+To confirm your seat, kindly complete the payment using the QR code shared separately.
 
 For any assistance, feel free to reach out to us.
 
@@ -236,7 +222,6 @@ function renderTable() {
     });
 }
 
-// Load Data
 Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv", {
     download: true,
     header: true,
