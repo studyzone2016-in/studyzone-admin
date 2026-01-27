@@ -78,7 +78,7 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
                 <th>Status</th>
                 <th>Date</th>
                 <th>Subscriber Name</th>
-                <th>Mobile</th>
+                <th>Mobile Number</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -108,7 +108,7 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
 </div>
 
 <script>
-// Authentication
+// Authentication Check
 if(sessionStorage.getItem("adminAuth")!=="true"){ location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
@@ -119,19 +119,11 @@ function normalizeMobile(r){
     return d.length === 10 ? "91" + d : d;
 }
 
-// Format: DD Mmm YYYY
-function formatDateProfessional(v){
+// Formats date to: 01 Feb 2026
+function formatTrendDate(v){
     const d = new Date(v);
-    if(isNaN(d)) return v;
+    if(isNaN(d)) return v || "—";
     return d.toLocaleDateString("en-GB", {day:"2-digit", month:"short", year:"numeric"});
-}
-
-function calculateDays(start, end) {
-    const s = new Date(start);
-    const e = new Date(end);
-    if(isNaN(s) || isNaN(e)) return 0;
-    const diffTime = Math.abs(e - s);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive of start day
 }
 
 function closeModal(){ document.getElementById('detailModal').style.display='none'; }
@@ -140,7 +132,7 @@ function openRequest(idx){
     activeIdx = idx;
     const row = fullData[idx];
     const container = document.getElementById('modalDetailsContainer');
-    document.getElementById('modalName').innerText = row["Full Name"];
+    document.getElementById('modalName').innerText = row["Full Name"] || "Details";
     
     let html = "";
     Object.keys(row).forEach(key => {
@@ -152,9 +144,10 @@ function openRequest(idx){
     });
     container.innerHTML = html;
 
-    const status = row["Status"];
+    const status = row["Status"] || "Wait";
     document.getElementById('chipWait').className = status === 'Wait' ? 'chip active-wait' : 'chip';
     document.getElementById('chipDone').className = status === 'Converted' ? 'chip active-done' : 'chip';
+
     document.getElementById('detailModal').style.display = 'block';
 }
 
@@ -169,36 +162,41 @@ function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const mobile = normalizeMobile(row["Mobile Number"]);
     
-    // Calculations
-    const days = calculateDays(row["Start Date"], row["End Date"]);
-    const estCost = parseInt(row["Total Fees Payable"]) || 0;
-    const regFee = 100; // Define your fixed Reg Fee here or pull from row
-    const grandTotal = estCost + regFee;
+    // Pick values directly from headers as requested
+    const name = (row["Full Name"] || "Student").toUpperCase();
+    const branch = row["Preferred Branch"] || "—";
+    const plan = row["Preferred Plan"] || "—";
+    const startDate = formatTrendDate(row["Start Date"]);
+    const endDate = formatTrendDate(row["End Date"]);
+    const days = row["No. of Days to Book"] || "—";
+    const estCost = row["Estimated Cost"] || "0";
+    const regFee = row["Registration Fees"] || "0";
+    const grandTotal = row["Grand Estimated Cost"] || "0";
 
-    const msg = `Namaste *${row["Full Name"].toUpperCase()}* 🙏
+    const msg = `Namaste *${name}* 🙏
 
 Greetings from *Study ZONE*. 
 
-We have successfully received your enrollment request. Here is your summary:
+We have received your enrollment request. Please find your summary below:
 
-📌 *ENROLLMENT DETAILS*
-• *Preferred Branch:* ${row["Preferred Branch"] || "MIDC"}
-• *Preferred Plan:* ${row["Preferred Plan"] || "Full Day"}
-• *Start Date:* ${formatDateProfessional(row["Start Date"])}
-• *End Date:* ${formatDateProfessional(row["End Date"])}
-• *Total Days:* ${days} Days
+📌 *ENROLLMENT SUMMARY*
+• *Preferred Branch:* ${branch}
+• *Preferred Plan:* ${plan}
+• *Start Date:* ${startDate}
+• *No. of Days to Book:* ${days}
+• *End Date:* ${endDate}
 
-💰 *FEES BREAKDOWN*
+💰 *FEE STRUCTURE*
 • Estimated Cost: ₹${estCost}
-• Registration Fee: ₹${regFee}
-• *Grand Total Payable: ₹${grandTotal}*
+• Registration Fees: ₹${regFee}
+• *Grand Estimated Cost: ₹${grandTotal}*
 
-To confirm your seat, please complete the payment using our official UPI QR code.
+To confirm your seat, kindly complete the payment using our official QR code.
 
-For assistance, reply to this chat.
+For any assistance, feel free to reach out to us.
 
-Warm regards,
-*Study ZONE Management*`;
+Warm regards,  
+*Study ZONE*`;
 
     window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`, "_blank");
 }
@@ -207,15 +205,18 @@ function renderTable() {
     const body = document.getElementById('tableBody');
     body.innerHTML = "";
     fullData.forEach((row, i) => {
-        const statusClass = row["Status"] === "Converted" ? "pill-converted" : "pill-wait";
+        const statusVal = row["Status"] || "Wait";
+        const statusClass = statusVal === "Converted" ? "pill-converted" : "pill-wait";
+        const ts = formatTrendDate(row["Timestamp"]);
+        
         body.innerHTML += `
             <tr>
-                <td data-label="Status"><span class="status-pill ${statusClass}">${row["Status"] || "Wait"}</span></td>
-                <td data-label="Date">${formatDateProfessional(row["Timestamp"])}</td>
-                <td data-label="Subscriber"><a class="name-link" onclick="openRequest(${i})">${row["Full Name"]}</a></td>
+                <td data-label="Status"><span class="status-pill ${statusClass}">${statusVal}</span></td>
+                <td data-label="Date">${ts}</td>
+                <td data-label="Subscriber"><a class="name-link" onclick="openRequest(${i})">${row["Full Name"] || "Unnamed"}</a></td>
                 <td data-label="Mobile">
                     <a href="tel:${row["Mobile Number"]}" class="phone-link">
-                        <i class="fa-solid fa-phone"></i> ${row["Mobile Number"]}
+                        <i class="fa-solid fa-phone"></i> ${row["Mobile Number"] || "—"}
                     </a>
                 </td>
             </tr>
@@ -223,10 +224,12 @@ function renderTable() {
     });
 }
 
+// Load Data
 Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv", {
     download: true,
     header: true,
     complete: function(results) {
+        // Filter rows that at least have a Name
         fullData = results.data.filter(r => r["Full Name"]).reverse();
         renderTable();
     }
