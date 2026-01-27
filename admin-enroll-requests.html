@@ -108,7 +108,6 @@ td{padding:14px 12px; font-size:14px; border-bottom:1px solid var(--line);}
 </div>
 
 <script>
-// Authentication Check
 if(sessionStorage.getItem("adminAuth")!=="true"){ location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
@@ -119,7 +118,6 @@ function normalizeMobile(r){
     return d.length === 10 ? "91" + d : d;
 }
 
-// Formats date to: 01 Feb 2026
 function formatTrendDate(v){
     const d = new Date(v);
     if(isNaN(d)) return v || "—";
@@ -162,8 +160,10 @@ function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const mobile = normalizeMobile(row["Mobile Number"]);
     
-    // Pick values directly from headers as requested
-    const name = (row["Full Name"] || "Student").toUpperCase();
+    // Pick values and clean up formatting
+    const rawName = row["Full Name"] || "Student";
+    const name = rawName.trim().toUpperCase(); // .trim() removes extra spaces
+    
     const branch = row["Preferred Branch"] || "—";
     const plan = row["Preferred Plan"] || "—";
     const startDate = formatTrendDate(row["Start Date"]);
@@ -224,12 +224,10 @@ function renderTable() {
     });
 }
 
-// Load Data
 Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv", {
     download: true,
     header: true,
     complete: function(results) {
-        // Filter rows that at least have a Name
         fullData = results.data.filter(r => r["Full Name"]).reverse();
         renderTable();
     }
