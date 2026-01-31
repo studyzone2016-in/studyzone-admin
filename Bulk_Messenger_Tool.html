@@ -11,14 +11,16 @@
       --text: #0f172a;
       --accent: #64748b;
       --border: #e2e8f0;
+      --wa-green: #25D366;
+      --sent-color: #94a3b8;
     }
 
     body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; }
 
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     
-    /* BULK MESSAGE PANEL */
-    .message-panel {
+    /* CONTROL PANEL */
+    .control-panel {
       background: white;
       padding: 16px;
       border-radius: 16px;
@@ -29,30 +31,31 @@
 
     .label-tag {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
     }
 
-    #customMessage {
+    select, textarea {
       width: 100%;
-      height: 120px;
-      padding: 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
       box-sizing: border-box;
       font-size: 14px;
       font-family: inherit;
-      resize: none;
       outline: none;
       background: #fff;
     }
 
-    #customMessage:focus { border-color: var(--primary); }
+    select { padding: 10px; margin-bottom: 15px; cursor: pointer; }
 
-    /* MEMBER LIST VIEW */
+    textarea { height: 100px; padding: 12px; resize: none; }
+    textarea:focus { border-color: var(--primary); }
+
+    /* LIST VIEW */
     .list-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
     
     .list-item {
@@ -63,24 +66,34 @@
       border-bottom: 1px solid #f1f5f9;
     }
 
-    .list-item:last-child { border-bottom: none; }
-
     .member-meta { display: flex; flex-direction: column; gap: 2px; }
     .name-text { font-weight: 800; font-size: 15px; color: var(--text); }
-    .center-tag { font-size: 12px; color: var(--accent); font-weight: 600; }
+    .center-tag { font-size: 11px; color: var(--accent); font-weight: 700; }
 
+    /* BUTTON STATES */
     .wa-link {
-      background: #dcfce7;
-      color: #15803d;
       padding: 8px 16px;
       border-radius: 10px;
       text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 800;
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .wa-pending {
+      background: #dcfce7;
+      color: #15803d;
       border: 1px solid #bbf7d0;
+    }
+
+    .wa-sent {
+      background: #f1f5f9;
+      color: var(--sent-color);
+      border: 1px solid var(--border);
+      pointer-events: auto; /* Allow re-clicking if needed */
     }
 
     #loading { text-align: center; padding: 40px; color: var(--accent); font-weight: 600; }
@@ -89,29 +102,35 @@
 <body>
 
 <div class="header">
-  <h2 style="margin:0; font-size: 1.2rem;">Bulk Messenger Tool</h2>
-  <div style="font-size: 12px; font-weight: 700; color: var(--primary);">
-    <span id="activeCount">0</span> Active Members
+  <h2 style="margin:0; font-size: 1.1rem;">Bulk Messenger</h2>
+  <div style="font-size: 11px; font-weight: 800; color: var(--primary);">
+    <span id="activeCount">0</span> LOADED
   </div>
 </div>
 
-<div class="message-panel">
-  <span class="label-tag">Campaign Message</span>
-  <textarea id="customMessage" placeholder="Paste or type your global message here..." oninput="updateLinks()"></textarea>
-  <p style="font-size: 10px; color: var(--accent); margin-top: 8px;">
-    *Editing this box instantly updates all WhatsApp links below.
-  </p>
+<div class="control-panel">
+  <div style="margin-bottom: 15px;">
+    <span class="label-tag">1. Choose Target Center</span>
+    <select id="centerSelect" onchange="renderList()">
+      <option value="ALL">All Centers</option>
+    </select>
+  </div>
+
+  <div>
+    <span class="label-tag">2. Message Template</span>
+    <textarea id="customMessage" placeholder="Type your campaign message..." oninput="renderList()"></textarea>
+  </div>
 </div>
 
-<div id="loading">Fetching Active Member List...</div>
+<div id="loading">Syncing Active Members...</div>
 <div class="list-card" id="memberList" style="display:none;"></div>
 
 <script>
-// Data source from your provided URL
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
 let activeUsers = [];
 let indices = {};
+let sentList = new Set(); // To track which IDs have been clicked
 
 fetch(CSV_URL).then(r => r.text()).then(csv => {
   const lines = csv.trim().split("\n").map(l => {
@@ -130,12 +149,13 @@ fetch(CSV_URL).then(r => r.text()).then(csv => {
     name: headers.indexOf("Full Name"),
     center: headers.indexOf("Center"),
     expiry: headers.indexOf("Access Expiry (DD-MM-YY)"),
-    phone: headers.indexOf("Phone")
+    phone: headers.indexOf("Phone"),
+    // Using Phone as a unique ID for sent-tracking
+    id: headers.indexOf("Phone") 
   };
 
   const today = new Date(); today.setHours(0,0,0,0);
   
-  // Filter for Active Members only
   activeUsers = lines.filter(r => {
       const parts = (r[indices.expiry] || "").split("-");
       if(parts.length !== 3) return false;
@@ -143,29 +163,54 @@ fetch(CSV_URL).then(r => r.text()).then(csv => {
       return expiryDate >= today;
   });
 
+  // Populate Center Dropdown
+  const centers = [...new Set(activeUsers.map(r => r[indices.center]).filter(Boolean))].sort();
+  const dropdown = document.getElementById('centerSelect');
+  centers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.innerText = c;
+      dropdown.appendChild(opt);
+  });
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('memberList').style.display = 'block';
-  document.getElementById('activeCount').innerText = activeUsers.length;
-  updateLinks();
+  renderList();
 });
 
-function updateLinks() {
+function markAsSent(phone) {
+    sentList.add(phone);
+    renderList(); // Re-render to update the colors
+}
+
+function renderList() {
   const listContainer = document.getElementById('memberList');
   const userMsg = document.getElementById('customMessage').value;
+  const targetCenter = document.getElementById('centerSelect').value;
+  
   listContainer.innerHTML = '';
 
-  activeUsers.forEach(r => {
-    const phone = (r[indices.phone] || "").replace(/\D/g, "").slice(-10);
-    const waUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(userMsg)}`;
+  const filtered = activeUsers.filter(r => 
+      targetCenter === "ALL" || r[indices.center] === targetCenter
+  );
+
+  document.getElementById('activeCount').innerText = filtered.length;
+
+  filtered.forEach(r => {
+    const rawPhone = (r[indices.phone] || "").replace(/\D/g, "").slice(-10);
+    const isSent = sentList.has(rawPhone);
+    const waUrl = `https://wa.me/91${rawPhone}?text=${encodeURIComponent(userMsg)}`;
 
     listContainer.innerHTML += `
       <div class="list-item">
         <div class="member-meta">
-          <span class="name-text">${r[indices.name]}</span>
+          <span class="name-text" style="${isSent ? 'color: var(--accent); text-decoration: line-through;' : ''}">${r[indices.name]}</span>
           <span class="center-tag">📍 ${r[indices.center]}</span>
         </div>
-        <a href="${waUrl}" target="_blank" class="wa-link">
-          💬 Send
+        <a href="${waUrl}" 
+           onclick="markAsSent('${rawPhone}')" 
+           target="_blank" 
+           class="wa-link ${isSent ? 'wa-sent' : 'wa-pending'}">
+          ${isSent ? '✔️ Sent' : '💬 Send'}
         </a>
       </div>
     `;
