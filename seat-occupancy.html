@@ -1,9 +1,126 @@
-// 1. AUTH CHECK
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Study ZONE | Seat Occupancy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --primary: #1e293b;
+      --accent: #2563eb;
+      --east: #0891b2;
+      --west: #4f46e5;
+      --bg-body: #f1f5f9;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: #334155;
+      margin: 0;
+      padding: 16px;
+    }
+
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 800px;
+      margin: 0 auto 24px;
+    }
+
+    .back-btn {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .branch-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      border: 1px solid var(--border);
+    }
+
+    .branch-header {
+      padding: 16px;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .east-bg { background: var(--east); }
+    .west-bg { background: var(--west); }
+
+    .slot-row {
+      padding: 16px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .slot-row:last-child { border-bottom: none; }
+
+    .slot-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .slot-name { color: #64748b; font-size: 0.9rem; text-transform: uppercase; }
+    .slot-count { color: var(--primary); font-size: 1rem; }
+
+    .progress-bg {
+      background: #e2e8f0;
+      height: 8px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 1s ease-in-out;
+    }
+
+    #loading { text-align: center; margin-top: 50px; font-weight: 600; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="header-section">
+  <a href="index.html" class="back-btn">← Back</a>
+  <h2 style="margin:0; font-size: 1.5rem;">Live Occupancy</h2>
+</div>
+
+<div id="loading">Updating Statistics...</div>
+<div class="dashboard-grid" id="branchContainer"></div>
+
+<script>
+  // 1. AUTH CHECK
   if (sessionStorage.getItem("adminAuth") !== "true") {
       location.href = "index.html";
   }
 
-  // 2. DATA SOURCE - Using the GID for Raw_Users
+  // 2. DATA SOURCE - Using your updated URL
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
@@ -27,7 +144,6 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Initializing structure for Branch mapping
     const summary = {
       "East Branch": { morning: 0, afternoon: 0, evening: 0 },
       "West Branch": { morning: 0, afternoon: 0, evening: 0 }
@@ -35,8 +151,8 @@
 
     rows.forEach(row => {
       // Step 1: Check Expiry Date (Column F)
-      const expiryStr = row["Access Expiry (DD-MM-YY)"];
-      if (!expiryStr || expiryStr.trim() === "" || expiryStr === "--") return;
+      const expiryStr = (row["Access Expiry (DD-MM-YY)"] || "").trim();
+      if (!expiryStr || expiryStr === "--") return;
 
       const parts = expiryStr.split('-');
       if (parts.length !== 3) return;
@@ -44,7 +160,7 @@
       const [day, month, year] = parts.map(Number);
       const expiryDate = new Date(2000 + year, month - 1, day);
 
-      // Only process if the subscription is NOT expired
+      // Condition: Not a past date
       if (expiryDate >= today) {
         
         // Step 2: Determine Branch based on Center (Column L)
@@ -57,19 +173,19 @@
           branchKey = "West Branch";
         }
 
-        // Step 3: Categorize Slot based on Plan (Column N)
+        // Step 3: Categorize based on Plan (Column N)
         if (branchKey) {
           const plan = (row["Plan"] || "").toLowerCase();
 
-          // Morning Logic: Includes Morning Batch, Morning+Afternoon, Morning+Evening, Full Day
+          // Morning Logic
           if (plan.includes("morning") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].morning++;
           }
-          // Afternoon Logic: Includes Afternoon Batch, Afternoon+Evening, Morning+Afternoon, Full Day
+          // Afternoon Logic
           if (plan.includes("afternoon") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].afternoon++;
           }
-          // Evening Logic: Includes Evening Batch, Morning+Evening, Afternoon+Evening, Full Day
+          // Evening Logic
           if (plan.includes("evening") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].evening++;
           }
@@ -82,7 +198,6 @@
 
   function renderUI(summary) {
     const container = document.getElementById('branchContainer');
-    if (!container) return;
     container.innerHTML = "";
 
     for (const [branchName, counts] of Object.entries(summary)) {
@@ -101,7 +216,8 @@
           </div>
           <div class="slots-list">
             ${slots.map(s => {
-              const percent = Math.min((s.val / 60) * 100, 100); 
+              const capacity = 60; // Assuming 60 seats per slot
+              const percent = Math.min((s.val / capacity) * 100, 100); 
               return `
                 <div class="slot-row">
                   <div class="slot-info">
@@ -120,3 +236,6 @@
       container.insertAdjacentHTML('beforeend', branchHtml);
     }
   }
+</script>
+</body>
+</html>
