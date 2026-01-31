@@ -1,130 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Study ZONE | Seat Occupancy</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <style>
-    :root {
-      --primary: #1e293b;
-      --accent: #2563eb;
-      --east: #0891b2;
-      --west: #4f46e5;
-      --bg-body: #f1f5f9;
-      --border: #e2e8f0;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background-color: var(--bg-body);
-      color: #334155;
-      margin: 0;
-      padding: 16px;
-    }
-
-    .header-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 800px;
-      margin: 0 auto 24px;
-    }
-
-    .back-btn {
-      background: white;
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      color: var(--primary);
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    /* BRANCH CARDS */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .branch-card {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-      border: 1px solid var(--border);
-    }
-
-    .branch-header {
-      padding: 16px;
-      color: white;
-      font-weight: 800;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .east-bg { background: var(--east); }
-    .west-bg { background: var(--west); }
-
-    .slot-row {
-      padding: 16px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .slot-row:last-child { border-bottom: none; }
-
-    .slot-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    .slot-name { color: #64748b; font-size: 0.9rem; text-transform: uppercase; }
-    .slot-count { color: var(--primary); font-size: 1rem; }
-
-    /* PROGRESS BAR */
-    .progress-bg {
-      background: #e2e8f0;
-      height: 8px;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 10px;
-      transition: width 1s ease-in-out;
-    }
-
-    #loading { text-align: center; margin-top: 50px; font-weight: 600; color: var(--accent); }
-  </style>
-</head>
-<body>
-
-<div class="header-section">
-  <a href="index.html" class="back-btn">← Back</a>
-  <h2 style="margin:0; font-size: 1.5rem;">Live Occupancy</h2>
-</div>
-
-<div id="loading">Updating Statistics...</div>
-<div class="dashboard-grid" id="branchContainer"></div>
-
-
-
-<script>
-  // 1. AUTH CHECK
+// 1. AUTH CHECK
   if (sessionStorage.getItem("adminAuth") !== "true") {
       location.href = "index.html";
   }
 
-  // 2. DATA SOURCE
+  // 2. DATA SOURCE (Raw_Users GID)
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
@@ -133,40 +12,89 @@
     skipEmptyLines: true,
     complete: function(results) {
       document.getElementById('loading').style.display = 'none';
-      renderDashboard(results.data);
+      processAndRender(results.data);
     }
   });
 
-  function renderDashboard(data) {
+  function processAndRender(rows) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Initializing structure for both branches
+    const summary = {
+      "East Branch": { morning: 0, afternoon: 0, evening: 0 },
+      "West Branch": { morning: 0, afternoon: 0, evening: 0 }
+    };
+
+    rows.forEach(row => {
+      // Logic A: Check Expiry (Column F)
+      const expiryStr = row["Access Expiry (DD-MM-YY)"];
+      if (!expiryStr || expiryStr === "--") return;
+
+      const [day, month, year] = expiryStr.split('-').map(Number);
+      const expiryDate = new Date(2000 + year, month - 1, day);
+
+      // Only proceed if subscription is active (Expiry >= Today)
+      if (expiryDate >= today) {
+        
+        // Logic B: Determine Branch (Column L - Center)
+        let branch = "";
+        const centerId = row["Center"];
+        if (centerId === "SZ_04") {
+          branch = "East Branch";
+        } else if (centerId === "SZ_01" || centerId === "SZ_03") {
+          branch = "West Branch";
+        }
+
+        // Logic C: Analyze Plan (Column N - Plan)
+        const plan = row["Plan"] || "";
+        if (branch) {
+          // Morning Check
+          if (plan.includes("Morning") || plan.includes("Full Day")) {
+            summary[branch].morning++;
+          }
+          // Afternoon Check
+          if (plan.includes("Afternoon") || plan.includes("Full Day")) {
+            summary[branch].afternoon++;
+          }
+          // Evening Check
+          if (plan.includes("Evening") || plan.includes("Full Day")) {
+            summary[branch].evening++;
+          }
+        }
+      }
+    });
+
+    renderUI(summary);
+  }
+
+  function renderUI(summary) {
     const container = document.getElementById('branchContainer');
     container.innerHTML = "";
 
-    // Grouping data by Branch
-    const branches = {};
-    data.forEach(row => {
-      const branchName = row["Branch"] || "Unknown Branch";
-      if (!branches[branchName]) branches[branchName] = [];
-      branches[branchName].push(row);
-    });
+    for (const [branchName, counts] of Object.entries(summary)) {
+      const isEast = branchName.includes("East");
+      const slots = [
+        { label: "Morning", val: counts.morning },
+        { label: "Afternoon", val: counts.afternoon },
+        { label: "Evening", val: counts.evening }
+      ];
 
-    for (const [name, slots] of Object.entries(branches)) {
-      const isEast = name.toLowerCase().includes("east");
       const branchHtml = `
         <div class="branch-card">
           <div class="branch-header ${isEast ? 'east-bg' : 'west-bg'}">
-            <span>${name}</span>
+            <span>${branchName}</span>
             <span>📍</span>
           </div>
           <div class="slots-list">
             ${slots.map(s => {
-              const count = parseInt(s["Active Count Today"]) || 0;
-              // Assuming 60 is max capacity for progress bar, adjust if needed
-              const percent = Math.min((count / 60) * 100, 100); 
+              // Adjust capacity (60) as needed for the progress bar
+              const percent = Math.min((s.val / 60) * 100, 100); 
               return `
                 <div class="slot-row">
                   <div class="slot-info">
-                    <span class="slot-name">${s["Slot"] || 'Slot'}</span>
-                    <span class="slot-count">${count} Students</span>
+                    <span class="slot-name">${s.label}</span>
+                    <span class="slot-count">${s.val} Students</span>
                   </div>
                   <div class="progress-bg">
                     <div class="progress-fill ${isEast ? 'east-bg' : 'west-bg'}" style="width: ${percent}%"></div>
@@ -180,6 +108,3 @@
       container.insertAdjacentHTML('beforeend', branchHtml);
     }
   }
-</script>
-</body>
-</html>
