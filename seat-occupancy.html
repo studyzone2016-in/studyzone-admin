@@ -18,48 +18,50 @@
 
   function processAndRender(rows) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
 
-    // Initializing structure for both branches
+    // Initializing structure for Branch mapping
     const summary = {
       "East Branch": { morning: 0, afternoon: 0, evening: 0 },
       "West Branch": { morning: 0, afternoon: 0, evening: 0 }
     };
 
     rows.forEach(row => {
-      // Logic A: Check Expiry (Column F)
+      // Step 1: Check Expiry Date (Column F: Access Expiry (DD-MM-YY))
       const expiryStr = row["Access Expiry (DD-MM-YY)"];
       if (!expiryStr || expiryStr === "--") return;
 
       const [day, month, year] = expiryStr.split('-').map(Number);
       const expiryDate = new Date(2000 + year, month - 1, day);
 
-      // Only proceed if subscription is active (Expiry >= Today)
+      // Only process if the subscription is NOT expired
       if (expiryDate >= today) {
         
-        // Logic B: Determine Branch (Column L - Center)
-        let branch = "";
+        // Step 2: Determine Branch based on Center (Column L)
+        let branchKey = "";
         const centerId = row["Center"];
+        
         if (centerId === "SZ_04") {
-          branch = "East Branch";
+          branchKey = "East Branch";
         } else if (centerId === "SZ_01" || centerId === "SZ_03") {
-          branch = "West Branch";
+          branchKey = "West Branch";
         }
 
-        // Logic C: Analyze Plan (Column N - Plan)
-        const plan = row["Plan"] || "";
-        if (branch) {
-          // Morning Check
-          if (plan.includes("Morning") || plan.includes("Full Day")) {
-            summary[branch].morning++;
+        // Step 3: Categorize Slot based on Plan (Column N)
+        if (branchKey) {
+          const plan = row["Plan"] || "";
+
+          // Morning Slots Logic
+          if (plan.includes("Morning") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+            summary[branchKey].morning++;
           }
-          // Afternoon Check
-          if (plan.includes("Afternoon") || plan.includes("Full Day")) {
-            summary[branch].afternoon++;
+          // Afternoon Slots Logic
+          if (plan.includes("Afternoon") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+            summary[branchKey].afternoon++;
           }
-          // Evening Check
-          if (plan.includes("Evening") || plan.includes("Full Day")) {
-            summary[branch].evening++;
+          // Evening Slots Logic
+          if (plan.includes("Evening") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+            summary[branchKey].evening++;
           }
         }
       }
@@ -88,7 +90,7 @@
           </div>
           <div class="slots-list">
             ${slots.map(s => {
-              // Adjust capacity (60) as needed for the progress bar
+              // Set 60 as the base capacity for the progress bar calculation
               const percent = Math.min((s.val / 60) * 100, 100); 
               return `
                 <div class="slot-row">
