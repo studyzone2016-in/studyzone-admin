@@ -8,17 +8,18 @@
 
   <style>
     :root {
-      --primary: #1f3c88;
+      --primary: #1e3a8a;
       --accent: #2563eb;
-      --bg-body: #f4f6fb;
+      --success: #16a34a;
+      --bg-body: #f1f5f9;
       --card-bg: #ffffff;
       --border: #e2e8f0;
       --text-muted: #64748b;
-      --radius: 16px;
+      --radius: 20px;
     }
 
     body {
-      font-family: "Inter", "Segoe UI", sans-serif;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
       background: var(--bg-body);
       margin: 0;
       padding: 0;
@@ -35,139 +36,143 @@
       flex-direction: column;
     }
 
-    header { text-align: center; margin-bottom: 20px; }
-    header h1 { color: var(--primary); margin: 0; font-size: 24px; font-weight: 800; }
-    header p { color: var(--text-muted); font-size: 13px; margin: 5px 0 0; }
+    header { text-align: center; margin-bottom: 25px; margin-top: 10px; }
+    header h1 { color: var(--primary); margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+    header p { color: var(--text-muted); font-size: 14px; margin: 4px 0 0; font-weight: 500; }
 
     .card {
       background: var(--card-bg);
       border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
       border: 1px solid var(--border);
       margin-bottom: 15px;
     }
 
     label { 
       font-size: 11px; 
-      font-weight: 700; 
-      color: var(--primary); 
+      font-weight: 800; 
+      color: var(--text-muted); 
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 12px;
     }
 
     /* LOGIN SCREEN */
-    #loginCard { margin-top: 50px; }
+    #loginCard { margin-top: 40px; animation: fadeIn 0.5s ease; }
     input[type="password"] {
       width: 100%;
-      padding: 14px;
-      margin: 10px 0 15px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 15px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
       box-sizing: border-box;
       font-size: 16px;
+      transition: border-color 0.2s;
     }
+    input[type="password"]:focus { border-color: var(--accent); outline: none; }
 
     /* GRID NAVIGATION */
-    #linksCard { display: none; }
+    #linksCard { display: none; animation: slideUp 0.4s ease; }
     .nav-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr); /* 3 Columns for a lively look */
       gap: 12px;
-      margin-top: 15px;
     }
 
     .nav-item {
       background: var(--card-bg);
       text-decoration: none;
-      padding: 20px 10px;
+      padding: 18px 5px;
       border-radius: var(--radius);
       text-align: center;
       border: 1px solid var(--border);
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .nav-item i { font-size: 24px; color: var(--accent); }
-    .nav-item span { font-size: 12px; font-weight: 700; color: var(--primary); }
-    .nav-item:active { transform: scale(0.95); background: #f0f7ff; }
+    .nav-item i { font-size: 22px; color: var(--accent); }
+    .nav-item span { font-size: 10.5px; font-weight: 700; color: var(--primary); }
+    
+    .nav-item:hover { border-color: var(--accent); background: #f8faff; }
+    .nav-item:active { transform: scale(0.92); background: #eef2ff; }
 
-    /* CALCULATOR - REFINED ALIGNMENT */
-    .calc-card { background: var(--primary); color: white; border: none; }
-    .calc-card label { color: rgba(255,255,255,0.8); }
+    /* CALCULATOR - GLASSMORPHISM UI */
+    .calc-card { 
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); 
+      color: white; 
+      border: none;
+      box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);
+    }
+    .calc-card label { color: rgba(255,255,255,0.7); }
     
     .calc-inputs { 
       display: flex; 
       gap: 10px; 
-      margin-top: 12px; 
-      align-items: flex-start;
+      margin-top: 10px; 
     }
 
     .calc-inputs input {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
       color: white;
-      padding: 0 12px; /* Controlled horizontal padding */
-      height: 45px;    /* Locked height for perfect alignment */
-      border-radius: 8px;
+      padding: 12px;
+      border-radius: 12px;
       width: 100%;
       outline: none;
       font-size: 15px;
       font-weight: 600;
-      box-sizing: border-box; /* Crucial for border alignment */
-      transition: border 0.2s;
-    }
-
-    .calc-inputs input:focus {
-      border: 1px solid rgba(255,255,255,0.6);
-    }
-
-    /* Dark mode calendar icon fix */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(1);
-      cursor: pointer;
+      box-sizing: border-box;
+      backdrop-filter: blur(4px);
     }
 
     .calc-display {
       background: rgba(0,0,0,0.15);
-      border-radius: 12px;
-      padding: 15px;
-      margin-top: 15px;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
       text-align: center;
       border: 1px solid rgba(255,255,255,0.1);
     }
 
     .calc-result {
       display: block;
-      font-size: 1.8rem;
-      font-weight: 800;
+      font-size: 1.6rem;
+      font-weight: 900;
       color: #ffffff;
-      margin-top: 2px;
+      letter-spacing: 1px;
     }
 
     button.primary-btn {
       width: 100%;
-      padding: 14px;
+      padding: 16px;
       background: var(--primary);
       color: white;
       border: none;
-      border-radius: 10px;
-      font-weight: 700;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 16px;
       cursor: pointer;
+      box-shadow: 0 4px 6px rgba(31, 60, 136, 0.2);
     }
 
     .logout-link {
       text-align: center;
-      margin-top: 25px;
+      margin-top: 30px;
       color: #ef4444;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      text-decoration: underline;
+      text-decoration: none;
+      opacity: 0.8;
     }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
 
@@ -176,18 +181,17 @@
 <div class="container">
   <header>
     <h1>Study ZONE</h1>
-    <p>Admin Management Portal</p>
+    <p>Admin Intelligence Portal</p>
   </header>
 
   <div class="card" id="loginCard">
-    <label>Authentication</label>
-    <input type="password" id="password" placeholder="Enter Admin Password">
-    <button class="primary-btn" onclick="login()">Login</button>
+    <label>Secure Access</label>
+    <input type="password" id="password" placeholder="Admin Password">
+    <button class="primary-btn" onclick="login()">Access Dashboard</button>
   </div>
 
   <div id="linksCard">
-    
-    <label>Management Tasks</label>
+    <label>Quick Navigation</label>
     <div class="nav-grid">
       <a href="admin-enroll-requests.html" class="nav-item">
         <i class="fas fa-file-signature"></i>
@@ -202,8 +206,16 @@
         <span>Expiries</span>
       </a>
       <a href="active-members.html" class="nav-item">
-        <i class="fas fa-users"></i>
-        <span>Members</span>
+        <i class="fas fa-users-viewfinder"></i>
+        <span>Member List</span>
+      </a>
+      <a href="Bulk_Messenger_Tool.html" class="nav-item">
+        <i class="fab fa-whatsapp"></i>
+        <span>Messenger</span>
+      </a>
+      <a href="#" class="nav-item" onclick="alert('Configuration Module Coming Soon')">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
       </a>
     </div>
 
@@ -211,8 +223,8 @@
 
     <div class="card calc-card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <label>Subscription Calculator</label>
-        <span style="font-size: 9px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">INCLUSIVE</span>
+        <label style="color:white; margin:0;">Inclusive Calculator</label>
+        <i class="fas fa-calendar-check" style="opacity: 0.6;"></i>
       </div>
       
       <div class="calc-inputs">
@@ -220,17 +232,17 @@
           <input type="date" id="startDate" onchange="runCalc()">
         </div>
         <div style="flex: 1;">
-          <input type="number" id="numDays" value="30" placeholder="Days" oninput="runCalc()">
+          <input type="number" id="numDays" value="30" oninput="runCalc()">
         </div>
       </div>
 
       <div class="calc-display">
-        <div style="font-size: 11px; opacity: 0.8; font-weight: bold; margin-bottom: 5px;">EXPIRY DATE</div>
+        <div style="font-size: 10px; opacity: 0.7; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Final Expiry Date</div>
         <span class="calc-result" id="expiryResult">-- --- ----</span>
       </div>
     </div>
 
-    <div class="logout-link" onclick="logout()">Logout Session</div>
+    <div class="logout-link" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout System</div>
   </div>
 </div>
 
@@ -241,7 +253,7 @@
       sessionStorage.setItem("adminAuth", "true");
       showDashboard();
     } else {
-      alert("Invalid Password");
+      alert("Unauthorized Access");
     }
   }
 
@@ -270,7 +282,7 @@
     const startDate = new Date(startVal);
     const totalDays = parseInt(daysVal);
     
-    // Inclusive Logic: Start + (Days - 1)
+    // Inclusive Logic: Current day counts as Day 1
     const expiryDate = new Date(startDate);
     expiryDate.setDate(startDate.getDate() + (totalDays - 1));
 
@@ -278,12 +290,12 @@
     resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options).toUpperCase();
   }
 
-  // Auth Check
+  // Auth Guard
   if (sessionStorage.getItem("adminAuth") === "true") {
     showDashboard();
   }
 
-  // Enter Key Listener
+  // Password Input Listener
   document.getElementById("password").addEventListener("keypress", function(e) {
     if (e.key === "Enter") login();
   });
