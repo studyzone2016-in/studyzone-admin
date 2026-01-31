@@ -7,7 +7,6 @@
   <style>
     :root {
       --primary: #2563eb;
-      --success: #16a34a;
       --wa-green: #25D366;
       --bg-body: #f8fafc;
       --text-main: #334155;
@@ -20,7 +19,7 @@
       background-color: var(--bg-body);
       color: var(--text-main);
       margin: 0;
-      padding: 8px; /* Reduced for screen real estate */
+      padding: 8px;
     }
 
     /* COMPACT HEADER */
@@ -67,7 +66,6 @@
       font-weight: 700;
       text-transform: uppercase;
       color: #94a3b8;
-      letter-spacing: 0.02em;
     }
 
     select {
@@ -78,12 +76,7 @@
       background: #fff;
     }
 
-    /* CENTER CHIPS - MORE COMPACT */
-    .chip-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
 
     .chip-group label {
       cursor: pointer;
@@ -91,7 +84,6 @@
       background: #f1f5f9;
       padding: 4px 10px;
       border-radius: 15px;
-      transition: all 0.2s;
     }
 
     .chip-group input { display: none; }
@@ -111,7 +103,7 @@
 
     .table-wrap { 
       overflow-x: auto; 
-      max-height: calc(100vh - 200px); /* Dynamic height based on viewport */
+      max-height: calc(100vh - 210px); 
     }
 
     table { width: 100%; border-collapse: collapse; }
@@ -131,7 +123,7 @@
     }
 
     td {
-      padding: 8px 12px; /* Reduced vertical padding */
+      padding: 10px 12px;
       font-size: 13px;
       border-bottom: 1px solid #f1f5f9;
     }
@@ -141,8 +133,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 5px 8px;
-      border-radius: 5px;
+      padding: 6px 10px;
+      border-radius: 6px;
       text-decoration: none;
       font-weight: 700;
       font-size: 11px;
@@ -307,6 +299,9 @@ function render(){
     (selCenters.length===0||selCenters.includes(r.center)) &&
     (selExpiry==='ALL'||r.expiry===selExpiry)
   ).forEach(r=>{
+    // WhatsApp logic using your specific message requirements
+    const waMessage = `🔔 Renewal Alert: Access Ends on ${r.expiry} post 10 PM - Study ZONE`;
+    
     tbody.insertAdjacentHTML('beforeend',`
       <tr>
         <td>
@@ -315,9 +310,7 @@ function render(){
         </td>
         <td>
           <a class="btn-action wa-btn" target="_blank"
-            href="https://wa.me/91${r.phone}?text=${encodeURIComponent(
-              `🔔 Renewal Alert: Your Study ZONE access ends on ${r.expiry}. Please renew to continue.`
-            )}">💬 WhatsApp</a>
+            href="https://wa.me/91${r.phone}?text=${encodeURIComponent(waMessage)}">💬 WhatsApp</a>
         </td>
         <td class="adv-col" style="display:${showAll?'table-cell':'none'}">
           <span class="phone-text">${r.phone}</span>
