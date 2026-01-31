@@ -66,6 +66,15 @@
       font-size: 1.1rem;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+    }
+
+    .total-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
     }
 
     .east-bg { background: var(--east); }
@@ -115,12 +124,10 @@
 <div class="dashboard-grid" id="branchContainer"></div>
 
 <script>
-  // 1. AUTH CHECK
   if (sessionStorage.getItem("adminAuth") !== "true") {
       location.href = "index.html";
   }
 
-  // 2. DATA SOURCE - Using your updated URL
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
@@ -134,9 +141,6 @@
       } else {
         document.getElementById('loading').innerText = "Error: No data found in CSV.";
       }
-    },
-    error: function(err) {
-      document.getElementById('loading').innerText = "Error loading CSV: " + err;
     }
   });
 
@@ -145,12 +149,11 @@
     today.setHours(0, 0, 0, 0);
 
     const summary = {
-      "East Branch": { morning: 0, afternoon: 0, evening: 0 },
-      "West Branch": { morning: 0, afternoon: 0, evening: 0 }
+      "East Branch": { morning: 0, afternoon: 0, evening: 0, totalActive: 0 },
+      "West Branch": { morning: 0, afternoon: 0, evening: 0, totalActive: 0 }
     };
 
     rows.forEach(row => {
-      // Step 1: Check Expiry Date (Column F)
       const expiryStr = (row["Access Expiry (DD-MM-YY)"] || "").trim();
       if (!expiryStr || expiryStr === "--") return;
 
@@ -160,10 +163,7 @@
       const [day, month, year] = parts.map(Number);
       const expiryDate = new Date(2000 + year, month - 1, day);
 
-      // Condition: Not a past date
       if (expiryDate >= today) {
-        
-        // Step 2: Determine Branch based on Center (Column L)
         let branchKey = "";
         const centerId = (row["Center"] || "").trim();
         
@@ -173,19 +173,16 @@
           branchKey = "West Branch";
         }
 
-        // Step 3: Categorize based on Plan (Column N)
         if (branchKey) {
+          summary[branchKey].totalActive++; // Increment total unique active users
           const plan = (row["Plan"] || "").toLowerCase();
 
-          // Morning Logic
           if (plan.includes("morning") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].morning++;
           }
-          // Afternoon Logic
           if (plan.includes("afternoon") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].afternoon++;
           }
-          // Evening Logic
           if (plan.includes("evening") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].evening++;
           }
@@ -212,11 +209,14 @@
         <div class="branch-card">
           <div class="branch-header ${isEast ? 'east-bg' : 'west-bg'}">
             <span>${branchName}</span>
-            <span>📍</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="total-badge">${counts.totalActive} Active</span>
+              <span>📍</span>
+            </div>
           </div>
           <div class="slots-list">
             ${slots.map(s => {
-              const capacity = 60; // Assuming 60 seats per slot
+              const capacity = 60;
               const percent = Math.min((s.val / capacity) * 100, 100); 
               return `
                 <div class="slot-row">
