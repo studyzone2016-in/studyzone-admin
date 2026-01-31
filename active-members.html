@@ -13,7 +13,6 @@
       --accent: #64748b;
       --border: #e2e8f0;
       --danger: #ef4444;
-      --success: #16a34a;
     }
 
     body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; }
@@ -36,13 +35,12 @@
 
     .table-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .scroll-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 750px; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
     th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; color: var(--accent); letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
     td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
     
-    .member-info { display: flex; flex-direction: column; gap: 2px; }
     .name-text { font-weight: 800; font-size: 14px; color: var(--text); }
-    .sub-detail { font-size: 11px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .sub-detail { font-size: 11px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
     
     .fees-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
     .fees-paid { background: #dcfce7; color: #15803d; }
@@ -56,8 +54,7 @@
     .days-badge { margin-top: 4px; background: #f1f5f9; color: var(--text); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; width: fit-content; border: 1px solid var(--border); }
 
     .action-group { display: flex; gap: 8px; }
-    .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 16px; transition: transform 0.1s; }
-    .icon-btn:active { transform: scale(0.9); }
+    .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 16px; }
     .btn-wa { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
     .btn-tel { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
   </style>
@@ -70,7 +67,7 @@
 </div>
 
 <div class="search-container">
-  <input type="text" id="nameSearch" placeholder="Search by name..." oninput="render()">
+  <input type="text" id="nameSearch" placeholder="Search name..." oninput="render()">
 </div>
 
 <div class="filter-bar">
@@ -86,9 +83,9 @@
       <thead>
         <tr>
           <th>Member & Center</th>
-          <th>Plan Type</th>
-          <th>Subscription Timeline</th>
-          <th>Quick Actions</th>
+          <th>Plan</th>
+          <th>Timeline (Newest First)</th>
+          <th>Contact</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -112,7 +109,6 @@ let rawData = [], filters = { center: [], fees: [], plan: [] }, indices = {};
 
 fetch(CSV_URL).then(r => r.text()).then(csv => {
   const lines = csv.trim().split("\n").map(l => {
-      // Robust CSV parsing for quoted values
       const out = []; let cur = '', qt = false;
       for (const ch of l) {
           if (ch === '"') qt = !qt;
@@ -151,10 +147,8 @@ function calculateDaysBooked(startStr, endStr) {
     const start = parseDate(startStr);
     const end = parseDate(endStr);
     if (start.getTime() === 0 || end.getTime() === 0) return "--";
-    // Difference in milliseconds + 1 day to include the start date in the count
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
+    // Inclusive counting: +1 day
+    return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 }
 
 function openDrawer(type) {
@@ -210,24 +204,22 @@ function render() {
     const matchFees = filters.fees.length === 0 || filters.fees.includes(r[indices.fees]);
     const matchPlan = filters.plan.length === 0 || filters.plan.includes(r[indices.plan]);
     return matchName && matchCenter && matchFees && matchPlan;
-  }).sort((a,b) => parseDate(a[indices.expiry]) - parseDate(b[indices.expiry]));
+  }).sort((a,b) => parseDate(b[indices.join]) - parseDate(a[indices.join])); // SORT: LATEST START DATE FIRST
 
   document.getElementById('resultCount').innerText = filtered.length;
 
   filtered.forEach(r => {
-    const phone = r[indices.phone].replace(/\D/g, "").slice(-10);
+    const phone = (r[indices.phone] || "").replace(/\D/g, "").slice(-10);
     const daysBooked = calculateDaysBooked(r[indices.join], r[indices.expiry]);
-    const feesClass = r[indices.fees].toLowerCase().includes('paid') ? 'fees-paid' : 'fees-pending';
+    const feesClass = (r[indices.fees] || "").toLowerCase().includes('paid') ? 'fees-paid' : 'fees-pending';
 
     tbody.innerHTML += `
       <tr>
         <td>
-          <div class="member-info">
-            <span class="name-text">${r[indices.name]}</span>
-            <div class="sub-detail">
-              <span>📍 ${r[indices.center]}</span>
-              <span class="fees-badge ${feesClass}">${r[indices.fees]}</span>
-            </div>
+          <span class="name-text">${r[indices.name]}</span>
+          <div class="sub-detail">
+            <span>📍 ${r[indices.center]}</span>
+            <span class="fees-badge ${feesClass}">${r[indices.fees]}</span>
           </div>
         </td>
         <td><span class="plan-tag">${r[indices.plan]}</span></td>
