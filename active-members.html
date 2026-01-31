@@ -13,51 +13,48 @@
       --accent: #64748b;
       --border: #e2e8f0;
       --danger: #ef4444;
+      --success: #16a34a;
     }
 
     body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; }
 
-    /* HEADER & STATS */
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .status-pill { background: var(--primary); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
-    /* SEARCH BAR */
     .search-container { margin-bottom: 12px; }
     #nameSearch { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box; font-size: 16px; outline: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-    /* HORIZONTAL FILTER BAR */
     .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-chip { background: white; border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--accent); }
     .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-    /* DRAWER DRAWER (BOTTOM SHEET) */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1000; backdrop-filter: blur(2px); }
     .drawer { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 24px; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1001; max-height: 60vh; overflow-y: auto; }
     .drawer.open { bottom: 0; }
     .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 800; font-size: 1.1rem; }
 
-    /* TABLE LAYOUT */
     .table-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .scroll-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    table { width: 100%; border-collapse: collapse; min-width: 750px; }
     th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; color: var(--accent); letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
     td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
     
     .member-info { display: flex; flex-direction: column; gap: 2px; }
     .name-text { font-weight: 800; font-size: 14px; color: var(--text); }
     .sub-detail { font-size: 11px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    
     .fees-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
     .fees-paid { background: #dcfce7; color: #15803d; }
     .fees-pending { background: #fee2e2; color: #b91c1c; }
     
-    .plan-tag { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
-    .expiry-pill { display: inline-flex; flex-direction: column; font-size: 11px; font-weight: 600; }
-    .days-left { font-size: 10px; margin-top: 2px; padding: 1px 6px; border-radius: 10px; width: fit-content; }
-    .days-ok { background: #f1f5f9; color: var(--accent); }
-    .days-urgent { background: #fee2e2; color: var(--danger); font-weight: 800; }
+    .plan-tag { background: #eff6ff; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #dbeafe; }
+    
+    .timeline-group { display: flex; flex-direction: column; gap: 1px; font-size: 11px; }
+    .timeline-label { color: var(--accent); font-weight: 500; font-size: 10px; }
+    .timeline-val { font-weight: 700; color: var(--text); }
+    .days-badge { margin-top: 4px; background: #f1f5f9; color: var(--text); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; width: fit-content; border: 1px solid var(--border); }
 
-    /* QUICK ACTIONS */
     .action-group { display: flex; gap: 8px; }
     .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 16px; transition: transform 0.1s; }
     .icon-btn:active { transform: scale(0.9); }
@@ -88,10 +85,10 @@
     <table>
       <thead>
         <tr>
-          <th>Member & Details</th>
+          <th>Member & Center</th>
           <th>Plan Type</th>
-          <th>Expiry Timeline</th>
-          <th>Contact</th>
+          <th>Subscription Timeline</th>
+          <th>Quick Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -103,7 +100,7 @@
 <div class="drawer" id="drawer">
   <div class="drawer-header">
     <span id="drawerTitle">Filter</span>
-    <span style="color:var(--primary)" onclick="closeDrawer()">Done</span>
+    <span style="color:var(--primary); cursor: pointer;" onclick="closeDrawer()">Done</span>
   </div>
   <div id="drawerContent"></div>
 </div>
@@ -114,9 +111,19 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuG
 let rawData = [], filters = { center: [], fees: [], plan: [] }, indices = {};
 
 fetch(CSV_URL).then(r => r.text()).then(csv => {
-  const lines = csv.trim().split("\n").map(l => l.split(",").map(c => c.replace(/^"|"$/g,'').trim()));
-  const headers = lines.shift();
+  const lines = csv.trim().split("\n").map(l => {
+      // Robust CSV parsing for quoted values
+      const out = []; let cur = '', qt = false;
+      for (const ch of l) {
+          if (ch === '"') qt = !qt;
+          else if (ch === ',' && !qt) { out.push(cur.trim()); cur = ''; }
+          else cur += ch;
+      }
+      out.push(cur.trim());
+      return out.map(v => v.replace(/^"|"$/g, ''));
+  });
   
+  const headers = lines.shift();
   indices = {
     name: headers.indexOf("Full Name"),
     center: headers.indexOf("Center"),
@@ -134,8 +141,20 @@ fetch(CSV_URL).then(r => r.text()).then(csv => {
 
 function parseDate(v) {
   if (!v || v === "--") return new Date(0);
-  const [d, m, y] = v.split("-");
-  return new Date(`20${y}`, m - 1, d);
+  const parts = v.split("-");
+  if(parts.length !== 3) return new Date(0);
+  const [d, m, y] = parts.map(Number);
+  return new Date(2000 + y, m - 1, d);
+}
+
+function calculateDaysBooked(startStr, endStr) {
+    const start = parseDate(startStr);
+    const end = parseDate(endStr);
+    if (start.getTime() === 0 || end.getTime() === 0) return "--";
+    // Difference in milliseconds + 1 day to include the start date in the count
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
 }
 
 function openDrawer(type) {
@@ -143,7 +162,6 @@ function openDrawer(type) {
   const title = document.getElementById('drawerTitle');
   content.innerHTML = '';
   title.innerText = `Select ${type.toUpperCase()}`;
-  
   const colIdx = indices[type];
   const uniqueVals = [...new Set(rawData.map(r => r[colIdx]).filter(Boolean))].sort();
 
@@ -156,7 +174,6 @@ function openDrawer(type) {
       </label>
     `;
   });
-
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('drawer').classList.add('open');
 }
@@ -171,7 +188,6 @@ function toggleFilter(type, val) {
   const idx = filters[type].indexOf(val);
   if (idx > -1) filters[type].splice(idx, 1);
   else filters[type].push(val);
-  
   const chip = document.getElementById(`chip-${type}`);
   if (filters[type].length > 0) chip.classList.add('active');
   else chip.classList.remove('active');
@@ -186,7 +202,6 @@ function resetFilters() {
 function render() {
   const search = document.getElementById('nameSearch').value.toLowerCase();
   const tbody = document.getElementById('tableBody');
-  const today = new Date(); today.setHours(0,0,0,0);
   tbody.innerHTML = '';
 
   const filtered = rawData.filter(r => {
@@ -201,11 +216,8 @@ function render() {
 
   filtered.forEach(r => {
     const phone = r[indices.phone].replace(/\D/g, "").slice(-10);
-    const expiryDate = parseDate(r[indices.expiry]);
-    const diffDays = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    
+    const daysBooked = calculateDaysBooked(r[indices.join], r[indices.expiry]);
     const feesClass = r[indices.fees].toLowerCase().includes('paid') ? 'fees-paid' : 'fees-pending';
-    const urgencyClass = diffDays <= 3 ? 'days-urgent' : 'days-ok';
 
     tbody.innerHTML += `
       <tr>
@@ -220,9 +232,10 @@ function render() {
         </td>
         <td><span class="plan-tag">${r[indices.plan]}</span></td>
         <td>
-          <div class="expiry-pill">
-            <span style="color:var(--accent)">Ends: ${r[indices.expiry]}</span>
-            <span class="days-left ${urgencyClass}">${diffDays} days left</span>
+          <div class="timeline-group">
+            <div><span class="timeline-label">START:</span> <span class="timeline-val">${r[indices.join]}</span></div>
+            <div><span class="timeline-label">END:</span> <span class="timeline-val" style="color:var(--danger)">${r[indices.expiry]}</span></div>
+            <div class="days-badge">${daysBooked} Days Booked</div>
           </div>
         </td>
         <td>
