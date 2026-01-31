@@ -3,22 +3,29 @@
       location.href = "index.html";
   }
 
-  // 2. DATA SOURCE (Raw_Users GID)
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+  // 2. DATA SOURCE - Using the GID for Raw_Users
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=1348530041&single=true&output=csv";
 
   Papa.parse(CSV_URL, {
     download: true,
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-      document.getElementById('loading').style.display = 'none';
-      processAndRender(results.data);
+      if (results.data && results.data.length > 0) {
+        document.getElementById('loading').style.display = 'none';
+        processAndRender(results.data);
+      } else {
+        document.getElementById('loading').innerText = "Error: No data found in CSV.";
+      }
+    },
+    error: function(err) {
+      document.getElementById('loading').innerText = "Error loading CSV: " + err;
     }
   });
 
   function processAndRender(rows) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
+    today.setHours(0, 0, 0, 0);
 
     // Initializing structure for Branch mapping
     const summary = {
@@ -27,11 +34,14 @@
     };
 
     rows.forEach(row => {
-      // Step 1: Check Expiry Date (Column F: Access Expiry (DD-MM-YY))
+      // Step 1: Check Expiry Date (Column F)
       const expiryStr = row["Access Expiry (DD-MM-YY)"];
-      if (!expiryStr || expiryStr === "--") return;
+      if (!expiryStr || expiryStr.trim() === "" || expiryStr === "--") return;
 
-      const [day, month, year] = expiryStr.split('-').map(Number);
+      const parts = expiryStr.split('-');
+      if (parts.length !== 3) return;
+
+      const [day, month, year] = parts.map(Number);
       const expiryDate = new Date(2000 + year, month - 1, day);
 
       // Only process if the subscription is NOT expired
@@ -39,7 +49,7 @@
         
         // Step 2: Determine Branch based on Center (Column L)
         let branchKey = "";
-        const centerId = row["Center"];
+        const centerId = (row["Center"] || "").trim();
         
         if (centerId === "SZ_04") {
           branchKey = "East Branch";
@@ -49,18 +59,18 @@
 
         // Step 3: Categorize Slot based on Plan (Column N)
         if (branchKey) {
-          const plan = row["Plan"] || "";
+          const plan = (row["Plan"] || "").toLowerCase();
 
-          // Morning Slots Logic
-          if (plan.includes("Morning") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+          // Morning Logic: Includes Morning Batch, Morning+Afternoon, Morning+Evening, Full Day
+          if (plan.includes("morning") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].morning++;
           }
-          // Afternoon Slots Logic
-          if (plan.includes("Afternoon") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+          // Afternoon Logic: Includes Afternoon Batch, Afternoon+Evening, Morning+Afternoon, Full Day
+          if (plan.includes("afternoon") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].afternoon++;
           }
-          // Evening Slots Logic
-          if (plan.includes("Evening") || plan.includes("Full Day") || plan.includes("Day Plan")) {
+          // Evening Logic: Includes Evening Batch, Morning+Evening, Afternoon+Evening, Full Day
+          if (plan.includes("evening") || plan.includes("full day") || plan.includes("day plan")) {
             summary[branchKey].evening++;
           }
         }
@@ -72,6 +82,7 @@
 
   function renderUI(summary) {
     const container = document.getElementById('branchContainer');
+    if (!container) return;
     container.innerHTML = "";
 
     for (const [branchName, counts] of Object.entries(summary)) {
@@ -90,7 +101,6 @@
           </div>
           <div class="slots-list">
             ${slots.map(s => {
-              // Set 60 as the base capacity for the progress bar calculation
               const percent = Math.min((s.val / 60) * 100, 100); 
               return `
                 <div class="slot-row">
