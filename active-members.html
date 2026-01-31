@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Active Members Pro</title>
+  <title>Study ZONE | Subscription Manager Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <style>
     :root {
       --primary: #2563eb;
       --bg: #f8fafc;
-      --card: #ffffff;
       --text: #0f172a;
       --accent: #64748b;
       --border: #e2e8f0;
@@ -17,36 +16,35 @@
 
     body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; }
 
+    /* UI ELEMENTS */
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .status-pill { background: var(--primary); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    #nameSearch { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-    .search-container { margin-bottom: 12px; }
-    #nameSearch { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box; font-size: 16px; outline: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
+    /* FILTERS */
     .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
     .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-chip { background: white; border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--accent); }
+    .filter-chip { background: white; border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 12px; white-space: nowrap; cursor: pointer; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 6px; }
     .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+    /* BOTTOM SHEET DRAWER */
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1000; backdrop-filter: blur(2px); }
     .drawer { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 24px; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1001; max-height: 60vh; overflow-y: auto; }
     .drawer.open { bottom: 0; }
     .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 800; font-size: 1.1rem; }
 
+    /* DATA TABLE */
     .table-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .scroll-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 700px; }
-    th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; color: var(--accent); letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border); }
     td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
     
     .name-text { font-weight: 800; font-size: 14px; color: var(--text); }
     .sub-detail { font-size: 11px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-    
-    .fees-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
+    .fees-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; font-weight: 700; }
     .fees-paid { background: #dcfce7; color: #15803d; }
     .fees-pending { background: #fee2e2; color: #b91c1c; }
-    
-    .plan-tag { background: #eff6ff; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #dbeafe; }
     
     .timeline-group { display: flex; flex-direction: column; gap: 1px; font-size: 11px; }
     .timeline-label { color: var(--accent); font-weight: 500; font-size: 10px; }
@@ -54,21 +52,20 @@
     .days-badge { margin-top: 4px; background: #f1f5f9; color: var(--text); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; width: fit-content; border: 1px solid var(--border); }
 
     .action-group { display: flex; gap: 8px; }
-    .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 16px; }
-    .btn-wa { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .icon-btn { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; }
+    .btn-wa { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; position: relative; }
     .btn-tel { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-dot { position: absolute; top: -3px; right: -3px; background: var(--danger); width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; display: none; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h2 style="margin:0; font-size: 1.1rem;">Active Members</h2>
+  <h2 style="margin:0; font-size: 1.1rem;">Active Members Pro</h2>
   <div class="status-pill"><span id="resultCount">0</span> Active</div>
 </div>
 
-<div class="search-container">
-  <input type="text" id="nameSearch" placeholder="Search name..." oninput="render()">
-</div>
+<input type="text" id="nameSearch" placeholder="Search by name..." oninput="render()">
 
 <div class="filter-bar">
   <div class="filter-chip" id="chip-center" onclick="openDrawer('center')">📍 Center</div>
@@ -82,7 +79,7 @@
     <table>
       <thead>
         <tr>
-          <th>Member & Center</th>
+          <th>Member & Status</th>
           <th>Plan</th>
           <th>Timeline (Newest First)</th>
           <th>Contact</th>
@@ -143,19 +140,16 @@ function parseDate(v) {
   return new Date(2000 + y, m - 1, d);
 }
 
-function calculateDaysBooked(startStr, endStr) {
-    const start = parseDate(startStr);
-    const end = parseDate(endStr);
-    if (start.getTime() === 0 || end.getTime() === 0) return "--";
-    // Inclusive counting: +1 day
-    return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+function calculateDays(startStr, endStr) {
+    const s = parseDate(startStr), e = parseDate(endStr);
+    if (s.getTime() === 0 || e.getTime() === 0) return "--";
+    return Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
 }
 
 function openDrawer(type) {
   const content = document.getElementById('drawerContent');
   const title = document.getElementById('drawerTitle');
-  content.innerHTML = '';
-  title.innerText = `Select ${type.toUpperCase()}`;
+  content.innerHTML = ''; title.innerText = `Select ${type.toUpperCase()}`;
   const colIdx = indices[type];
   const uniqueVals = [...new Set(rawData.map(r => r[colIdx]).filter(Boolean))].sort();
 
@@ -204,14 +198,23 @@ function render() {
     const matchFees = filters.fees.length === 0 || filters.fees.includes(r[indices.fees]);
     const matchPlan = filters.plan.length === 0 || filters.plan.includes(r[indices.plan]);
     return matchName && matchCenter && matchFees && matchPlan;
-  }).sort((a,b) => parseDate(b[indices.join]) - parseDate(a[indices.join])); // SORT: LATEST START DATE FIRST
+  }).sort((a,b) => parseDate(b[indices.join]) - parseDate(a[indices.join]));
 
   document.getElementById('resultCount').innerText = filtered.length;
 
   filtered.forEach(r => {
     const phone = (r[indices.phone] || "").replace(/\D/g, "").slice(-10);
-    const daysBooked = calculateDaysBooked(r[indices.join], r[indices.expiry]);
-    const feesClass = (r[indices.fees] || "").toLowerCase().includes('paid') ? 'fees-paid' : 'fees-pending';
+    const daysBooked = calculateDays(r[indices.join], r[indices.expiry]);
+    const status = (r[indices.fees] || "").toLowerCase();
+    const isPaid = status.includes('paid') && !status.includes('partial');
+    
+    // SMART MESSAGE SELECTION
+    let waMessage = "";
+    if (isPaid) {
+      waMessage = `🔔 Renewal Alert: Access Ends on ${r[indices.expiry]} post 10 PM - Study ZONE`;
+    } else {
+      waMessage = `🔔 Balance Fees Reminder: Hi! Please share a date for pending fee clearance so we can update your records. Thanks! — Study ZONE`;
+    }
 
     tbody.innerHTML += `
       <tr>
@@ -219,10 +222,10 @@ function render() {
           <span class="name-text">${r[indices.name]}</span>
           <div class="sub-detail">
             <span>📍 ${r[indices.center]}</span>
-            <span class="fees-badge ${feesClass}">${r[indices.fees]}</span>
+            <span class="fees-badge ${isPaid ? 'fees-paid' : 'fees-pending'}">${r[indices.fees]}</span>
           </div>
         </td>
-        <td><span class="plan-tag">${r[indices.plan]}</span></td>
+        <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">${r[indices.plan]}</span></td>
         <td>
           <div class="timeline-group">
             <div><span class="timeline-label">START:</span> <span class="timeline-val">${r[indices.join]}</span></div>
@@ -233,7 +236,9 @@ function render() {
         <td>
           <div class="action-group">
             <a href="tel:${phone}" class="icon-btn btn-tel">📞</a>
-            <a href="https://wa.me/91${phone}?text=${encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[indices.expiry]} post 10 PM - Study ZONE`)}" class="icon-btn btn-wa">💬</a>
+            <a href="https://wa.me/91${phone}?text=${encodeURIComponent(waMessage)}" target="_blank" class="icon-btn btn-wa">
+               💬 ${!isPaid ? '<div class="alert-dot" style="display:block"></div>' : ''}
+            </a>
           </div>
         </td>
       </tr>
