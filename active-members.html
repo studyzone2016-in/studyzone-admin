@@ -4,241 +4,166 @@
   <meta charset="UTF-8">
   <title>Study ZONE | Active Members</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/universal.css">
-  
   <style>
-    /* INDUSTRY STANDARD RESET & BASE */
     :root {
       --primary: #2563eb;
       --success: #22c55e;
       --wa-green: #25D366;
-      --bg-body: #f8fafc;
+      --bg-body: #f1f5f9;
       --text-main: #1e293b;
       --border-color: #e2e8f0;
-      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
 
     body { 
-      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      font-family: 'Inter', system-ui, sans-serif; 
       background-color: var(--bg-body);
       color: var(--text-main);
       margin: 0;
-      padding: 20px;
+      padding: 16px;
     }
 
-    /* HEADER SECTION */
     .header-area {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
     }
 
-    .back-btn {
-      background: #fff;
-      border: 1px solid var(--border-color);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .back-btn:hover { background: #f1f5f9; }
-
-    h3 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-
-    /* TOOLBAR & FILTERS */
     .toolbar {
       background: white;
-      padding: 16px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: var(--shadow);
-      margin-bottom: 20px;
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
+      border: 1px solid var(--border-color);
     }
 
-    .filters {
+    /* BEST ALIGNMENT FOR FILTERS */
+    .filter-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      align-items: end;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .search-sort-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed var(--border-color);
     }
 
     .dropdown { position: relative; }
-
     .label-tag {
       display: block;
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       color: #64748b;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
-    .drop-btn, select, input[type="text"] {
+    .drop-btn, select, input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px;
       border: 1px solid var(--border-color);
-      background: #fff;
-      cursor: pointer;
       border-radius: 8px;
       font-size: 14px;
-      box-sizing: border-box;
       outline: none;
     }
-
-    .drop-btn:hover, select:hover { border-color: #cbd5e1; }
 
     .drop-list {
       display: none;
       position: absolute;
-      top: 110%;
+      top: 100%;
       left: 0;
-      z-index: 999;
+      z-index: 100;
       background: #fff;
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-      max-height: 250px;
+      box-shadow: var(--shadow);
+      max-height: 200px;
       overflow-y: auto;
       width: 100%;
     }
 
     .drop-list label {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px;
-      font-size: 14px;
+      padding: 8px 12px;
+      font-size: 13px;
       cursor: pointer;
     }
 
     .drop-list label:hover { background: #f8fafc; }
 
-    .count-box {
-      background: #eff6ff;
-      color: var(--primary);
-      border: 1px solid #bfdbfe;
-      padding: 10px;
-      font-weight: 600;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    /* TABLE STYLING */
     .table-container {
       background: white;
       border-radius: 12px;
       box-shadow: var(--shadow);
+      max-width: 1200px;
+      margin: 0 auto;
       overflow: hidden;
-      border: 1px solid var(--border-color);
     }
 
     .table-wrap { overflow-x: auto; }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 850px;
-    }
-
-    th {
-      background: #f8fafc;
-      color: #64748b;
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    td {
-      padding: 14px;
-      font-size: 14px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    tr:last-child td { border-bottom: none; }
-    tr:hover { background-color: #fbfcfe; }
-
-    /* ACTION BUTTONS */
-    .btn-group { display: flex; gap: 6px; justify-content: start; }
-
-    .action-btn {
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: none;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      transition: opacity 0.2s;
-    }
-
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th { background: #f8fafc; padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid var(--border-color); }
+    td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+    
+    .badge-plan { background: #eff6ff; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+    .btn-group { display: flex; gap: 5px; }
+    .action-btn { padding: 6px 10px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; }
     .call-btn { background: #e0f2fe; color: #0369a1; }
     .wa-btn { background: #dcfce7; color: #15803d; }
-    
-    .action-btn:hover { opacity: 0.8; }
-    .disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
 
     @media (max-width: 768px) {
-      body { padding: 12px; }
-      .header-area { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .filter-grid, .search-sort-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
 
 <div class="header-area">
-  <button class="back-btn" onclick="history.back()">← Back</button>
   <h3>Active Members</h3>
-  <div class="count-box">
-    Total Active: <span id="resultCount">0</span>
-  </div>
+  <div style="font-weight: 600;">Total: <span id="resultCount" style="color: var(--primary);">0</span></div>
 </div>
 
 <div class="toolbar">
-  <div class="filters">
-    
+  <div class="filter-grid">
     <div class="dropdown">
       <span class="label-tag">Fees Status</span>
       <div class="drop-btn" onclick="toggleDrop('feesList')">Select Status</div>
       <div class="drop-list" id="feesList"></div>
     </div>
-
     <div class="dropdown">
       <span class="label-tag">Center</span>
       <div class="drop-btn" onclick="toggleDrop('centerList')">All Centers</div>
       <div class="drop-list" id="centerList"></div>
     </div>
-
     <div class="dropdown">
       <span class="label-tag">Plan</span>
       <div class="drop-btn" onclick="toggleDrop('planList')">All Plans</div>
       <div class="drop-list" id="planList"></div>
     </div>
+  </div>
 
+  <div class="search-sort-grid">
+    <div>
+      <span class="label-tag">Search Name</span>
+      <input type="text" id="nameSearch" placeholder="Type student name..." oninput="render()">
+    </div>
     <div>
       <span class="label-tag">Sort By</span>
       <select id="sortBy" onchange="render()">
-        <option value="">Default</option>
-        <option value="joinAsc">Joining (Oldest)</option>
-        <option value="joinDesc">Joining (Newest)</option>
         <option value="expAsc">Expiry (Soonest)</option>
         <option value="expDesc">Expiry (Latest)</option>
+        <option value="joinDesc">Joining (Newest)</option>
       </select>
     </div>
-
-    <div>
-      <span class="label-tag">Search</span>
-      <input type="text" id="nameSearch" placeholder="Enter name...">
-    </div>
-
   </div>
 </div>
 
@@ -247,12 +172,13 @@
     <table>
       <thead>
         <tr>
-          <th>Full Name</th>
+          <th>Subscriber</th>
           <th>Center</th>
-          <th>Plan</th>
-          <th>Joining Date</th>
-          <th>Access Expiry</th>
-          <th>Actions</th>
+          <th>Current Plan</th>
+          <th>Joining</th>
+          <th>Expiry</th>
+          <th>Days Booked</th>
+          <th>Quick Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -261,140 +187,112 @@
 </div>
 
 <script>
-// Logic remains consistent with your provided CSV handling
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-let allRows=[], idxGlobal=null;
-
-function normalizePhone(raw){
-  if(!raw) return null;
-  let p=raw.replace(/\D/g,"");
-  if(p.startsWith("91") && p.length>10) p=p.slice(-10);
-  return /^\d{10}$/.test(p)?p:null;
-}
+let allRows=[], idxG=null;
 
 function toDate(v){
-  if(!v) return new Date(0);
+  if(!v || v === "--") return new Date(0);
   const [d,m,y]=v.split("-");
-  return new Date(`20${y}`,m-1,d);
+  return new Date(`20${y}`, m-1, d);
 }
 
-fetch(CSV_URL)
-.then(r=>r.text())
-.then(csv=>{
-  const rows=parseCSV(csv);
-  const headers=rows.shift();
+function calcDays(start, end){
+  const s = toDate(start), e = toDate(end);
+  if(s.getTime() === 0 || e.getTime() === 0) return "--";
+  const diff = Math.ceil((e - s) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : 0;
+}
 
-  idxGlobal={
-    fees:headers.indexOf("Fees Status"),
-    center:headers.indexOf("Center"),
-    plan:headers.indexOf("Plan"),
-    name:headers.indexOf("Full Name"),
-    phone:headers.indexOf("Phone"),
-    join:headers.indexOf("Joining Date (DD-MM-YY)"),
-    expiry:headers.indexOf("Access Expiry (DD-MM-YY)")
+fetch(CSV_URL).then(r=>r.text()).then(csv=>{
+  const lines = csv.trim().split("\n").map(l => l.split(",").map(c => c.replace(/^"|"$/g,'').trim()));
+  const headers = lines.shift();
+
+  idxG = {
+    fees: headers.indexOf("Fees Status"),
+    center: headers.indexOf("Center"),
+    plan: headers.indexOf("Plan"),
+    name: headers.indexOf("Full Name"),
+    phone: headers.indexOf("Phone"),
+    join: headers.indexOf("Joining Date (DD-MM-YY)"),
+    expiry: headers.indexOf("Access Expiry (DD-MM-YY)")
   };
 
-  const today=new Date(); today.setHours(0,0,0,0);
-  allRows=rows.filter(r=>toDate(r[idxGlobal.expiry])>=today);
+  const today = new Date(); today.setHours(0,0,0,0);
+  allRows = lines.filter(r => toDate(r[idxG.expiry]) >= today);
 
-  buildDropdown("feesList",idxGlobal.fees);
-  buildDropdown("centerList",idxGlobal.center);
-  buildDropdown("planList",idxGlobal.plan);
+  buildDrop("feesList", idxG.fees);
+  buildDrop("centerList", idxG.center);
+  buildDrop("planList", idxG.plan);
   render();
 });
 
-function toggleDrop(id){
-  const el=document.getElementById(id);
-  const open=el.style.display==="block";
-  closeAll();
-  if(!open) el.style.display="block";
-}
-
-function closeAll(){
-  document.querySelectorAll(".drop-list").forEach(d=>d.style.display="none");
-}
-
-function buildDropdown(id,col){
-  const box=document.getElementById(id);
-  [...new Set(allRows.map(r=>r[col]).filter(Boolean))].forEach(v=>{
-    const l=document.createElement("label");
-    l.innerHTML=`<input type="checkbox" value="${v}"> ${v}`;
-    l.querySelector("input").onchange=render;
+function buildDrop(id, col){
+  const box = document.getElementById(id);
+  [...new Set(allRows.map(r=>r[col]).filter(Boolean))].sort().forEach(v=>{
+    const l = document.createElement("label");
+    l.innerHTML = `<input type="checkbox" value="${v}"> ${v}`;
+    l.querySelector("input").onchange = render;
     box.appendChild(l);
   });
 }
 
-function selected(id){
-  return [...document.querySelectorAll(`#${id} input:checked`)].map(c=>c.value);
+function toggleDrop(id){
+  const el = document.getElementById(id);
+  const isDisp = el.style.display === "block";
+  document.querySelectorAll(".drop-list").forEach(d => d.style.display = "none");
+  if(!isDisp) el.style.display = "block";
 }
 
 function render(){
-  const tableBody = document.getElementById("tableBody");
-  tableBody.innerHTML="";
-  const f=selected("feesList"),
-        c=selected("centerList"),
-        p=selected("planList"),
-        q=document.getElementById("nameSearch").value.toLowerCase(),
-        s=document.getElementById("sortBy").value;
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  
+  const f = [...document.querySelectorAll("#feesList input:checked")].map(i=>i.value);
+  const c = [...document.querySelectorAll("#centerList input:checked")].map(i=>i.value);
+  const p = [...document.querySelectorAll("#planList input:checked")].map(i=>i.value);
+  const q = document.getElementById("nameSearch").value.toLowerCase();
+  const s = document.getElementById("sortBy").value;
 
-  let data=allRows.filter(r=>{
-    if(f.length && !f.includes(r[idxGlobal.fees])) return false;
-    if(c.length && !c.includes(r[idxGlobal.center])) return false;
-    if(p.length && !p.includes(r[idxGlobal.plan])) return false;
-    if(q && !r[idxGlobal.name].toLowerCase().includes(q)) return false;
+  let data = allRows.filter(r => {
+    if(f.length && !f.includes(r[idxG.fees])) return false;
+    if(c.length && !c.includes(r[idxG.center])) return false;
+    if(p.length && !p.includes(r[idxG.plan])) return false;
+    if(q && !r[idxG.name].toLowerCase().includes(q)) return false;
     return true;
   });
 
-  if(s){
-    data.sort((a,b)=>{
-      if(s==="joinAsc") return toDate(a[idxGlobal.join])-toDate(b[idxGlobal.join]);
-      if(s==="joinDesc") return toDate(b[idxGlobal.join])-toDate(a[idxGlobal.join]);
-      if(s==="expAsc") return toDate(a[idxGlobal.expiry])-toDate(b[idxGlobal.expiry]);
-      if(s==="expDesc") return toDate(b[idxGlobal.expiry])-toDate(a[idxGlobal.expiry]);
-    });
-  }
+  data.sort((a,b) => {
+    if(s === "expAsc") return toDate(a[idxG.expiry]) - toDate(b[idxG.expiry]);
+    if(s === "expDesc") return toDate(b[idxG.expiry]) - toDate(a[idxG.expiry]);
+    if(s === "joinDesc") return toDate(b[idxG.join]) - toDate(a[idxG.join]);
+  });
 
-  document.getElementById("resultCount").innerText=data.length;
+  document.getElementById("resultCount").innerText = data.length;
 
-  data.forEach(r=>{
-    const ph=normalizePhone(r[idxGlobal.phone]);
-    const msg=encodeURIComponent(`🔔 Renewal Alert: Access Ends on ${r[idxGlobal.expiry]}`);
-
-    tableBody.innerHTML+=`
-    <tr>
-      <td style="font-weight:600; color:var(--primary)">${r[idxGlobal.name]}</td>
-      <td>${r[idxGlobal.center]}</td>
-      <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:12px;">${r[idxGlobal.plan]}</span></td>
-      <td>${r[idxGlobal.join]}</td>
-      <td>${r[idxGlobal.expiry]}</td>
-      <td>
-        <div class="btn-group">
-          ${ph?`<button class="action-btn call-btn" onclick="location.href='tel:${ph}'">Call</button>`:`<button class="action-btn disabled">Call</button>`}
-          ${ph?`<button class="action-btn wa-btn" onclick="location.href='https://wa.me/91${ph}?text=${msg}'">WhatsApp</button>`:`<button class="action-btn disabled">WhatsApp</button>`}
-        </div>
-      </td>
-    </tr>`;
+  data.forEach(r => {
+    const phone = r[idxG.phone].replace(/\D/g,"").slice(-10);
+    const daysBooked = calcDays(r[idxG.join], r[idxG.expiry]);
+    
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-weight:700;">${r[idxG.name]}</td>
+        <td>${r[idxG.center]}</td>
+        <td><span class="badge-plan">${r[idxG.plan]}</span></td>
+        <td>${r[idxG.join]}</td>
+        <td style="color:#ef4444; font-weight:600;">${r[idxG.expiry]}</td>
+        <td style="font-weight:600;">${daysBooked} Days</td>
+        <td>
+          <div class="btn-group">
+            <a href="tel:${phone}" class="action-btn call-btn">Call</a>
+            <a href="https://wa.me/91${phone}?text=Hi ${r[idxG.name]}, your Study ZONE access ends on ${r[idxG.expiry]}." target="_blank" class="action-btn wa-btn">WhatsApp</a>
+          </div>
+        </td>
+      </tr>`;
   });
 }
 
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".dropdown")) closeAll();
-});
-document.getElementById("nameSearch").oninput=render;
-
-function parseCSV(t){
-  const r=[],row=[],c={v:""},q={v:false};
-  for(let x of t){
-    if(x=='"') q.v=!q.v;
-    else if(x==","&&!q.v){row.push(c.v);c.v="";}
-    else if(x=="\n"&&!q.v){row.push(c.v);r.push([...row]);row.length=0;c.v="";}
-    else c.v+=x;
-  }
-  row.push(c.v); r.push([...row]);
-  return r;
-}
+document.addEventListener("click", e => { if(!e.target.closest(".dropdown")) document.querySelectorAll(".drop-list").forEach(d => d.style.display = "none"); });
 </script>
-
 </body>
 </html>
