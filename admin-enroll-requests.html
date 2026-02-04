@@ -13,47 +13,36 @@
             --card: #ffffff; --line: #e2e8f0; --success: #10b981;
             --pending: #f59e0b; --text: #0f172a; --muted: #64748b; --whatsapp: #25D366;
         }
-
         body { margin: 0; padding: 16px; background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text); }
         header { display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto 20px; }
         h1 { font-size: 20px; color: var(--brand); margin: 0; }
-
         .search-container { max-width: 1000px; margin: 0 auto 15px; position: relative; }
         .search-input { width: 100%; padding: 12px 40px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; box-sizing: border-box; }
         .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--muted); }
-
         .table-card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); overflow: hidden; max-width: 1000px; margin: 0 auto; border: 1px solid var(--line); }
         table { width: 100%; border-collapse: collapse; }
         th { background: #f8fafc; color: var(--muted); padding: 16px 12px; font-size: 11px; text-transform: uppercase; font-weight: 700; text-align: left; border-bottom: 1px solid var(--line); }
         td { padding: 14px 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
-
         .status-pill { padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
         .pill-wait { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
         .pill-converted { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-
         .name-link { color: var(--brand); font-weight: 600; cursor: pointer; text-decoration: underline dotted; }
-
-        /* Modal Styles */
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; backdrop-filter: blur(4px); }
         .modal-content { background: #fff; max-width: 450px; margin: 5vh auto; border-radius: 24px; overflow: hidden; position: relative; }
         .modal-header { padding: 20px; background: var(--brand); color: #fff; display: flex; justify-content: space-between; }
         .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
-        
         .detail-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
         .detail-label { font-size: 11px; color: var(--muted); font-weight: 700; }
-        
         .status-selector { margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chip { padding: 12px; border-radius: 12px; text-align: center; font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid var(--line); transition: 0.2s; }
+        .chip { padding: 12px; border-radius: 12px; text-align: center; font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid var(--line); }
         .chip.active-wait { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
         .chip.active-done { background: #ecfdf5; border-color: var(--success); color: #047857; }
         .chip.loading { opacity: 0.5; pointer-events: none; }
-
-        .wa-action-btn { width: 100%; background: var(--whatsapp); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
+        .wa-action-btn { width: 100%; background: var(--whatsapp); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; }
         @media(max-width:600px){
             table thead { display: none; }
             table tr { display: block; padding: 12px; border-bottom: 6px solid var(--bg); }
-            table td { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: none; }
+            table td { display: flex; justify-content: space-between; padding: 6px 0; }
             table td::before { content: attr(data-label); font-size: 10px; color: var(--muted); font-weight: 700; }
         }
     </style>
@@ -105,36 +94,27 @@
 </div>
 
 <script>
-// --- CONFIGURATION ---
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-IuhJ6HwTKn0KXywn_XYKI6XN7NasfILFCxVYoyw4LZZodc0pFUlZGDVbHU2RQOaa/exec"; 
+// REPLACE WITH YOUR DEPLOYED WEB APP URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVMeHNjxE07ZbCmjiGEY8P2ib6IFfBqdvrIq4JmiUKewmRLrtDHilGEp7zOKfdhnrJcA/exec"; 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
-// ---------------------
 
 let fullData = [], activeIdx = null;
-
-function parseAndFormatDate(dateStr) {
-    if (!dateStr || dateStr === "—") return "—";
-    // Tries to handle simple slash/dash dates
-    const parts = dateStr.split(" ")[0].split(/[/ -]/);
-    if (parts.length === 3) {
-        const d = new Date(parts[2], parts[1]-1, parts[0]);
-        if(!isNaN(d)) return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-    }
-    return dateStr;
-}
 
 function renderTable(dataToRender) {
     const body = document.getElementById('tableBody');
     body.innerHTML = "";
     dataToRender.forEach((row) => {
         const originalIdx = fullData.indexOf(row);
-        const statusVal = (row["Status"] && row["Status"].trim() !== "") ? row["Status"] : "Wait";
+        // FORCE DEFAULT "Wait" if status is empty or missing
+        let statusVal = row["Status"] ? row["Status"].trim() : "";
+        if (statusVal === "") statusVal = "Wait";
+        
         const statusClass = statusVal === "Converted" ? "pill-converted" : "pill-wait";
         
         body.innerHTML += `
             <tr>
                 <td data-label="Status"><span class="status-pill ${statusClass}">${statusVal}</span></td>
-                <td data-label="Date">${parseAndFormatDate(row["Timestamp"])}</td>
+                <td data-label="Date">${row["Timestamp"] || "—"}</td>
                 <td data-label="Name"><a class="name-link" onclick="openRequest(${originalIdx})">${row["Full Name"] || "Unnamed"}</a></td>
                 <td data-label="Mobile">${row["Mobile Number"] || "—"}</td>
             </tr>`;
@@ -145,7 +125,7 @@ function filterTable() {
     const term = document.getElementById('searchInput').value.toLowerCase();
     const filtered = fullData.filter(row => 
         (row["Full Name"] && row["Full Name"].toLowerCase().includes(term)) ||
-        (row["Mobile Number"] && row["Mobile Number"].toLowerCase().includes(term))
+        (row["Mobile Number"] && row["Mobile Number"].includes(term))
     );
     renderTable(filtered);
 }
@@ -168,7 +148,7 @@ function openRequest(idx) {
 }
 
 function updateChipUI(status) {
-    document.getElementById('chipWait').className = status === 'Wait' ? 'chip active-wait' : 'chip';
+    document.getElementById('chipWait').className = (status === 'Wait' || status === '') ? 'chip active-wait' : 'chip';
     document.getElementById('chipDone').className = status === 'Converted' ? 'chip active-done' : 'chip';
 }
 
@@ -178,10 +158,10 @@ async function updateStatusOnSheet(newStatus) {
     chips.forEach(c => c.classList.add('loading'));
     
     try {
-        // Use no-cors for Google Apps Script to avoid pre-flight errors
         await fetch(SCRIPT_URL, {
             method: "POST",
-            mode: "no-cors",
+            mode: "no-cors", // Required for Apps Script
+            cache: "no-cache",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 timestamp: row["Timestamp"],
@@ -189,13 +169,13 @@ async function updateStatusOnSheet(newStatus) {
             })
         });
 
-        // Optimistic UI update
+        // Update local data and UI immediately
         fullData[activeIdx]["Status"] = newStatus;
         renderTable(fullData);
         updateChipUI(newStatus);
-        alert("Status update signal sent to Sheet.");
+        alert("Success: Status updated to " + newStatus);
     } catch (e) {
-        alert("Error updating status. Please check your App Script.");
+        alert("Error updating sheet.");
     } finally {
         chips.forEach(c => c.classList.remove('loading'));
     }
@@ -203,22 +183,18 @@ async function updateStatusOnSheet(newStatus) {
 
 function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
-    const phone = (row["Mobile Number"] || "").replace(/\s/g, ''); 
-    const message = `Hello ${row["Full Name"]}, this is from Study ZONE. Your enrollment status is currently: ${row["Status"] || 'Wait'}.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    const phone = row["Mobile Number"].replace(/\D/g, '');
+    const msg = encodeURIComponent(`Hi ${row["Full Name"]}, your enrollment is marked as ${row["Status"] || 'Wait'}.`);
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
-function closeModal() { 
-    document.getElementById('detailModal').style.display='none'; 
-}
+function closeModal() { document.getElementById('detailModal').style.display='none'; }
 
-// Initial Load
+// Load Data
 Papa.parse(CSV_URL, {
-    download: true, 
-    header: true, 
-    skipEmptyLines: true,
+    download: true, header: true, skipEmptyLines: true,
     complete: function(results) {
-        fullData = results.data.filter(r => r["Full Name"]).reverse();
+        fullData = results.data.filter(r => r["Timestamp"]).reverse();
         renderTable(fullData);
     }
 });
