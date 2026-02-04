@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Study ZONE Invoice Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #00a8e8; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; }
+        #invoice-preview { background: white; padding: 30px; border: 1px solid #ddd; min-height: 500px; }
+        .blue-text { color: #00a8e8; }
+        @media print { .no-print { display: none; } body { background: white; } .grid { display: block; } }
+    </style>
+</head>
+<body>
+
+<div class="grid">
+    <div class="card no-print">
+        <h2 class="blue-text">Invoice Entry</h2>
+        <label>Search Student</label>
+        <select id="userSelect" onchange="loadUser()"><option>Loading Students...</option></select>
+        
+        <label>Date of Issue</label>
+        <input type="date" id="issueDate">
+        
+        <label>Start Date</label>
+        <input type="date" id="startDate" oninput="calculateDates()">
+        
+        <label>Days</label>
+        <input type="number" id="numDays" value="30" oninput="calculateDates()">
+
+        <label>Received Amount (₹)</label>
+        <input type="number" id="recAmt" value="0" oninput="calculateDates()">
+        
+        <button onclick="saveAndPrint()">PRINT & SAVE TO LOG SHEET</button>
+    </div>
+
+    <div id="invoice-preview">
+        <h3 id="p-branch">Study ZONE - West Branch</h3>
+        <p>Dombivli | 📞 9987896069</p>
+        <hr>
+        <div style="display:flex; justify-content: space-between;">
+            <div>
+                <b class="blue-text">Bill To:</b><br>
+                <span id="p-name">---</span><br>
+                <span id="p-phone">---</span>
+            </div>
+            <div style="text-align:right">
+                <b class="blue-text">Date of Issue:</b><br>
+                <span id="p-issue">---</span>
+            </div>
+        </div>
+        <br>
+        <table width="100%" border="1" style="border-collapse: collapse;" cellpadding="5">
+            <thead><tr style="background:#eee"><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><span id="p-plan">Plan Name</span><br><small id="p-range"></small></td>
+                    <td><span id="p-days">30</span> Days</td>
+                    <td id="p-planCost">0</td>
+                </tr>
+                <tr>
+                    <td>Registration Fee</td>
+                    <td>1</td>
+                    <td id="p-reg">0</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="text-align:right; margin-top:15px;">
+            <b>Total: ₹<span id="p-total">0</span></b><br>
+            Received: ₹<span id="p-rec">0</span><br>
+            <b style="border-top:1px solid #000">Balance: ₹<span id="p-bal">0</span></b>
+        </div>
+        <p style="font-size:10px; margin-top:30px; color:#666">Note: All subscription payment are non-refundable and non-transferable.</p>
+    </div>
+</div>
+
+<script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzR26EHagLfruU-d4R02IX8ZvZnqDkC2T0e-rTzHtARNKtYpXsdNnmVshSQKChLYliR/exec"; // <--- PUT YOUR URL HERE
+    let sheetData = [];
+
+    // Initialize date to today
+    document.getElementById('issueDate').valueAsDate = new Date();
+
+    Papa.parse(CSV_URL, {
+        download: true, header: true,
+        complete: function(res) {
+            sheetData = res.data.filter(r => r["Full Name"]);
+            let html = '<option value="">-- Select --</option>';
+            sheetData.forEach((row, i) => html += `<option value="${i}">${row["Full Name"]}</option>`);
+            document.getElementById('userSelect').innerHTML = html;
+        }
+    });
+
+    function loadUser() {
+        let i = document.getElementById('userSelect').value;
+        if(!i) return;
+        let u = sheetData[i];
+        document.getElementById('p-name').innerText = u["Full Name"];
+        document.getElementById('p-phone').innerText = u["Mobile Number"];
+        document.getElementById('p-branch').innerText = "Study ZONE - " + (u["Preferred Branch"] || "General");
+        document.getElementById('p-plan').innerText = u["Preferred Plan"];
+        document.getElementById('p-planCost').innerText = u["Estimated Cost"];
+        document.getElementById('p-reg').innerText = u["Registration Fees"];
+        calculateDates();
+    }
+
+    function calculateDates() {
+        let start = new Date(document.getElementById('startDate').value);
+        let days = parseInt(document.getElementById('numDays').value) || 0;
+        let planCost = parseFloat(document.getElementById('p-planCost').innerText) || 0;
+        let reg = parseFloat(document.getElementById('p-reg').innerText) || 0;
+        let rec = parseFloat(document.getElementById('recAmt').value) || 0;
+
+        if(!isNaN(start.getTime())) {
+            let end = new Date(start);
+            end.setDate(start.getDate() + days);
+            document.getElementById('p-range').innerText = start.toLocaleDateString() + " to " + end.toLocaleDateString();
+        }
+        
+        let total = planCost + reg;
+        document.getElementById('p-issue').innerText = document.getElementById('issueDate').value;
+        document.getElementById('p-days').innerText = days;
+        document.getElementById('p-total').innerText = total;
+        document.getElementById('p-rec').innerText = rec;
+        document.getElementById('p-bal').innerText = total - rec;
+    }
+
+    async function saveAndPrint() {
+        const payload = {
+            issueDate: document.getElementById('p-issue').innerText,
+            branch: document.getElementById('p-branch').innerText,
+            fullName: document.getElementById('p-name').innerText,
+            mobile: document.getElementById('p-phone').innerText,
+            plan: document.getElementById('p-plan').innerText,
+            days: document.getElementById('p-days').innerText,
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('p-range').innerText.split(' to ')[1] || '',
+            total: document.getElementById('p-total').innerText,
+            received: document.getElementById('p-rec').innerText,
+            balance: document.getElementById('p-bal').innerText
+        };
+
+        try {
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            alert("Saved to log sheet!");
+            window.print();
+        } catch(e) {
+            alert("Error saving, check your Web App URL.");
+        }
+    }
+</script>
+</body>
+</html>
