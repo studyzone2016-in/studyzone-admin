@@ -43,7 +43,7 @@
             table thead { display: none; }
             table tr { display: block; padding: 12px; border-bottom: 6px solid var(--bg); }
             table td { display: flex; justify-content: space-between; padding: 6px 0; }
-            table td::before { content: attr(data-label); font-size: 10px; color: var(--muted); font-weight: 700; }
+            table td::before { content: attr(data-label); font-size: 10px; color: var(--muted); font-weight: 700; margin-right: 10px; }
         }
     </style>
 </head>
@@ -87,18 +87,29 @@
                 <div class="chip" id="chipDone" onclick="updateStatusOnSheet('Converted')">CONVERTED</div>
             </div>
             <button class="wa-action-btn" onclick="sendWhatsAppPopup()">
-                <i class="fa-brands fa-whatsapp"></i> Send Message
+                <i class="fa-brands fa-whatsapp"></i> Send Pro Message
             </button>
         </div>
     </div>
 </div>
 
 <script>
-// PASTE THE NEW URL FROM APPS SCRIPT HERE
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDMYvXyYssmZQChmFRh9P1RQq-Vrjsgav19t2v9C3XevCKW-LqrVsNS6SRN3biReJBzg/exec"; 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
 
 let fullData = [], activeIdx = null;
+
+// Helper to format date as DD MMM YYYY
+function formatDate(dateStr) {
+    if (!dateStr || dateStr === "—") return "—";
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr; 
+    const day = String(date.getDate()).padStart(2, '0');
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+}
 
 function renderTable(dataToRender) {
     const body = document.getElementById('tableBody');
@@ -107,13 +118,12 @@ function renderTable(dataToRender) {
         const originalIdx = fullData.indexOf(row);
         let statusVal = (row["Status"] || "In Wait").trim();
         if (statusVal === "") statusVal = "In Wait";
-        
         const statusClass = statusVal === "Converted" ? "pill-converted" : "pill-wait";
         
         body.innerHTML += `
             <tr>
                 <td data-label="Status"><span class="status-pill ${statusClass}">${statusVal}</span></td>
-                <td data-label="Date">${row["Timestamp"] ? row["Timestamp"].split(' ')[0] : "—"}</td>
+                <td data-label="Date">${formatDate(row["Timestamp"])}</td>
                 <td data-label="Name"><a class="name-link" onclick="openRequest(${originalIdx})">${row["Full Name"] || "No Name"}</a></td>
                 <td data-label="Mobile">${row["Mobile Number"] || "—"}</td>
             </tr>`;
@@ -138,7 +148,12 @@ function openRequest(idx) {
     let html = "";
     Object.keys(row).forEach(key => {
         if(key === "Status" || key === "Timestamp") return;
-        html += `<div class="detail-item"><div class="detail-label">${key}</div><div class="detail-value">${row[key] || "—"}</div></div>`;
+        let val = row[key] || "—";
+        // Apply date formatting if the key sounds like a date
+        if (key.toLowerCase().includes("date") || key.toLowerCase().includes("start") || key.toLowerCase().includes("end")) {
+            val = formatDate(val);
+        }
+        html += `<div class="detail-item"><div class="detail-label">${key}</div><div class="detail-value">${val}</div></div>`;
     });
     document.getElementById('modalDetailsContainer').innerHTML = html;
     
@@ -157,7 +172,6 @@ async function updateStatusOnSheet(newStatus) {
     chips.forEach(c => c.classList.add('loading'));
     
     try {
-        // We use mode: no-cors for Apps Script POST
         await fetch(SCRIPT_URL, {
             method: "POST",
             mode: "no-cors",
@@ -167,11 +181,9 @@ async function updateStatusOnSheet(newStatus) {
                 status: newStatus
             })
         });
-
         fullData[activeIdx]["Status"] = newStatus;
         renderTable(fullData);
         updateChipUI(newStatus);
-        alert("Update signal sent to Google Sheet!");
     } catch (e) {
         alert("Error updating sheet.");
     } finally {
@@ -182,8 +194,39 @@ async function updateStatusOnSheet(newStatus) {
 function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const phone = row["Mobile Number"].replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hi ${row["Full Name"]}, your enrollment status is ${row["Status"] || 'In Wait'}.`);
-    window.open(`https://wa.me/91${phone}?text=${msg}`, '_blank');
+    const name = row["Full Name"] || "Customer";
+    const branch = row["Preferred Branch"] || "Dombivli East (MIDC)";
+    const plan = row["Preferred Plan"] || "Max Plan – Full Day";
+    const startDate = formatDate(row["Start Date"] || "2026-03-01");
+    const endDate = formatDate(row["End Date"] || "2026-03-30");
+    const cost = row["Grand Total"] || "2,995";
+
+    const msg = `Namaste *${name.toUpperCase()}* 🙏
+
+Greetings from *Study ZONE*.
+
+We have received your enrollment request. Please find your summary below:
+
+🔳 *ENROLLMENT DETAILS*
+▫️ *Branch:* ${branch}
+▫️ *Plan:* ${plan}
+▫️ *Duration:* ${startDate} – ${endDate}
+▫️ *Term:* 30 Days
+
+🔳 *FEE STRUCTURE*
+▫️ Subscription: ₹2,820
+▫️ Registration: ₹175
+▫️ *Grand Total: ₹${cost}*
+
+✉️ *NEXT STEP*
+To secure your seat, please complete the payment using the QR code provided in the following message.
+
+_Kindly share the transaction screenshot for our records._
+
+Warm regards,
+*Study ZONE*`;
+
+    window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function closeModal() { document.getElementById('detailModal').style.display='none'; }
