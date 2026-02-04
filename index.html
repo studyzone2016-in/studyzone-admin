@@ -77,7 +77,7 @@
     #linksCard { display: none; animation: slideUp 0.4s ease; }
     .nav-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr); /* 3 Columns for a lively look */
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
     }
 
@@ -101,7 +101,7 @@
     .nav-item:hover { border-color: var(--accent); background: #f8faff; }
     .nav-item:active { transform: scale(0.92); background: #eef2ff; }
 
-    /* CALCULATOR - GLASSMORPHISM UI */
+    /* CALCULATOR */
     .calc-card { 
       background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); 
       color: white; 
@@ -193,7 +193,7 @@
   <div id="linksCard">
     <label>Quick Navigation</label>
     <div class="nav-grid">
-      <a href="admin-enroll-requests.html" class="nav-item">
+      <a href="requests.html" class="nav-item">
         <i class="fas fa-file-signature"></i>
         <span>Enrollments</span>
       </a>
@@ -290,12 +290,11 @@
     resultDisplay.innerText = expiryDate.toLocaleDateString('en-GB', options).toUpperCase();
   }
 
-  // Auth Guard
+  // Auth Guard - Persists even if they navigate back from requests.html
   if (sessionStorage.getItem("adminAuth") === "true") {
     showDashboard();
   }
 
-  // Password Input Listener
   document.getElementById("password").addEventListener("keypress", function(e) {
     if (e.key === "Enter") login();
   });
