@@ -5,6 +5,7 @@
     <title>Study ZONE | Requests Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -33,24 +34,29 @@
         .pill-converted { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
 
         .name-link { color: var(--brand); font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
-        .phone-link { color: var(--text); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-
+        
+        /* MODAL */
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; backdrop-filter: blur(8px); }
-        .modal-content { background: #fff; max-width: 450px; margin: 5vh auto; border-radius: 24px; position: relative; animation: slideUp 0.3s ease-out; }
+        .modal-content { background: #fff; max-width: 450px; margin: 4vh auto; border-radius: 24px; position: relative; animation: slideUp 0.3s ease-out; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .modal-header { padding: 20px; background: var(--brand); color: #fff; display: flex; justify-content: space-between; align-items: center; border-radius: 24px 24px 0 0; }
-        .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
-        .detail-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-        .detail-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
-        .detail-value { font-size: 14px; font-weight: 600; }
+        .modal-body { padding: 20px; max-height: 75vh; overflow-y: auto; }
+        .detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+        .detail-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+        .detail-value { font-size: 13px; font-weight: 600; }
 
-        .status-selector { margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chip { padding: 12px; border-radius: 12px; text-align: center; font-size: 12px; font-weight: 700; cursor: pointer; border: 2px solid var(--line); }
+        .qr-section { background: #f8fafc; border: 1px dashed var(--line); border-radius: 12px; padding: 15px; text-align: center; margin-top: 15px; }
+        #qrcode { display: inline-block; margin-top: 10px; background: white; padding: 10px; border-radius: 10px; }
+
+        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-wa { width: 100%; background: var(--whatsapp); color: white; margin-top: 15px; font-size: 15px; }
+        .btn-dl { background: var(--text); color: white; margin-top: 10px; width: 100%; font-size: 11px; }
+
+        .status-selector { margin: 15px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .chip { padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; border: 2px solid var(--line); }
         .chip.active-wait { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
         .chip.active-done { background: #ecfdf5; border-color: var(--success); color: #047857; }
-
-        .wa-action-btn { width: 100%; background: var(--whatsapp); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
 
         @media(max-width:600px){
             table thead { display: none; }
@@ -63,7 +69,7 @@
 <body>
 
 <header>
-    <h1>Enrollment Requests</h1>
+    <h1>Enrollment Manager</h1>
     <a href="index.html" style="text-decoration:none; font-size:12px; font-weight:700; color:var(--brand); background:var(--brand-light); padding:8px 16px; border-radius:8px;">BACK</a>
 </header>
 
@@ -75,12 +81,7 @@
 <div class="table-card">
     <table>
         <thead>
-            <tr>
-                <th>Status</th>
-                <th>Requested On</th>
-                <th>Subscriber Name</th>
-                <th>Mobile Number</th>
-            </tr>
+            <tr><th>Status</th><th>Requested On</th><th>Subscriber Name</th><th>Mobile Number</th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
@@ -94,13 +95,21 @@
         </div>
         <div class="modal-body">
             <div id="modalDetailsContainer"></div>
-            <p style="font-size: 10px; font-weight: 800; color: var(--muted); margin-top: 20px;">UPDATE ENROLLMENT STATUS</p>
+
+            <div class="qr-section">
+                <span style="font-size: 10px; font-weight: 800; color: var(--muted);">RECONCILIATION QR</span>
+                <div id="qrcode"></div>
+                <button class="btn btn-dl" onclick="downloadQR()"><i class="fa-solid fa-download"></i> DOWNLOAD QR FOR WHATSAPP</button>
+            </div>
+            
+            <p style="font-size: 10px; font-weight: 800; color: var(--muted); margin-top: 15px; margin-bottom: 5px;">UPDATE STATUS</p>
             <div class="status-selector">
                 <div class="chip" id="chipWait" onclick="updateStatusUI('Wait')">IN WAIT</div>
                 <div class="chip" id="chipDone" onclick="updateStatusUI('Converted')">CONVERTED</div>
             </div>
-            <button class="wa-action-btn" onclick="sendWhatsAppPopup()">
-                <i class="fa-brands fa-whatsapp"></i> Send Message Summary
+
+            <button class="btn btn-wa" onclick="sendWhatsAppPopup()">
+                <i class="fa-brands fa-whatsapp"></i> Send Confirmation Message
             </button>
         </div>
     </div>
@@ -110,33 +119,33 @@
 if(sessionStorage.getItem("adminAuth") !== "true") { location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
+const UPI_ID = "studyzonedombivli@upi";
 
 /**
- * FIXED DATE PARSER
- * Specifically handles DD/MM/YYYY HH:MM:SS format from Google Sheets
+ * RE-ENGINEERED DATE PARSER
+ * Specifically handles DD/MM/YYYY even with extra time data
  */
 function parseAndFormatDate(dateStr) {
     if (!dateStr || dateStr === "—") return "—";
-    
     try {
-        // Split date and time components
-        const [datePart] = dateStr.split(" ");
-        const parts = datePart.split(/[/ -]/);
-        
-        if (parts.length === 3) {
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1; // JS Months are 0-11
-            const year = parts[2].length === 2 ? 2000 + parseInt(parts[2], 10) : parseInt(parts[2], 10);
+        // Extract only digits to handle any separator (/, -, or space)
+        const parts = dateStr.match(/\d+/g); 
+        if (parts && parts.length >= 3) {
+            const d = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            let y = parseInt(parts[2], 10);
             
-            const d = new Date(year, month, day);
-            if (!isNaN(d.getTime())) {
-                return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+            // Correct 2-digit years
+            if (y < 100) y += 2000; 
+
+            const dateObj = new Date(y, m, d);
+            if (!isNaN(dateObj.getTime())) {
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${d.toString().padStart(2, '0')} ${months[m]} ${y}`;
             }
         }
-        return dateStr;
-    } catch (e) {
-        return dateStr;
-    }
+    } catch (e) { console.error("Parse Error", e); }
+    return dateStr;
 }
 
 function normalizeMobile(r) {
@@ -150,24 +159,41 @@ function closeModal() { document.getElementById('detailModal').style.display='no
 function openRequest(idx) {
     activeIdx = idx;
     const row = fullData[idx];
-    const container = document.getElementById('modalDetailsContainer');
     document.getElementById('modalName').innerText = row["Full Name"] || "Details";
     
     let html = "";
-    const exclude = ["Status", "Timestamp"];
+    const fields = ["Preferred Branch", "Preferred Plan", "Start Date", "No. of Days to Book", "End Date", "Grand Estimated Cost"];
     
-    Object.keys(row).forEach(key => {
-        if(exclude.includes(key)) return;
+    fields.forEach(key => {
         let val = row[key] || "—";
         if(key.toLowerCase().includes("date")) val = parseAndFormatDate(val);
         html += `<div class="detail-item"><div class="detail-label">${key}</div><div class="detail-value">${val}</div></div>`;
     });
-    container.innerHTML = html;
+    document.getElementById('modalDetailsContainer').innerHTML = html;
+
+    // Generate UPI QR with Tally Note
+    const upiUri = `upi://pay?pa=${UPI_ID}&pn=StudyZONE&am=${row["Grand Estimated Cost"] || "0"}&tn=Fees_${row["Mobile Number"]}&cu=INR`;
+    document.getElementById('qrcode').innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), { text: upiUri, width: 180, height: 180 });
 
     const status = row["Status"] || "Wait";
     document.getElementById('chipWait').className = status === 'Wait' ? 'chip active-wait' : 'chip';
     document.getElementById('chipDone').className = status === 'Converted' ? 'chip active-done' : 'chip';
     document.getElementById('detailModal').style.display = 'block';
+}
+
+function downloadQR() {
+    const canvas = document.querySelector("#qrcode canvas");
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+        const name = (fullData[activeIdx]["Full Name"] || "Student").replace(/\s/g, "_");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `QR_${name}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
 }
 
 function updateStatusUI(newStatus) {
@@ -177,60 +203,60 @@ function updateStatusUI(newStatus) {
     document.getElementById('chipDone').className = newStatus === 'Converted' ? 'chip active-done' : 'chip';
 }
 
-function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = fullData.filter(r => 
-        (r["Full Name"] || "").toLowerCase().includes(q) || 
-        (r["Mobile Number"] || "").toString().includes(q)
-    );
-    renderTable(filtered);
-}
-
 function sendWhatsAppPopup() {
     const row = fullData[activeIdx];
     const msg = `Namaste *${(row["Full Name"] || "Student").toUpperCase()}* 🙏
 
-Greetings from *Study ZONE*. We have received your enrollment request.
+Greetings from *Study ZONE*. 
 
-📌 *SUMMARY*
-• Branch: ${row["Preferred Branch"] || "—"}
-• Plan: ${row["Preferred Plan"] || "—"}
+We have received your enrollment request. Please find your summary below:
+
+📌 *ENROLLMENT SUMMARY*
+• Preferred Branch: ${row["Preferred Branch"] || "—"}
+• Preferred Plan: ${row["Preferred Plan"] || "—"}
 • Start Date: ${parseAndFormatDate(row["Start Date"])}
-• Duration: ${row["No. of Days to Book"] || "—"} Days
+• No. of Days to Book: ${row["No. of Days to Book"] || "—"}
+• End Date: ${parseAndFormatDate(row["End Date"])}
 
-💳 *FEES*
-• Grand Total: ₹${row["Grand Estimated Cost"] || "0"}
+💳 *FEE STRUCTURE*
+• Estimated Cost: ₹${row["Estimated Cost"] || "0"}
+• Registration Fees: ₹${row["Registration Fees"] || "0"}
+• *Grand Estimated Cost: ₹${row["Grand Estimated Cost"] || "0"}*
 
-Kindly complete the payment to confirm your seat. 
+To confirm your seat, kindly complete the payment using the QR code shared separately.
 
-Warm regards,
-*Study ZONE Admin*`;
+For any assistance, feel free to reach out to us.
+
+Warm regards,  
+*Study ZONE*`;
 
     window.open(`https://wa.me/${normalizeMobile(row["Mobile Number"])}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    renderTable(fullData.filter(r => (r["Full Name"] || "").toLowerCase().includes(q) || (r["Mobile Number"] || "").toString().includes(q)));
 }
 
 function renderTable(dataToRender) {
     const body = document.getElementById('tableBody');
     body.innerHTML = "";
-    
     dataToRender.forEach((row) => {
         const originalIdx = fullData.indexOf(row);
-        const statusVal = row["Status"] || "Wait"; // DEFAULT TO WAIT
+        const statusVal = row["Status"] || "Wait";
         const statusClass = statusVal === "Converted" ? "pill-converted" : "pill-wait";
-        
         body.innerHTML += `
             <tr>
                 <td data-label="Status"><span class="status-pill ${statusClass}">${statusVal}</span></td>
                 <td data-label="Requested On">${parseAndFormatDate(row["Timestamp"])}</td>
                 <td data-label="Subscriber"><a class="name-link" onclick="openRequest(${originalIdx})">${row["Full Name"] || "Unnamed"}</a></td>
-                <td data-label="Mobile"><a href="tel:${row["Mobile Number"]}" class="phone-link"><i class="fa-solid fa-phone"></i> ${row["Mobile Number"] || "—"}</a></td>
+                <td data-label="Mobile">${row["Mobile Number"] || "—"}</td>
             </tr>`;
     });
 }
 
 Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv", {
-    download: true, header: true, skipEmptyLines: true,
-    complete: function(results) {
+    download: true, header: true, complete: function(results) {
         fullData = results.data.filter(r => r["Full Name"] && r["Full Name"].trim() !== "").reverse();
         renderTable(fullData);
     }
