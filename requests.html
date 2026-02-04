@@ -35,11 +35,9 @@
         .modal-body { padding: 20px; }
         .qr-section { background: #f8fafc; border: 1px dashed var(--line); border-radius: 12px; padding: 15px; text-align: center; margin-top: 15px; }
         #qrcode { display: inline-block; margin-top: 10px; border: 8px solid white; border-radius: 8px; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
         .btn-wa { background: var(--whatsapp); color: white; width: 100%; margin-top: 15px; font-size: 15px; }
-        .btn-pdf { background: #ef4444; color: white; }
-        .btn-status { background: var(--brand); color: white; }
+        .btn-status { background: var(--brand); color: white; width: 100%; margin-bottom: 10px; }
         @media(max-width:600px){
             table thead { display: none; }
             table tr { display: block; padding: 12px; border-bottom: 6px solid var(--bg); }
@@ -52,7 +50,7 @@
 
 <header>
     <h1>Enrollment Manager</h1>
-    <a href="index.html" style="text-decoration:none; color:var(--brand); font-weight:700; background: var(--brand-light); padding: 8px 15px; border-radius: 8px;">BACK</a>
+    <a href="index.html" style="text-decoration:none; color:var(--brand); font-weight:700; background: #eef2ff; padding: 8px 15px; border-radius: 8px;">BACK</a>
 </header>
 
 <div class="search-container">
@@ -84,18 +82,15 @@
             <div id="modalDetailsContainer"></div>
             
             <div class="qr-section">
-                <span style="font-size: 10px; font-weight: 800; color: var(--muted);">SCAN FOR DIRECT PAYMENT</span>
+                <span style="font-size: 10px; font-weight: 800; color: var(--muted);">RECONCILIATION UPI QR</span>
                 <div id="qrcode"></div>
                 <p id="upiHint" style="font-size: 10px; margin-top: 5px; color: var(--brand); font-weight: 700;"></p>
             </div>
 
-            <div class="action-grid">
-                <button class="btn btn-status" id="toggleStatusBtn" onclick="toggleStatus()">Mark Converted</button>
-                <button class="btn btn-pdf" onclick="generateInvoicePDF()"><i class="fa-solid fa-file-pdf"></i> Invoice</button>
-            </div>
+            <button class="btn btn-status" id="toggleStatusBtn" onclick="toggleStatus()">Mark Converted</button>
 
             <button class="btn btn-wa" onclick="sendWhatsAppSummary()">
-                <i class="fa-brands fa-whatsapp"></i> Confirm & Send Payment Link
+                <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Summary
             </button>
         </div>
     </div>
@@ -105,15 +100,32 @@
 if(sessionStorage.getItem("adminAuth") !== "true") { location.href="index.html"; }
 
 let fullData = [], activeIdx = null;
-const UPI_ID = "studyzonedombivli@upi"; // NEW UPI ID AS REQUESTED
+const UPI_ID = "studyzonedombivli@upi";
 
+/**
+ * FIXED DATE PARSER
+ * Targets DD/MM/YYYY format specifically to avoid 1906 issue
+ */
 function parseAndFormatDate(dateStr) {
     if (!dateStr || dateStr === "—") return "—";
-    const parts = dateStr.split(" ")[0].split(/[/ -]/);
-    if (parts.length === 3) {
-        const d = new Date(parts[2], parts[1]-1, parts[0]);
-        return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-    }
+    try {
+        const cleanStr = dateStr.split(" ")[0]; // Remove time if exists
+        const parts = cleanStr.split(/[/ -]/);
+        
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            let year = parts[2];
+            // Fix 2-digit years if present
+            if (year.length === 2) year = "20" + year;
+            const yearInt = parseInt(year, 10);
+            
+            const d = new Date(yearInt, month, day);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+            }
+        }
+    } catch (e) { console.error("Date Error", e); }
     return dateStr;
 }
 
@@ -135,7 +147,6 @@ function openRequest(idx) {
     });
     document.getElementById('modalDetailsContainer').innerHTML = html;
 
-    // Generate UPI QR
     const amount = row["Grand Estimated Cost"] || "0";
     const mobile = row["Mobile Number"] || "0";
     const refID = `SZ${mobile}${Date.now().toString().slice(-3)}`;
@@ -143,7 +154,7 @@ function openRequest(idx) {
     
     document.getElementById('qrcode').innerHTML = "";
     new QRCode(document.getElementById("qrcode"), { text: upiUri, width: 140, height: 140 });
-    document.getElementById('upiHint').innerText = `Ref: ${refID}`;
+    document.getElementById('upiHint').innerText = `Tally Ref: ${refID}`;
     document.getElementById('detailModal').style.display = 'block';
 }
 
@@ -158,11 +169,7 @@ function sendWhatsAppSummary() {
     const row = fullData[activeIdx];
     const name = (row["Full Name"] || "Subscriber").toUpperCase();
     const amount = row["Grand Estimated Cost"] || "0";
-    const refID = document.getElementById('upiHint').innerText.split(': ')[1];
     
-    // THE UPI PAY LINK FOR CLICKABLE WHATSAPP ACTION
-    const upiPayLink = `upi://pay?pa=${UPI_ID}&pn=Study%20ZONE&am=${amount}&tn=Fees_${name.split(' ')[0]}&tr=${refID}&cu=INR`;
-
     const msg = `Namaste *${name}* 🙏
 
 Greetings from *Study ZONE*. 
@@ -181,11 +188,12 @@ We have received your enrollment request. Please find your summary below:
 • Registration Fees: ₹${row["Registration Fees"] || "0"}
 • *Grand Estimated Cost: ₹${amount}*
 
-To confirm your seat, kindly complete the payment using the link below:
+To confirm your seat, kindly complete the payment using the following UPI details:
 
-👉 *Pay Now:* ${upiPayLink}
+🏦 *UPI VPA:* ${UPI_ID}
+💰 *Amount:* ₹${amount}
 
-_Note: The link will open your default UPI App (GPay/PhonePe)._
+_Please share a screenshot after payment for confirmation._
 
 For any assistance, feel free to reach out to us.
 
@@ -193,21 +201,6 @@ Warm regards,
 *Study ZONE*`;
 
     window.open(`https://wa.me/91${row["Mobile Number"]}?text=${encodeURIComponent(msg)}`, "_blank");
-}
-
-async function generateInvoicePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const row = fullData[activeIdx];
-    doc.setFont("helvetica", "bold");
-    doc.text("Study ZONE Enrollment Invoice", 20, 20);
-    doc.setFontSize(10);
-    doc.text(`Student: ${row["Full Name"]}`, 20, 35);
-    doc.text(`Mobile: ${row["Mobile Number"]}`, 20, 42);
-    doc.text(`Amount: INR ${row["Grand Estimated Cost"]}`, 20, 49);
-    doc.text(`Status: ${row["Status"] || "Wait"}`, 20, 56);
-    doc.line(20, 60, 190, 60);
-    doc.save(`Invoice_${row["Full Name"]}.pdf`);
 }
 
 function filterTable() {
