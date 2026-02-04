@@ -7,7 +7,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -29,15 +28,22 @@
         .pill-wait { background: #fffbeb; color: #b45309; }
         .pill-converted { background: #ecfdf5; color: #047857; }
         .name-link { color: var(--brand); font-weight: 600; cursor: pointer; text-decoration: underline; }
+        
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; backdrop-filter: blur(8px); overflow-y: auto; }
-        .modal-content { background: #fff; max-width: 450px; margin: 2vh auto; border-radius: 24px; position: relative; padding-bottom: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-content { background: #fff; max-width: 450px; margin: 2vh auto; border-radius: 24px; position: relative; padding-bottom: 20px; }
         .modal-header { padding: 20px; background: var(--brand); color: #fff; display: flex; justify-content: space-between; border-radius: 24px 24px 0 0; }
         .modal-body { padding: 20px; }
-        .qr-section { background: #f8fafc; border: 1px dashed var(--line); border-radius: 12px; padding: 15px; text-align: center; margin-top: 15px; }
+        
+        .qr-section { background: #f8fafc; border: 1px dashed var(--line); border-radius: 12px; padding: 15px; text-align: center; margin-top: 15px; position: relative;}
         #qrcode { display: inline-block; margin-top: 10px; border: 8px solid white; border-radius: 8px; }
-        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+        #qrcode img { display: inline-block !important; }
+
+        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
         .btn-wa { background: var(--whatsapp); color: white; width: 100%; margin-top: 15px; font-size: 15px; }
+        .btn-dl { background: var(--text); color: white; margin-top: 10px; width: 100%; font-size: 11px; padding: 8px; }
         .btn-status { background: var(--brand); color: white; width: 100%; margin-bottom: 10px; }
+
         @media(max-width:600px){
             table thead { display: none; }
             table tr { display: block; padding: 12px; border-bottom: 6px solid var(--bg); }
@@ -82,16 +88,17 @@
             <div id="modalDetailsContainer"></div>
             
             <div class="qr-section">
-                <span style="font-size: 10px; font-weight: 800; color: var(--muted);">RECONCILIATION UPI QR</span>
+                <span style="font-size: 10px; font-weight: 800; color: var(--muted);">DYNAMIC RECONCILIATION QR</span>
                 <div id="qrcode"></div>
-                <p id="upiHint" style="font-size: 10px; margin-top: 5px; color: var(--brand); font-weight: 700;"></p>
+                <button class="btn btn-dl" onclick="downloadQR()"><i class="fa-solid fa-download"></i> SAVE QR TO GALLERY</button>
             </div>
 
-            <button class="btn btn-status" id="toggleStatusBtn" onclick="toggleStatus()">Mark Converted</button>
-
-            <button class="btn btn-wa" onclick="sendWhatsAppSummary()">
-                <i class="fa-brands fa-whatsapp"></i> Send WhatsApp Summary
-            </button>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-status" id="toggleStatusBtn" onclick="toggleStatus()">Mark Converted</button>
+                <button class="btn btn-wa" onclick="sendWhatsAppSummary()">
+                    <i class="fa-brands fa-whatsapp"></i> Send Message Summary
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -103,29 +110,26 @@ let fullData = [], activeIdx = null;
 const UPI_ID = "studyzonedombivli@upi";
 
 /**
- * FIXED DATE PARSER
- * Targets DD/MM/YYYY format specifically to avoid 1906 issue
+ * REVISITED DATE PARSER
+ * Manually splits string to prevent Year flipping to 1906
  */
 function parseAndFormatDate(dateStr) {
     if (!dateStr || dateStr === "—") return "—";
     try {
-        const cleanStr = dateStr.split(" ")[0]; // Remove time if exists
-        const parts = cleanStr.split(/[/ -]/);
+        const cleanDate = dateStr.split(" ")[0]; // Get only date part
+        const parts = cleanDate.split(/[/ -]/);
         
         if (parts.length === 3) {
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            let year = parts[2];
-            // Fix 2-digit years if present
-            if (year.length === 2) year = "20" + year;
-            const yearInt = parseInt(year, 10);
+            const d = parseInt(parts[0]);
+            const m = parseInt(parts[1]) - 1;
+            let y = parseInt(parts[2]);
+            if (y < 100) y += 2000; // Handle 2-digit years
             
-            const d = new Date(yearInt, month, day);
-            if (!isNaN(d.getTime())) {
-                return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-            }
+            const dateObj = new Date(y, m, d);
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            return `${d.toString().padStart(2, '0')} ${months[m]} ${y}`;
         }
-    } catch (e) { console.error("Date Error", e); }
+    } catch (e) { console.error("Date Parse Error", e); }
     return dateStr;
 }
 
@@ -140,7 +144,7 @@ function openRequest(idx) {
     let html = "";
     ["Preferred Branch", "Preferred Plan", "Start Date", "End Date", "Grand Estimated Cost"].forEach(key => {
         let val = row[key] || "—";
-        if(key.includes("Date")) val = parseAndFormatDate(val);
+        if(key.toLowerCase().includes("date")) val = parseAndFormatDate(val);
         html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px;">
                     <b style="color:var(--muted); font-size:11px;">${key.toUpperCase()}:</b> <span>${val}</span>
                  </div>`;
@@ -148,14 +152,28 @@ function openRequest(idx) {
     document.getElementById('modalDetailsContainer').innerHTML = html;
 
     const amount = row["Grand Estimated Cost"] || "0";
-    const mobile = row["Mobile Number"] || "0";
-    const refID = `SZ${mobile}${Date.now().toString().slice(-3)}`;
-    const upiUri = `upi://pay?pa=${UPI_ID}&pn=Study%20ZONE&am=${amount}&tn=Fees_${mobile}&tr=${refID}&cu=INR`;
+    const name = (row["Full Name"] || "Student").substring(0, 10);
+    const upiUri = `upi://pay?pa=${UPI_ID}&pn=Study%20ZONE&am=${amount}&tn=Fees_${name}&cu=INR`;
     
     document.getElementById('qrcode').innerHTML = "";
-    new QRCode(document.getElementById("qrcode"), { text: upiUri, width: 140, height: 140 });
-    document.getElementById('upiHint').innerText = `Tally Ref: ${refID}`;
+    new QRCode(document.getElementById("qrcode"), { 
+        text: upiUri, 
+        width: 180, 
+        height: 180,
+        correctLevel: QRCode.CorrectLevel.H 
+    });
+
     document.getElementById('detailModal').style.display = 'block';
+}
+
+function downloadQR() {
+    const qrImg = document.querySelector("#qrcode img");
+    if (!qrImg) { alert("QR not ready"); return; }
+    const name = fullData[activeIdx]["Full Name"] || "Student";
+    const link = document.createElement("a");
+    link.href = qrImg.src;
+    link.download = `QR_StudyZone_${name}.png`;
+    link.click();
 }
 
 function toggleStatus() {
@@ -188,12 +206,7 @@ We have received your enrollment request. Please find your summary below:
 • Registration Fees: ₹${row["Registration Fees"] || "0"}
 • *Grand Estimated Cost: ₹${amount}*
 
-To confirm your seat, kindly complete the payment using the following UPI details:
-
-🏦 *UPI VPA:* ${UPI_ID}
-💰 *Amount:* ₹${amount}
-
-_Please share a screenshot after payment for confirmation._
+To confirm your seat, kindly complete the payment using the QR code shared separately.
 
 For any assistance, feel free to reach out to us.
 
