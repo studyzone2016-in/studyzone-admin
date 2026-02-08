@@ -1,157 +1,238 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Study ZONE Invoice Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
-        button { background: #00a8e8; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; }
-        #invoice-preview { background: white; padding: 30px; border: 1px solid #ddd; min-height: 500px; }
-        .blue-text { color: #00a8e8; }
-        @media print { .no-print { display: none; } body { background: white; } .grid { display: block; } }
-    </style>
+  <meta charset="UTF-8">
+  <title>Study ZONE | Analysis Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --accent: #f59e0b;
+      --bg-body: #f1f5f9;
+      --text-main: #1e293b;
+      --border: #e2e8f0;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      margin: 0;
+      padding: 12px;
+      line-height: 1.4;
+    }
+
+    .nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .back-btn { text-decoration: none; color: var(--primary); font-weight: 600; font-size: 14px; }
+    h2 { margin: 0; font-size: 1.2rem; font-weight: 800; }
+
+    /* SECTION STYLING */
+    .section-container { margin-bottom: 40px; }
+    .section-heading {
+      background: var(--primary);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .section-heading.joining { background: #059669; } /* Green for Joinings */
+
+    /* DATA CARDS */
+    .data-card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+    }
+
+    .card-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+
+    .name-block { flex: 1; }
+    .full-name { font-weight: 800; font-size: 15px; color: #0f172a; display: block; }
+    .sub-info { font-size: 11px; color: #64748b; font-weight: 500; }
+    
+    .phone-link { 
+      font-size: 13px; 
+      color: var(--primary); 
+      text-decoration: none; 
+      font-weight: 600;
+      background: #eff6ff;
+      padding: 4px 8px;
+      border-radius: 5px;
+    }
+
+    .grid-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .detail-item label {
+      display: block;
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 1px;
+    }
+
+    .detail-item span { font-weight: 600; color: #334155; }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      background: #f1f5f9;
+    }
+    
+    .status-paid { color: #059669; background: #ecfdf5; }
+    .status-pending { color: #dc2626; background: #fef2f2; }
+
+    .spacer { height: 20px; border-top: 2px solid #cbd5e1; margin: 30px 0; }
+  </style>
 </head>
 <body>
 
-<div class="grid">
-    <div class="card no-print">
-        <h2 class="blue-text">Invoice Entry</h2>
-        <label>Search Student</label>
-        <select id="userSelect" onchange="loadUser()"><option>Loading Students...</option></select>
-        
-        <label>Date of Issue</label>
-        <input type="date" id="issueDate">
-        
-        <label>Start Date</label>
-        <input type="date" id="startDate" oninput="calculateDates()">
-        
-        <label>Days</label>
-        <input type="number" id="numDays" value="30" oninput="calculateDates()">
+<div class="nav-header">
+  <a href="index.html" class="back-btn">← Home</a>
+  <h2>Data Analysis</h2>
+</div>
 
-        <label>Received Amount (₹)</label>
-        <input type="number" id="recAmt" value="0" oninput="calculateDates()">
-        
-        <button onclick="saveAndPrint()">PRINT & SAVE TO LOG SHEET</button>
-    </div>
+<div class="section-container">
+  <div class="section-heading">🆕 Newly Created Subscribers (By Column E)</div>
+  <div id="createdContainer">Loading data...</div>
+</div>
 
-    <div id="invoice-preview">
-        <h3 id="p-branch">Study ZONE - West Branch</h3>
-        <p>Dombivli | 📞 9987896069</p>
-        <hr>
-        <div style="display:flex; justify-content: space-between;">
-            <div>
-                <b class="blue-text">Bill To:</b><br>
-                <span id="p-name">---</span><br>
-                <span id="p-phone">---</span>
-            </div>
-            <div style="text-align:right">
-                <b class="blue-text">Date of Issue:</b><br>
-                <span id="p-issue">---</span>
-            </div>
-        </div>
-        <br>
-        <table width="100%" border="1" style="border-collapse: collapse;" cellpadding="5">
-            <thead><tr style="background:#eee"><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td><span id="p-plan">Plan Name</span><br><small id="p-range"></small></td>
-                    <td><span id="p-days">30</span> Days</td>
-                    <td id="p-planCost">0</td>
-                </tr>
-                <tr>
-                    <td>Registration Fee</td>
-                    <td>1</td>
-                    <td id="p-reg">0</td>
-                </tr>
-            </tbody>
-        </table>
-        <div style="text-align:right; margin-top:15px;">
-            <b>Total: ₹<span id="p-total">0</span></b><br>
-            Received: ₹<span id="p-rec">0</span><br>
-            <b style="border-top:1px solid #000">Balance: ₹<span id="p-bal">0</span></b>
-        </div>
-        <p style="font-size:10px; margin-top:30px; color:#666">Note: All subscription payment are non-refundable and non-transferable.</p>
-    </div>
+<div class="spacer"></div>
+
+<div class="section-container">
+  <div class="section-heading joining">📅 Joining Date Latest on Top (By Column J)</div>
+  <div id="joiningContainer">Loading data...</div>
 </div>
 
 <script>
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC3P-2fO5c0kdG-rE4A9d3V54wNwH4CH6q6kM_eUqjTMr4P228wCmYZr4MtP6UN7BBoyQcWw4kc1Sy/pub?gid=0&single=true&output=csv";
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzR26EHagLfruU-d4R02IX8ZvZnqDkC2T0e-rTzHtARNKtYpXsdNnmVshSQKChLYliR/exec"; // <--- PUT YOUR URL HERE
-    let sheetData = [];
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-    // Initialize date to today
-    document.getElementById('issueDate').valueAsDate = new Date();
+function parseCSV(line){
+  const out=[]; let cur='',qt=false;
+  for(const ch of line){
+    if(ch=='"') qt=!qt;
+    else if(ch==','&&!qt){out.push(cur);cur='';}
+    else cur+=ch;
+  }
+  out.push(cur);
+  return out.map(v=>v.replace(/^"|"$/g,'').trim());
+}
 
-    Papa.parse(CSV_URL, {
-        download: true, header: true,
-        complete: function(res) {
-            sheetData = res.data.filter(r => r["Full Name"]);
-            let html = '<option value="">-- Select --</option>';
-            sheetData.forEach((row, i) => html += `<option value="${i}">${row["Full Name"]}</option>`);
-            document.getElementById('userSelect').innerHTML = html;
-        }
-    });
+function parseDate(v){
+  if(!v) return new Date(0);
+  let [d,m,y]=v.split('-').map(n=>parseInt(n,10));
+  if(y<100) y+=2000;
+  return new Date(y,m-1,d);
+}
 
-    function loadUser() {
-        let i = document.getElementById('userSelect').value;
-        if(!i) return;
-        let u = sheetData[i];
-        document.getElementById('p-name').innerText = u["Full Name"];
-        document.getElementById('p-phone').innerText = u["Mobile Number"];
-        document.getElementById('p-branch').innerText = "Study ZONE - " + (u["Preferred Branch"] || "General");
-        document.getElementById('p-plan').innerText = u["Preferred Plan"];
-        document.getElementById('p-planCost').innerText = u["Estimated Cost"];
-        document.getElementById('p-reg').innerText = u["Registration Fees"];
-        calculateDates();
-    }
+fetch(csvUrl).then(r=>r.text()).then(csv=>{
+  const lines = csv.trim().split('\n');
+  const headers = parseCSV(lines[0]);
 
-    function calculateDates() {
-        let start = new Date(document.getElementById('startDate').value);
-        let days = parseInt(document.getElementById('numDays').value) || 0;
-        let planCost = parseFloat(document.getElementById('p-planCost').innerText) || 0;
-        let reg = parseFloat(document.getElementById('p-reg').innerText) || 0;
-        let rec = parseFloat(document.getElementById('recAmt').value) || 0;
+  // Map Column Indexes based on your Sheet Structure
+  const idx = {
+    name: headers.findIndex(x => x.toLowerCase().includes('full')),
+    phone: headers.findIndex(x => x.toLowerCase().includes('phone')),
+    created: 4, // Column E (0-indexed 4)
+    expiry: headers.findIndex(x => x.toLowerCase().includes('expiry')),
+    joining: 9, // Column J (0-indexed 9)
+    center: headers.findIndex(x => x.toLowerCase().includes('center')),
+    fees: headers.findIndex(x => x.toLowerCase().includes('fees')),
+    plan: headers.findIndex(x => x.toLowerCase().includes('plan'))
+  };
 
-        if(!isNaN(start.getTime())) {
-            let end = new Date(start);
-            end.setDate(start.getDate() + days);
-            document.getElementById('p-range').innerText = start.toLocaleDateString() + " to " + end.toLocaleDateString();
-        }
-        
-        let total = planCost + reg;
-        document.getElementById('p-issue').innerText = document.getElementById('issueDate').value;
-        document.getElementById('p-days').innerText = days;
-        document.getElementById('p-total').innerText = total;
-        document.getElementById('p-rec').innerText = rec;
-        document.getElementById('p-bal').innerText = total - rec;
-    }
+  let rawData = lines.slice(1).map(l => {
+    const c = parseCSV(l);
+    return {
+      name: c[idx.name] || 'N/A',
+      phone: (c[idx.phone] || '').replace(/\D/g,'').slice(-10),
+      created: c[idx.created] || '',
+      createdDate: parseDate(c[idx.created]),
+      expiry: c[idx.expiry] || '',
+      joining: c[idx.joining] || '',
+      joiningDate: parseDate(c[idx.joining]),
+      center: c[idx.center] || 'Main',
+      fees: c[idx.fees] || 'Pending',
+      plan: c[idx.plan] || 'Basic'
+    };
+  });
 
-    async function saveAndPrint() {
-        const payload = {
-            issueDate: document.getElementById('p-issue').innerText,
-            branch: document.getElementById('p-branch').innerText,
-            fullName: document.getElementById('p-name').innerText,
-            mobile: document.getElementById('p-phone').innerText,
-            plan: document.getElementById('p-plan').innerText,
-            days: document.getElementById('p-days').innerText,
-            startDate: document.getElementById('startDate').value,
-            endDate: document.getElementById('p-range').innerText.split(' to ')[1] || '',
-            total: document.getElementById('p-total').innerText,
-            received: document.getElementById('p-rec').innerText,
-            balance: document.getElementById('p-bal').innerText
-        };
+  // --- RENDERING SECTION 1 (CREATED DATE) ---
+  const createdSort = [...rawData].sort((a,b) => b.createdDate - a.createdDate);
+  const createdContainer = document.getElementById('createdContainer');
+  createdContainer.innerHTML = '';
+  
+  createdSort.forEach(r => {
+    createdContainer.innerHTML += `
+      <div class="data-card">
+        <div class="card-row-top">
+          <div class="name-block">
+            <span class="full-name">${r.name}</span>
+            <span class="sub-info">${r.center} • ${r.fees}</span>
+          </div>
+          <a href="tel:${r.phone}" class="phone-link">📞 ${r.phone}</a>
+        </div>
+        <div class="grid-details">
+          <div class="detail-item"><label>Created</label><span>${r.created}</span></div>
+          <div class="detail-item"><label>Joining</label><span>${r.joining}</span></div>
+          <div class="detail-item"><label>Expiry</label><span>${r.expiry}</span></div>
+          <div class="detail-item"><label>Plan</label><span class="badge">${r.plan}</span></div>
+        </div>
+      </div>`;
+  });
 
-        try {
-            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            alert("Saved to log sheet!");
-            window.print();
-        } catch(e) {
-            alert("Error saving, check your Web App URL.");
-        }
-    }
+  // --- RENDERING SECTION 2 (JOINING DATE) ---
+  const joiningSort = [...rawData].sort((a,b) => b.joiningDate - a.joiningDate);
+  const joiningContainer = document.getElementById('joiningContainer');
+  joiningContainer.innerHTML = '';
+
+  joiningSort.forEach(r => {
+    joiningContainer.innerHTML += `
+      <div class="data-card">
+        <div class="card-row-top">
+          <div class="name-block">
+            <span class="full-name">${r.name}</span>
+            <span class="sub-info">${r.center} • ${r.fees}</span>
+          </div>
+          <a href="tel:${r.phone}" class="phone-link">📞 ${r.phone}</a>
+        </div>
+        <div class="grid-details">
+          <div class="detail-item"><label>Joining Date</label><span style="color:var(--primary)">${r.joining}</span></div>
+          <div class="detail-item"><label>Current Plan</label><span class="badge">${r.plan}</span></div>
+        </div>
+      </div>`;
+  });
+});
 </script>
+
 </body>
 </html>
