@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Advanced Analysis</title>
+  <title>Study ZONE | Enrollment Analysis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
@@ -22,13 +22,12 @@
     .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .back-btn { text-decoration: none; color: var(--primary); font-weight: 700; font-size: 14px; }
     
-    /* FILTERS */
     .control-panel {
       background: white;
       padding: 15px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
@@ -44,88 +43,112 @@
       background: #fff;
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-main);
     }
 
-    /* SECTION TITLE */
-    .view-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: #475569;
-      margin: 10px 4px;
-      padding-left: 8px;
-      border-left: 4px solid var(--primary);
+    .view-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e0e7ff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--primary);
     }
 
-    /* CARDS */
+    #dynamicHeading { font-size: 13px; font-weight: 800; color: #3730a3; }
+    #recordCount { font-size: 11px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+
+    /* DATA CARD STYLING */
     .data-card {
       background: white;
       border-radius: 12px;
-      padding: 14px;
+      padding: 16px;
       margin-bottom: 12px;
       border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
 
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
+    .card-header {
       border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
     }
 
-    .name-stack { display: flex; flex-direction: column; }
-    .full-name { font-weight: 800; font-size: 15px; color: #0f172a; }
-    .sub-info { font-size: 11px; color: #64748b; font-weight: 500; }
-    
-    .call-link {
-      background: #eff6ff;
-      color: var(--primary);
-      text-decoration: none;
-      padding: 6px 10px;
+    .full-name { 
+      font-size: 16px; 
+      font-weight: 900; 
+      color: #0f172a; 
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .sub-meta { font-size: 11px; color: #64748b; font-weight: 600; }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
       border-radius: 6px;
+      text-decoration: none;
       font-size: 12px;
       font-weight: 700;
-      align-self: flex-start;
     }
+
+    .btn-call { background: #eff6ff; color: var(--primary); }
+    .btn-wa { background: #ecfdf5; color: #059669; }
 
     .details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 8px;
     }
 
-    .data-item { display: flex; flex-direction: column; }
-    .data-item label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .data-item label { display: block; font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; }
     .data-item span { font-size: 12px; font-weight: 600; color: #334155; }
 
-    .empty-state { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+    .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
   </style>
 </head>
 <body>
 
 <div class="nav-header">
   <a href="index.html" class="back-btn">← Back</a>
-  <h2 style="margin:0; font-size: 1.1rem;">Study ZONE Analytics</h2>
+  <h2 style="margin:0; font-size: 1.1rem; font-weight: 800;">Study ZONE Tracker</h2>
 </div>
 
 <div class="control-panel">
   <div class="filter-group">
-    <label>Analysis Type</label>
+    <label>Analysis Mode</label>
     <select id="analysisType">
-      <option value="CREATED">New Creation (Col E)</option>
-      <option value="JOINING">Latest Joining (Col J)</option>
+      <option value="CREATED">Registration (Col E)</option>
+      <option value="JOINING">Joining (Col J)</option>
     </select>
   </div>
   <div class="filter-group">
-    <label>Select Date</label>
+    <label>Filter Date</label>
     <select id="dateFilter">
       <option value="ALL">All Dates</option>
     </select>
   </div>
 </div>
 
-<div id="dynamicHeading" class="view-title">Loading...</div>
+<div class="view-banner">
+  <span id="dynamicHeading">Loading Analysis...</span>
+  <span id="recordCount">0</span>
+</div>
+
 <div id="resultsWrapper"></div>
 
 <script>
@@ -135,10 +158,10 @@ const typeDropdown = document.getElementById('analysisType');
 const dateDropdown = document.getElementById('dateFilter');
 const resultBox = document.getElementById('resultsWrapper');
 const headingBox = document.getElementById('dynamicHeading');
+const countBox = document.getElementById('recordCount');
 
 let masterList = [];
 
-// Format "08-02-26" string to "08 Feb 2026"
 function formatPrettyDate(str) {
   if (!str) return "N/A";
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -165,14 +188,14 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
   masterList = lines.slice(1).map(l => {
     const c = parseCSV(l);
     return {
-      name: c[0] || 'Unknown',
+      name: c[0] || 'No Name Found',
       phone: (c[1] || '').replace(/\D/g,'').slice(-10),
       created: c[4] || '', 
       joining: c[9] || '', 
       expiry: c[headers.findIndex(x=>x.toLowerCase().includes('expiry'))] || '',
-      center: c[headers.findIndex(x=>x.toLowerCase().includes('center'))] || '',
-      fees: c[headers.findIndex(x=>x.toLowerCase().includes('fees'))] || '',
-      plan: c[headers.findIndex(x=>x.toLowerCase().includes('plan'))] || ''
+      center: c[headers.findIndex(x=>x.toLowerCase().includes('center'))] || 'General',
+      fees: c[headers.findIndex(x=>x.toLowerCase().includes('fees'))] || 'Unpaid',
+      plan: c[headers.findIndex(x=>x.toLowerCase().includes('plan'))] || 'Trial'
     };
   });
 
@@ -183,20 +206,14 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
 function refreshFilters() {
   const type = typeDropdown.value;
   const uniqueDates = new Set();
-  
   masterList.forEach(r => {
     const d = type === 'CREATED' ? r.created : r.joining;
     if(d) uniqueDates.add(d);
   });
-
   const sorted = [...uniqueDates].sort((a,b) => {
-    const p = (s) => { 
-      let [dd,mm,yy] = s.split('-'); 
-      return new Date(2000+parseInt(yy), mm-1, dd); 
-    };
+    const p = (s) => { let [dd,mm,yy] = s.split('-'); return new Date(2000+parseInt(yy), mm-1, dd); };
     return p(b) - p(a);
   });
-
   dateDropdown.innerHTML = '<option value="ALL">All Dates</option>';
   sorted.forEach(d => {
     dateDropdown.insertAdjacentHTML('beforeend', `<option value="${d}">${formatPrettyDate(d)}</option>`);
@@ -207,38 +224,40 @@ function renderList() {
   const type = typeDropdown.value;
   const filterDate = dateDropdown.value;
   
-  // Update Heading Text
-  const typeText = type === 'CREATED' ? 'Newly Created' : 'Latest Joinings';
-  const dateText = filterDate === 'ALL' ? 'All Records' : formatPrettyDate(filterDate);
-  headingBox.innerText = `${typeText}: ${dateText}`;
-
-  resultBox.innerHTML = '';
+  const typeLabel = type === 'CREATED' ? 'New Registrations' : 'Latest Joinings';
+  headingBox.innerText = `${typeLabel}: ${filterDate === 'ALL' ? 'History' : formatPrettyDate(filterDate)}`;
 
   let filtered = masterList.filter(r => {
     const val = type === 'CREATED' ? r.created : r.joining;
     return (filterDate === 'ALL' || val === filterDate) && val !== '';
   });
 
+  countBox.innerText = filtered.length;
+  resultBox.innerHTML = '';
+
   if(filtered.length === 0) {
-    resultBox.innerHTML = '<div class="empty-state">No matching subscribers found.</div>';
+    resultBox.innerHTML = '<div class="empty-state">No student records found.</div>';
     return;
   }
 
   filtered.forEach(r => {
     resultBox.insertAdjacentHTML('beforeend', `
       <div class="data-card">
-        <div class="card-top">
-          <div class="name-stack">
-            <span class="full-name">${r.name}</span>
-            <span class="sub-info">${r.center} • ${r.fees}</span>
-          </div>
-          <a href="tel:${r.phone}" class="call-link">📞 Call</a>
+        <div class="card-header">
+          <span class="full-name">${r.name}</span>
+          <span class="sub-meta">${r.center} • Status: ${r.fees}</span>
         </div>
+        
         <div class="details-grid">
-          <div class="data-item"><label>Created</label><span>${r.created}</span></div>
-          <div class="data-item"><label>Joining</label><span>${r.joining}</span></div>
-          <div class="data-item"><label>Expiry</label><span>${r.expiry}</span></div>
-          <div class="data-item"><label>Plan</label><span>${r.plan}</span></div>
+          <div class="data-item"><label>Registration</label><span>${r.created}</span></div>
+          <div class="data-item"><label>Joining Date</label><span>${r.joining}</span></div>
+          <div class="data-item"><label>Expiry Date</label><span>${r.expiry}</span></div>
+          <div class="data-item"><label>Subscription</label><span>${r.plan}</span></div>
+        </div>
+
+        <div class="action-row">
+          <a href="tel:${r.phone}" class="btn btn-call">📞 Call</a>
+          <a href="https://wa.me/91${r.phone}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
         </div>
       </div>
     `);
@@ -247,7 +266,7 @@ function renderList() {
 
 typeDropdown.addEventListener('change', () => { refreshFilters(); renderList(); });
 dateDropdown.addEventListener('change', renderList);
-
 </script>
+
 </body>
 </html>
