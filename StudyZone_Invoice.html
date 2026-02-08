@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Study ZONE | Data Analysis</title>
+  <title>Study ZONE | Advanced Analysis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
@@ -13,87 +13,108 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background-color: var(--bg-body);
       color: var(--text-main);
       margin: 0; padding: 12px;
     }
 
-    .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-    .back-btn { text-decoration: none; color: var(--primary); font-weight: 600; font-size: 14px; }
-    h2 { margin: 0; font-size: 1.1rem; }
-
-    /* CONTROLS */
-    .filter-card {
+    .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .back-btn { text-decoration: none; color: var(--primary); font-weight: 700; font-size: 14px; }
+    
+    /* FILTERS */
+    .control-panel {
       background: white;
       padding: 15px;
       border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       margin-bottom: 20px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
     }
 
-    .filter-group { display: flex; flex-direction: column; gap: 5px; }
-    .filter-group label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; }
     
     select {
-      padding: 8px;
-      border-radius: 6px;
+      padding: 10px;
+      border-radius: 8px;
       border: 1px solid var(--border);
       background: #fff;
       font-size: 13px;
-      outline: none;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* SECTION TITLE */
+    .view-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #475569;
+      margin: 10px 4px;
+      padding-left: 8px;
+      border-left: 4px solid var(--primary);
     }
 
     /* CARDS */
     .data-card {
       background: white;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
       border: 1px solid var(--border);
     }
 
-    .card-header {
+    .card-top {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 10px;
       padding-bottom: 8px;
-      margin-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
     }
 
-    .full-name { font-weight: 800; font-size: 15px; display: block; }
-    .sub-details { font-size: 11px; color: #64748b; }
-    .phone-btn { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600; }
+    .name-stack { display: flex; flex-direction: column; }
+    .full-name { font-weight: 800; font-size: 15px; color: #0f172a; }
+    .sub-info { font-size: 11px; color: #64748b; font-weight: 500; }
+    
+    .call-link {
+      background: #eff6ff;
+      color: var(--primary);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      align-self: flex-start;
+    }
 
-    .grid-info {
+    .details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      font-size: 12px;
+      gap: 10px;
     }
 
-    .info-box label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; }
-    .info-box span { font-weight: 600; }
+    .data-item { display: flex; flex-direction: column; }
+    .data-item label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .data-item span { font-size: 12px; font-weight: 600; color: #334155; }
 
-    .no-data { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+    .empty-state { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
   </style>
 </head>
 <body>
 
 <div class="nav-header">
   <a href="index.html" class="back-btn">← Back</a>
-  <h2 id="viewTitle">Subscriber Analysis</h2>
+  <h2 style="margin:0; font-size: 1.1rem;">Study ZONE Analytics</h2>
 </div>
 
-<div class="filter-card">
+<div class="control-panel">
   <div class="filter-group">
     <label>Analysis Type</label>
     <select id="analysisType">
-      <option value="CREATED">Created (Col E)</option>
-      <option value="JOINING">Joining (Col J)</option>
+      <option value="CREATED">New Creation (Col E)</option>
+      <option value="JOINING">Latest Joining (Col J)</option>
     </select>
   </div>
   <div class="filter-group">
@@ -104,16 +125,27 @@
   </div>
 </div>
 
-<div id="resultsContainer"></div>
+<div id="dynamicHeading" class="view-title">Loading...</div>
+<div id="resultsWrapper"></div>
 
 <script>
 const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
 
-const typeSelect = document.getElementById('analysisType');
-const dateSelect = document.getElementById('dateFilter');
-const container = document.getElementById('resultsContainer');
+const typeDropdown = document.getElementById('analysisType');
+const dateDropdown = document.getElementById('dateFilter');
+const resultBox = document.getElementById('resultsWrapper');
+const headingBox = document.getElementById('dynamicHeading');
 
-let masterData = [];
+let masterList = [];
+
+// Format "08-02-26" string to "08 Feb 2026"
+function formatPrettyDate(str) {
+  if (!str) return "N/A";
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [d, m, y] = str.split('-').map(n => parseInt(n, 10));
+  const year = y < 100 ? 2000 + y : y;
+  return `${d.toString().padStart(2, '0')} ${months[m - 1]} ${year}`;
+}
 
 function parseCSV(line){
   const out=[]; let cur='',qt=false;
@@ -130,13 +162,13 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
   const lines = csv.trim().split('\n');
   const headers = parseCSV(lines[0]);
 
-  masterData = lines.slice(1).map(l => {
+  masterList = lines.slice(1).map(l => {
     const c = parseCSV(l);
     return {
-      name: c[0] || 'N/A', // Assuming Col A is Name
-      phone: (c[1] || '').replace(/\D/g,'').slice(-10), // Assuming Col B is Phone
-      created: c[4] || '', // Col E
-      joining: c[9] || '', // Col J
+      name: c[0] || 'Unknown',
+      phone: (c[1] || '').replace(/\D/g,'').slice(-10),
+      created: c[4] || '', 
+      joining: c[9] || '', 
       expiry: c[headers.findIndex(x=>x.toLowerCase().includes('expiry'))] || '',
       center: c[headers.findIndex(x=>x.toLowerCase().includes('center'))] || '',
       fees: c[headers.findIndex(x=>x.toLowerCase().includes('fees'))] || '',
@@ -144,77 +176,77 @@ fetch(csvUrl).then(r=>r.text()).then(csv=>{
     };
   });
 
-  updateDateOptions();
-  render();
+  refreshFilters();
+  renderList();
 });
 
-function updateDateOptions() {
-  const type = typeSelect.value;
-  const dates = new Set();
+function refreshFilters() {
+  const type = typeDropdown.value;
+  const uniqueDates = new Set();
   
-  masterData.forEach(r => {
+  masterList.forEach(r => {
     const d = type === 'CREATED' ? r.created : r.joining;
-    if(d) dates.add(d);
+    if(d) uniqueDates.add(d);
   });
 
-  // Sort dates descending (Latest first)
-  const sortedDates = [...dates].sort((a,b) => {
-    const parse = (s) => {
-      let [dd,mm,yy] = s.split('-');
-      return new Date(2000+parseInt(yy), mm-1, dd);
+  const sorted = [...uniqueDates].sort((a,b) => {
+    const p = (s) => { 
+      let [dd,mm,yy] = s.split('-'); 
+      return new Date(2000+parseInt(yy), mm-1, dd); 
     };
-    return parse(b) - parse(a);
+    return p(b) - p(a);
   });
 
-  dateSelect.innerHTML = '<option value="ALL">All Dates</option>';
-  sortedDates.forEach(d => {
-    dateSelect.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`);
+  dateDropdown.innerHTML = '<option value="ALL">All Dates</option>';
+  sorted.forEach(d => {
+    dateDropdown.insertAdjacentHTML('beforeend', `<option value="${d}">${formatPrettyDate(d)}</option>`);
   });
 }
 
-function render() {
-  const type = typeSelect.value;
-  const selectedDate = dateSelect.value;
-  container.innerHTML = '';
+function renderList() {
+  const type = typeDropdown.value;
+  const filterDate = dateDropdown.value;
+  
+  // Update Heading Text
+  const typeText = type === 'CREATED' ? 'Newly Created' : 'Latest Joinings';
+  const dateText = filterDate === 'ALL' ? 'All Records' : formatPrettyDate(filterDate);
+  headingBox.innerText = `${typeText}: ${dateText}`;
 
-  let filtered = masterData.filter(r => {
-    const dateToMatch = type === 'CREATED' ? r.created : r.joining;
-    return (selectedDate === 'ALL' || dateToMatch === selectedDate) && dateToMatch !== '';
+  resultBox.innerHTML = '';
+
+  let filtered = masterList.filter(r => {
+    const val = type === 'CREATED' ? r.created : r.joining;
+    return (filterDate === 'ALL' || val === filterDate) && val !== '';
   });
 
   if(filtered.length === 0) {
-    container.innerHTML = '<div class="no-data">No records found for this selection.</div>';
+    resultBox.innerHTML = '<div class="empty-state">No matching subscribers found.</div>';
     return;
   }
 
   filtered.forEach(r => {
-    // Shared Card UI
-    const html = `
+    resultBox.insertAdjacentHTML('beforeend', `
       <div class="data-card">
-        <div class="card-header">
-          <div>
+        <div class="card-top">
+          <div class="name-stack">
             <span class="full-name">${r.name}</span>
-            <span class="sub-details">${r.center} • ${r.fees}</span>
+            <span class="sub-info">${r.center} • ${r.fees}</span>
           </div>
-          <a href="tel:${r.phone}" class="phone-btn">📞 ${r.phone}</a>
+          <a href="tel:${r.phone}" class="call-link">📞 Call</a>
         </div>
-        <div class="grid-info">
-          <div class="info-box"><label>Created</label><span>${r.created}</span></div>
-          <div class="info-box"><label>Joining</label><span>${r.joining}</span></div>
-          <div class="info-box"><label>Expiry</label><span>${r.expiry}</span></div>
-          <div class="info-box"><label>Plan</label><span>${r.plan}</span></div>
+        <div class="details-grid">
+          <div class="data-item"><label>Created</label><span>${r.created}</span></div>
+          <div class="data-item"><label>Joining</label><span>${r.joining}</span></div>
+          <div class="data-item"><label>Expiry</label><span>${r.expiry}</span></div>
+          <div class="data-item"><label>Plan</label><span>${r.plan}</span></div>
         </div>
-      </div>`;
-    container.insertAdjacentHTML('beforeend', html);
+      </div>
+    `);
   });
 }
 
-// Listeners
-typeSelect.addEventListener('change', () => {
-  updateDateOptions();
-  render();
-});
-dateSelect.addEventListener('change', render);
+typeDropdown.addEventListener('change', () => { refreshFilters(); renderList(); });
+dateDropdown.addEventListener('change', renderList);
 
 </script>
 </body>
