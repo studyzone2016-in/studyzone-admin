@@ -12,8 +12,26 @@
             margin: 20px;
             color: #333;
         }
+        /* Style for the Back Button */
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #2c3e50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .back-btn:hover {
+            background-color: #34495e;
+        }
         h2 {
             color: #2c3e50;
+            margin-top: 0;
         }
         table {
             width: 100%;
@@ -30,6 +48,7 @@
         th {
             background-color: #2c3e50;
             color: #fff;
+            white-space: nowrap;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -46,12 +65,16 @@
 </head>
 <body>
 
+    <button class="back-btn" onclick="window.history.back()">← Back</button>
+
     <h2>Calculated Admissions for Today</h2>
     <p id="loading">Fetching and processing data...</p>
 
     <table id="dataTable" style="display: none;">
         <thead>
             <tr>
+                <th>Name</th>
+                <th>Mobile</th>
                 <th>Created Date</th>
                 <th>Joining Date</th>
                 <th>Access Expiry Date</th>
@@ -70,18 +93,15 @@
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
 
-        // Helper function to parse dates formatted as DD-MM-YY or DD/MM/YY
         function parseCustomDate(dateStr) {
             if (!dateStr) return null;
-            // Split by hyphen or slash
             let parts = dateStr.trim().split(/[-/]/);
             if (parts.length !== 3) return null;
             
             let d = parseInt(parts[0], 10);
-            let m = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+            let m = parseInt(parts[1], 10) - 1; 
             let y = parseInt(parts[2], 10);
             
-            // Handle 2-digit years
             if (y < 100) y += 2000; 
 
             let parsedDate = new Date(y, m, d);
@@ -89,7 +109,6 @@
             return parsedDate;
         }
 
-        // Get today's date stripped of time for accurate comparison
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -100,7 +119,6 @@
         function calculateRate(center, plan) {
             plan = plan ? plan.trim() : "";
             center = center ? center.trim() : "";
-
             let rate = 0;
 
             if (center === 'SZ04') {
@@ -119,7 +137,6 @@
                 else if (plan.includes('Mini Batch')) rate = 25;
                 else if (plan === 'Weekend Spl') rate = 41.66666666666667;
             }
-
             return rate;
         }
 
@@ -133,7 +150,10 @@
                 let foundRecords = false;
 
                 data.forEach(row => {
-                    // Extract data from standard column headers
+                    // Extracting Name and Mobile (adjust keys if different in your Sheet)
+                    const name = row["Name"]; 
+                    const mobile = row["Mobile"];
+                    
                     const createdStr = row["Created (DD-MM-YY)"];
                     const joiningStr = row["Joining Date (DD-MM-YY)"];
                     const expiryStr = row["Access Expiry (DD-MM-YY)"];
@@ -147,32 +167,29 @@
                     const isCreatedToday = isSameDay(createdDate, today);
                     const isJoiningToday = isSameDay(joiningDate, today);
 
-                    // Condition: ONLY process if Created OR Joining is Today
                     if (isCreatedToday || isJoiningToday) {
                         foundRecords = true;
 
-                        // Calculate Days: (Expiry - Joining) + 1 inclusive day
                         let days = 0;
                         if (joiningDate && expiryDate) {
                             const msPerDay = 1000 * 60 * 60 * 24;
                             days = Math.floor((expiryDate - joiningDate) / msPerDay) + 1;
                         }
-                        if (days < 0) days = 0; // Fallback for illogical dates
+                        if (days < 0) days = 0;
 
-                        // Derive Rate and Base Amount
                         const dailyRate = calculateRate(center, plan);
                         let totalAmount = dailyRate * days;
 
-                        // Add Rs 175 Registration Fee if Created Today
                         let regFee = 0;
                         if (isCreatedToday) {
                             regFee = 175;
                             totalAmount += regFee;
                         }
 
-                        // Generate Table Row
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
+                            <td>${name || 'N/A'}</td>
+                            <td>${mobile || 'N/A'}</td>
                             <td>${createdStr || 'N/A'}</td>
                             <td>${joiningStr || 'N/A'}</td>
                             <td>${expiryStr || 'N/A'}</td>
@@ -191,7 +208,7 @@
                 document.getElementById('dataTable').style.display = 'table';
 
                 if (!foundRecords) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No records match today's date criteria.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;">No records match today's date criteria.</td></tr>`;
                 }
             },
             error: function(err) {
