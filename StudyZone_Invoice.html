@@ -24,7 +24,6 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* Ultra-compact Controls Row */
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -33,7 +32,6 @@
             margin-bottom: 10px;
         }
         
-        /* Compact Back Button */
         .back-btn {
             display: inline-flex;
             align-items: center;
@@ -85,7 +83,7 @@
             font-weight: 600;
         }
         .checkbox-item input {
-            display: none; /* Hide the actual checkbox to save space, rely on background color */
+            display: none; 
         }
 
         .loading {
@@ -197,12 +195,18 @@
 
     function populateMonthDropdown() {
         const uniqueMonths = [];
+        // Ensure chronological order for the dropdown based on standard financial year
+        const orderOfMonths = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+        
         rawData.forEach(row => {
             const m = row['Tran Month'] ? row['Tran Month'].trim() : '';
             if (m && m !== '-' && !uniqueMonths.includes(m)) {
                 uniqueMonths.push(m);
             }
         });
+
+        // Sort the dropdown months
+        uniqueMonths.sort((a, b) => orderOfMonths.indexOf(a) - orderOfMonths.indexOf(b));
 
         const monthSelect = document.getElementById('monthSelect');
         uniqueMonths.forEach(m => {
@@ -257,6 +261,25 @@
                 if (!pivotData[timeValue][remark]) pivotData[timeValue][remark] = 0;
                 
                 pivotData[timeValue][remark] += amount;
+            }
+        });
+
+        // SORTING LOGIC ADDED HERE
+        timeLabelsOrder.sort((a, b) => {
+            if (viewMode === 'daily') {
+                // Convert DD-MM-YYYY into parsable format for accurate chronological sorting
+                const partsA = a.split('-');
+                const partsB = b.split('-');
+                if (partsA.length === 3 && partsB.length === 3) {
+                    const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+                    const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+                    return dateA - dateB;
+                }
+                return 0;
+            } else {
+                // Sort months chronologically starting from April
+                const orderOfMonths = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+                return orderOfMonths.indexOf(a) - orderOfMonths.indexOf(b);
             }
         });
 
