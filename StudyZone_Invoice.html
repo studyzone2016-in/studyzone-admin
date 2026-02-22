@@ -11,7 +11,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             background-color: #f4f7f6;
             color: #333;
         }
@@ -19,134 +19,103 @@
             max-width: 1000px;
             margin: auto;
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* Back Button Styles */
-        .top-bar {
+        /* Ultra-compact Controls Row */
+        .controls {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
+        
+        /* Compact Back Button */
         .back-btn {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
             background-color: #fff;
-            border: 1px solid #d1d5db;
-            color: #4b5563;
-            padding: 8px 14px;
+            border: 1px solid #ccc;
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 0.9em;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
+            transition: background 0.2s;
         }
-        .back-btn:hover {
-            background-color: #f3f4f6;
-            color: #111827;
-        }
+        .back-btn:hover { background-color: #f0f0f0; }
         .back-btn svg {
             width: 16px;
             height: 16px;
-            fill: currentColor;
+            fill: #333;
         }
         
-        /* Streamlined Controls */
-        .controls {
-            background: #f8f9fa;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            flex-wrap: wrap; /* Allows wrapping on very small screens */
-            gap: 15px;
-            border: 1px solid #e9ecef;
-        }
-        .control-group {
-            display: flex;
-            align-items: center;
-            flex-direction: row;
-            gap: 8px;
-        }
-        .control-group label {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: #2c3e50;
-            white-space: nowrap;
-        }
         select {
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-radius: 6px;
             border: 1px solid #ccc;
-            font-size: 0.9em;
+            font-size: 0.85em;
             background-color: white;
-            min-width: 110px;
             cursor: pointer;
         }
         
         .checkbox-group {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 6px;
+            flex-wrap: nowrap;
         }
         .checkbox-item {
             display: flex;
             align-items: center;
             background: white;
             border: 1px solid #ccc;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.85em;
+            font-size: 0.8em;
             cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
             white-space: nowrap;
+            user-select: none;
         }
         .checkbox-item:has(input:checked) {
             background-color: #e8f4f8;
             border-color: #3498db;
             color: #2980b9;
-            font-weight: bold;
+            font-weight: 600;
         }
         .checkbox-item input {
-            margin-right: 6px;
-            cursor: pointer;
+            display: none; /* Hide the actual checkbox to save space, rely on background color */
         }
 
         .loading {
             text-align: center;
             font-style: italic;
+            font-size: 0.9em;
             color: #666;
-            padding: 20px;
+            padding: 10px;
         }
         
         .table-wrapper {
             overflow-x: auto; 
             -webkit-overflow-scrolling: touch;
-            border-radius: 6px;
             border: 1px solid #e0e0e0;
+            border-radius: 6px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9em;
+            font-size: 0.85em;
             min-width: 300px;
         }
         th, td {
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
-            padding: 10px 12px;
+            padding: 8px 10px;
             text-align: right;
             white-space: nowrap; 
         }
-        th:last-child, td:last-child {
-            border-right: none;
-        }
+        th:last-child, td:last-child { border-right: none; }
         th {
             background-color: #2c3e50;
             color: white;
@@ -164,65 +133,35 @@
             background-color: #e8f4f8;
             color: #2c3e50;
         }
-        .grand-total td {
-            border-bottom: none;
-        }
-
-        @media (max-width: 600px) {
-            .dashboard-container { padding: 15px; }
-            .controls { justify-content: flex-start; }
-            th, td { padding: 10px 8px; font-size: 0.85em; }
-        }
+        .grand-total td { border-bottom: none; }
     </style>
 </head>
 <body>
 
 <div class="dashboard-container">
     
-    <div class="top-bar">
-        <button class="back-btn" onclick="history.back()">
-            <svg viewBox="0 0 24 24">
-                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
-            </svg>
-            Back
-        </button>
-    </div>
-    
     <div class="controls" id="controlsSection" style="display: none;">
+        <button class="back-btn" onclick="history.back()" title="Go Back">
+            <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+        </button>
         
-        <div class="control-group">
-            <label for="viewSelect">View:</label>
-            <select id="viewSelect">
-                <option value="monthly">Monthly</option>
-                <option value="daily">Daily</option>
-            </select>
-        </div>
+        <select id="viewSelect">
+            <option value="monthly">Monthly</option>
+            <option value="daily">Daily</option>
+        </select>
         
-        <div class="control-group" id="monthFilterGroup" style="display: none;">
-            <label for="monthSelect">Month:</label>
-            <select id="monthSelect">
-                <option value="all">All</option>
-                </select>
-        </div>
+        <select id="monthSelect" style="display: none;">
+            <option value="all">All Months</option>
+        </select>
         
-        <div class="control-group" style="margin-left: auto;">
-            <label>Categories:</label>
-            <div class="checkbox-group">
-                <label class="checkbox-item">
-                    <input type="checkbox" class="cat-checkbox" value="Income" checked> Income
-                </label>
-                <label class="checkbox-item">
-                    <input type="checkbox" class="cat-checkbox" value="Expence" checked> Expence
-                </label>
-                <label class="checkbox-item">
-                    <input type="checkbox" class="cat-checkbox" value="Saving" checked> Saving
-                </label>
-            </div>
+        <div class="checkbox-group">
+            <label class="checkbox-item"><input type="checkbox" class="cat-checkbox" value="Income" checked> Income</label>
+            <label class="checkbox-item"><input type="checkbox" class="cat-checkbox" value="Expence" checked> Expence</label>
+            <label class="checkbox-item"><input type="checkbox" class="cat-checkbox" value="Saving" checked> Saving</label>
         </div>
-
     </div>
 
-    <div id="loadingMessage" class="loading">Loading live data from Google Sheets...</div>
+    <div id="loadingMessage" class="loading">Loading data...</div>
     
     <div class="table-wrapper" id="tableContainer" style="display: none;">
         <table id="pivotTable">
@@ -243,7 +182,6 @@
         skipEmptyLines: true,
         complete: function(results) {
             rawData = results.data;
-            
             populateMonthDropdown();
 
             document.getElementById('loadingMessage').style.display = 'none';
@@ -253,8 +191,7 @@
             renderDashboard();
         },
         error: function(error) {
-            document.getElementById('loadingMessage').innerText = 'Error loading data. Please check the CSV link.';
-            console.error(error);
+            document.getElementById('loadingMessage').innerText = 'Error loading data.';
         }
     });
 
@@ -277,12 +214,8 @@
     }
 
     document.getElementById('viewSelect').addEventListener('change', function(e) {
-        const monthGroup = document.getElementById('monthFilterGroup');
-        if (e.target.value === 'daily') {
-            monthGroup.style.display = 'flex';
-        } else {
-            monthGroup.style.display = 'none';
-        }
+        const monthSelect = document.getElementById('monthSelect');
+        monthSelect.style.display = e.target.value === 'daily' ? 'inline-block' : 'none';
         renderDashboard();
     });
 
@@ -312,14 +245,12 @@
             }
 
             if (selectedCategories.includes(remark)) {
-                
                 if (!timeLabelsOrder.includes(timeValue)) {
                     timeLabelsOrder.push(timeValue);
                 }
 
                 const debitStr = row['DR'] ? String(row['DR']).replace(/,/g, '') : '0';
                 const creditStr = row['CR'] ? String(row['CR']).replace(/,/g, '') : '0';
-                
                 const amount = (parseFloat(debitStr) || 0) + (parseFloat(creditStr) || 0); 
 
                 if (!pivotData[timeValue]) pivotData[timeValue] = {};
@@ -342,15 +273,13 @@
         const tbody = document.getElementById('pivotBody');
 
         if (categories.length === 0) {
-            thead.innerHTML = '<tr><th>Please select at least one category to view data.</th></tr>';
+            thead.innerHTML = '<tr><th style="text-align:left;">Select categories to view data.</th></tr>';
             tbody.innerHTML = '';
             return;
         }
 
         let headHtml = `<tr><th>${viewMode === 'monthly' ? 'Month' : 'Date'}</th>`;
-        categories.forEach(cat => {
-            headHtml += `<th>${cat}</th>`;
-        });
+        categories.forEach(cat => { headHtml += `<th>${cat}</th>`; });
         headHtml += '</tr>';
         thead.innerHTML = headHtml;
 
@@ -360,18 +289,16 @@
 
         timeLabels.forEach(timeLabel => {
             let rowHtml = `<tr><td>${timeLabel}</td>`;
-            
             categories.forEach(cat => {
                 const val = (pivotData[timeLabel] && pivotData[timeLabel][cat]) ? pivotData[timeLabel][cat] : 0;
                 columnTotals[cat] += val;
                 rowHtml += `<td>${formatCurrency(val)}</td>`;
             });
-
             rowHtml += `</tr>`;
             bodyHtml += rowHtml;
         });
 
-        let footerHtml = `<tr class="grand-total"><td>Grand Total</td>`;
+        let footerHtml = `<tr class="grand-total"><td>Total</td>`;
         categories.forEach(cat => {
             footerHtml += `<td>${formatCurrency(columnTotals[cat])}</td>`;
         });
