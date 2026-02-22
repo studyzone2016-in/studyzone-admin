@@ -12,7 +12,6 @@
             margin: 20px;
             color: #333;
         }
-        /* Style for the Back Button */
         .back-btn {
             display: inline-block;
             margin-bottom: 20px;
@@ -73,17 +72,17 @@
     <table id="dataTable" style="display: none;">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Mobile</th>
+                <th>Full Name</th>
+                <th>Phone</th>
                 <th>Created Date</th>
                 <th>Joining Date</th>
                 <th>Access Expiry Date</th>
                 <th>Center</th>
                 <th>Plan</th>
                 <th>Days Counted</th>
-                <th>Rate Applied (per day)</th>
-                <th>Registration Fee</th>
-                <th>Total Amount (Rs)</th>
+                <th>Rate Applied</th>
+                <th>Reg. Fee</th>
+                <th>Total (Rs)</th>
             </tr>
         </thead>
         <tbody id="tableBody">
@@ -97,13 +96,10 @@
             if (!dateStr) return null;
             let parts = dateStr.trim().split(/[-/]/);
             if (parts.length !== 3) return null;
-            
             let d = parseInt(parts[0], 10);
             let m = parseInt(parts[1], 10) - 1; 
             let y = parseInt(parts[2], 10);
-            
             if (y < 100) y += 2000; 
-
             let parsedDate = new Date(y, m, d);
             parsedDate.setHours(0, 0, 0, 0);
             return parsedDate;
@@ -120,7 +116,6 @@
             plan = plan ? plan.trim() : "";
             center = center ? center.trim() : "";
             let rate = 0;
-
             if (center === 'SZ04') {
                 if (plan === 'Full Day') rate = 94;
                 else if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) rate = 54;
@@ -150,9 +145,9 @@
                 let foundRecords = false;
 
                 data.forEach(row => {
-                    // Extracting Name and Mobile (adjust keys if different in your Sheet)
-                    const name = row["Name"]; 
-                    const mobile = row["Mobile"];
+                    // Aligned to your requested headings
+                    const fullName = row["Full Name"]; 
+                    const phone = row["Phone"];
                     
                     const createdStr = row["Created (DD-MM-YY)"];
                     const joiningStr = row["Joining Date (DD-MM-YY)"];
@@ -164,12 +159,8 @@
                     const joiningDate = parseCustomDate(joiningStr);
                     const expiryDate = parseCustomDate(expiryStr);
 
-                    const isCreatedToday = isSameDay(createdDate, today);
-                    const isJoiningToday = isSameDay(joiningDate, today);
-
-                    if (isCreatedToday || isJoiningToday) {
+                    if (isSameDay(createdDate, today) || isSameDay(joiningDate, today)) {
                         foundRecords = true;
-
                         let days = 0;
                         if (joiningDate && expiryDate) {
                             const msPerDay = 1000 * 60 * 60 * 24;
@@ -179,17 +170,16 @@
 
                         const dailyRate = calculateRate(center, plan);
                         let totalAmount = dailyRate * days;
-
                         let regFee = 0;
-                        if (isCreatedToday) {
+                        if (isSameDay(createdDate, today)) {
                             regFee = 175;
                             totalAmount += regFee;
                         }
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td>${name || 'N/A'}</td>
-                            <td>${mobile || 'N/A'}</td>
+                            <td>${fullName || 'N/A'}</td>
+                            <td>${phone || 'N/A'}</td>
                             <td>${createdStr || 'N/A'}</td>
                             <td>${joiningStr || 'N/A'}</td>
                             <td>${expiryStr || 'N/A'}</td>
@@ -212,7 +202,7 @@
                 }
             },
             error: function(err) {
-                document.getElementById('loading').innerText = "Error loading data. Make sure the Google Sheet is published to the web.";
+                document.getElementById('loading').innerText = "Error loading data.";
                 console.error(err);
             }
         });
