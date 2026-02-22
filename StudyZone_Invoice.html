@@ -1,271 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Study ZONE | Enrollment Analysis</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    :root {
-      --primary: #2563eb;
-      --bg-body: #f1f5f9;
-      --text-main: #1e293b;
-      --border: #e2e8f0;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      margin: 0; padding: 12px;
-    }
-
-    .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .back-btn { text-decoration: none; color: var(--primary); font-weight: 700; font-size: 14px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Book Dashboard</title>
     
-    .control-panel {
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-bottom: 15px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .filter-group { display: flex; flex-direction: column; gap: 4px; }
-    .filter-group label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; }
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
-    select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #fff;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .view-banner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #e0e7ff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      border-left: 5px solid var(--primary);
-    }
-
-    #dynamicHeading { font-size: 13px; font-weight: 800; color: #3730a3; }
-    #recordCount { font-size: 11px; background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
-
-    /* DATA CARD STYLING */
-    .data-card {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    }
-
-    .card-header {
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-    }
-
-    .full-name { 
-      font-size: 16px; 
-      font-weight: 900; 
-      color: #0f172a; 
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .sub-meta { font-size: 11px; color: #64748b; font-weight: 600; }
-
-    .action-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .btn {
-      flex: 1;
-      text-align: center;
-      padding: 8px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .btn-call { background: #eff6ff; color: var(--primary); }
-    .btn-wa { background: #ecfdf5; color: #059669; }
-
-    .details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      background: #f8fafc;
-      padding: 10px;
-      border-radius: 8px;
-    }
-
-    .data-item label { display: block; font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; }
-    .data-item span { font-size: 12px; font-weight: 600; color: #334155; }
-
-    .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
-  </style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .dashboard-container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="nav-header">
-  <a href="index.html" class="back-btn">← Back</a>
-  <h2 style="margin:0; font-size: 1.1rem; font-weight: 800;">Study ZONE Tracker</h2>
+<div class="dashboard-container">
+    <h2>Monthly Financial Overview</h2>
+    <p>Live data sync: Total Income (CR) vs. Total Expenses (DR) by month.</p>
+    
+    <div id="loadingMessage" class="loading">Loading data from Google Sheets...</div>
+    
+    <canvas id="monthlyCashflowChart"></canvas>
 </div>
-
-<div class="control-panel">
-  <div class="filter-group">
-    <label>Analysis Mode</label>
-    <select id="analysisType">
-      <option value="CREATED">Registration (Col E)</option>
-      <option value="JOINING">Joining (Col J)</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <label>Filter Date</label>
-    <select id="dateFilter">
-      <option value="ALL">All Dates</option>
-    </select>
-  </div>
-</div>
-
-<div class="view-banner">
-  <span id="dynamicHeading">Loading Analysis...</span>
-  <span id="recordCount">0</span>
-</div>
-
-<div id="resultsWrapper"></div>
 
 <script>
-const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv';
+    // --- PASTE YOUR GOOGLE SHEET CSV LINK BELOW ---
+    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pub?output=csv'; 
 
-const typeDropdown = document.getElementById('analysisType');
-const dateDropdown = document.getElementById('dateFilter');
-const resultBox = document.getElementById('resultsWrapper');
-const headingBox = document.getElementById('dynamicHeading');
-const countBox = document.getElementById('recordCount');
+    // Fetch and parse the CSV data
+    Papa.parse(sheetCsvUrl, {
+        download: true,
+        header: true, // Uses your first row (Tran Month, DR, CR, etc.) as keys
+        skipEmptyLines: true,
+        complete: function(results) {
+            document.getElementById('loadingMessage').style.display = 'none';
+            processDataAndDrawChart(results.data);
+        },
+        error: function(error) {
+            document.getElementById('loadingMessage').innerText = 'Error loading data. Please check the CSV link.';
+            console.error(error);
+        }
+    });
 
-let masterList = [];
+    function processDataAndDrawChart(data) {
+        const monthlyData = {};
+        const monthsOrder = [];
 
-function formatPrettyDate(str) {
-  if (!str) return "N/A";
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const [d, m, y] = str.split('-').map(n => parseInt(n, 10));
-  const year = y < 100 ? 2000 + y : y;
-  return `${d.toString().padStart(2, '0')} ${months[m - 1]} ${year}`;
-}
+        // Loop through every row in your account book
+        data.forEach(row => {
+            const month = row['Tran Month'];
+            
+            // Skip rows that don't have a valid month
+            if (!month || month === '-' || month.trim() === '') return; 
 
-function parseCSV(line){
-  const out=[]; let cur='',qt=false;
-  for(const ch of line){
-    if(ch=='"') qt=!qt;
-    else if(ch==','&&!qt){out.push(cur);cur='';}
-    else cur+=ch;
-  }
-  out.push(cur);
-  return out.map(v=>v.replace(/^"|"$/g,'').trim());
-}
+            // Initialize the month object if it doesn't exist yet
+            if (!monthlyData[month]) {
+                monthlyData[month] = { income: 0, expense: 0 };
+                monthsOrder.push(month); // Keep track of the order the months appear
+            }
 
-fetch(csvUrl).then(r=>r.text()).then(csv=>{
-  const lines = csv.trim().split('\n');
-  const headers = parseCSV(lines[0]);
+            // Extract DR and CR amounts safely (treating empty cells as 0)
+            const debit = parseFloat(row['DR']) || 0;
+            const credit = parseFloat(row['CR']) || 0;
 
-  masterList = lines.slice(1).map(l => {
-    const c = parseCSV(l);
-    return {
-      name: c[0] || 'No Name Found',
-      phone: (c[1] || '').replace(/\D/g,'').slice(-10),
-      created: c[4] || '', 
-      joining: c[9] || '', 
-      expiry: c[headers.findIndex(x=>x.toLowerCase().includes('expiry'))] || '',
-      center: c[headers.findIndex(x=>x.toLowerCase().includes('center'))] || 'General',
-      fees: c[headers.findIndex(x=>x.toLowerCase().includes('fees'))] || 'Unpaid',
-      plan: c[headers.findIndex(x=>x.toLowerCase().includes('plan'))] || 'Trial'
-    };
-  });
+            // Add to the monthly totals
+            monthlyData[month].expense += debit;
+            monthlyData[month].income += credit;
+        });
 
-  refreshFilters();
-  renderList();
-});
+        // Prepare the arrays for Chart.js
+        const labels = [];
+        const incomeData = [];
+        const expenseData = [];
 
-function refreshFilters() {
-  const type = typeDropdown.value;
-  const uniqueDates = new Set();
-  masterList.forEach(r => {
-    const d = type === 'CREATED' ? r.created : r.joining;
-    if(d) uniqueDates.add(d);
-  });
-  const sorted = [...uniqueDates].sort((a,b) => {
-    const p = (s) => { let [dd,mm,yy] = s.split('-'); return new Date(2000+parseInt(yy), mm-1, dd); };
-    return p(b) - p(a);
-  });
-  dateDropdown.innerHTML = '<option value="ALL">All Dates</option>';
-  sorted.forEach(d => {
-    dateDropdown.insertAdjacentHTML('beforeend', `<option value="${d}">${formatPrettyDate(d)}</option>`);
-  });
-}
+        monthsOrder.forEach(m => {
+            labels.push(m);
+            incomeData.push(monthlyData[m].income);
+            expenseData.push(monthlyData[m].expense);
+        });
 
-function renderList() {
-  const type = typeDropdown.value;
-  const filterDate = dateDropdown.value;
-  
-  const typeLabel = type === 'CREATED' ? 'New Registrations' : 'Latest Joinings';
-  headingBox.innerText = `${typeLabel}: ${filterDate === 'ALL' ? 'History' : formatPrettyDate(filterDate)}`;
+        // Draw the Chart
+        renderChart(labels, incomeData, expenseData);
+    }
 
-  let filtered = masterList.filter(r => {
-    const val = type === 'CREATED' ? r.created : r.joining;
-    return (filterDate === 'ALL' || val === filterDate) && val !== '';
-  });
-
-  countBox.innerText = filtered.length;
-  resultBox.innerHTML = '';
-
-  if(filtered.length === 0) {
-    resultBox.innerHTML = '<div class="empty-state">No student records found.</div>';
-    return;
-  }
-
-  filtered.forEach(r => {
-    resultBox.insertAdjacentHTML('beforeend', `
-      <div class="data-card">
-        <div class="card-header">
-          <span class="full-name">${r.name}</span>
-          <span class="sub-meta">${r.center} • Status: ${r.fees}</span>
-        </div>
+    function renderChart(labels, incomeData, expenseData) {
+        const ctx = document.getElementById('monthlyCashflowChart').getContext('2d');
         
-        <div class="details-grid">
-          <div class="data-item"><label>Registration</label><span>${r.created}</span></div>
-          <div class="data-item"><label>Joining Date</label><span>${r.joining}</span></div>
-          <div class="data-item"><label>Expiry Date</label><span>${r.expiry}</span></div>
-          <div class="data-item"><label>Subscription</label><span>${r.plan}</span></div>
-        </div>
-
-        <div class="action-row">
-          <a href="tel:${r.phone}" class="btn btn-call">📞 Call</a>
-          <a href="https://wa.me/91${r.phone}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
-        </div>
-      </div>
-    `);
-  });
-}
-
-typeDropdown.addEventListener('change', () => { refreshFilters(); renderList(); });
-dateDropdown.addEventListener('change', renderList);
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income (CR)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        data: incomeData 
+                    },
+                    {
+                        label: 'Expenses (DR)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        data: expenseData
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 </script>
 
 </body>
