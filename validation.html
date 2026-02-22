@@ -3,209 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Revenue & Calculation Dashboard</title>
+    <title>Study ZONE - Revenue Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 20px;
-            color: #333;
-        }
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background-color: #2c3e50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background 0.3s;
-            border: none;
-            cursor: pointer;
-        }
-        .back-btn:hover {
-            background-color: #34495e;
-        }
-        h2 {
-            color: #2c3e50;
-            margin-top: 0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #2c3e50;
-            color: #fff;
-            white-space: nowrap;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .highlight {
-            font-weight: bold;
-            color: #27ae60;
-        }
-        #loading {
-            font-size: 1.2em;
-            color: #e67e22;
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 20px; color: #333; }
+        .controls-container { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .back-btn { padding: 10px 20px; background-color: #2c3e50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; }
+        .date-picker-wrap { display: flex; align-items: center; gap: 10px; }
+        input[type="date"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #2c3e50; color: #fff; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .highlight { font-weight: bold; color: #27ae60; }
+        .summary-row { background-color: #ecf0f1 !important; font-weight: bold; font-size: 1.1em; }
+        #loading { font-size: 1.2em; color: #e67e22; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <button class="back-btn" onclick="window.history.back()">← Back</button>
+    <div class="controls-container">
+        <button class="back-btn" onclick="window.history.back()">← Back</button>
+        <div class="date-picker-wrap">
+            <label for="dateSelect"><strong>Select Date:</strong></label>
+            <input type="date" id="dateSelect">
+        </div>
+    </div>
 
-    <h2>Calculated Admissions for Today</h2>
-    <p id="loading">Fetching and processing data...</p>
+    <h2 id="viewTitle">Admissions for Selected Date</h2>
+    <p id="loading">Loading data...</p>
 
     <table id="dataTable" style="display: none;">
         <thead>
             <tr>
                 <th>Full Name</th>
                 <th>Phone</th>
-                <th>Created Date</th>
-                <th>Joining Date</th>
-                <th>Access Expiry Date</th>
+                <th>Created</th>
+                <th>Joining</th>
+                <th>Expiry</th>
                 <th>Center</th>
                 <th>Plan</th>
-                <th>Days Counted</th>
-                <th>Rate Applied</th>
+                <th>Days</th>
+                <th>Daily Rate</th>
                 <th>Reg. Fee</th>
                 <th>Total (Rs)</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-        </tbody>
+        <tbody id="tableBody"></tbody>
+        <tfoot>
+            <tr class="summary-row">
+                <td colspan="10" style="text-align: right;">Grand Total:</td>
+                <td id="totalRevenue" class="highlight">Rs 0</td>
+            </tr>
+        </tfoot>
     </table>
 
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
+        let csvData = [];
+
+        // Set default date to today in Input
+        const dateInput = document.getElementById('dateSelect');
+        const now = new Date();
+        dateInput.value = now.toISOString().split('T')[0];
 
         function parseCustomDate(dateStr) {
             if (!dateStr) return null;
             let parts = dateStr.trim().split(/[-/]/);
             if (parts.length !== 3) return null;
-            let d = parseInt(parts[0], 10);
-            let m = parseInt(parts[1], 10) - 1; 
-            let y = parseInt(parts[2], 10);
-            if (y < 100) y += 2000; 
-            let parsedDate = new Date(y, m, d);
-            parsedDate.setHours(0, 0, 0, 0);
-            return parsedDate;
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        function isSameDay(d1, d2) {
-            return d1 && d2 && d1.getTime() === d2.getTime();
+            let d = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1, y = parseInt(parts[2], 10);
+            if (y < 100) y += 2000;
+            let parsed = new Date(y, m, d);
+            parsed.setHours(0, 0, 0, 0);
+            return parsed;
         }
 
         function calculateRate(center, plan) {
-            plan = plan ? plan.trim() : "";
-            center = center ? center.trim() : "";
-            let rate = 0;
+            plan = (plan || "").trim();
+            center = (center || "").trim();
             if (center === 'SZ04') {
-                if (plan === 'Full Day') rate = 94;
-                else if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) rate = 54;
-                else if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) rate = 74;
-                else if (plan === 'Day Plan') rate = 250;
-                else if (plan.includes('Mini Batch')) rate = 40;
-                else if (plan === 'Weekend Spl') rate = 66.66666666666667;
-            } 
-            else if (center === 'SZ03' || center === 'SZ01') {
-                if (plan === 'Full Day') rate = 60;
-                else if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) rate = 40;
-                else if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) rate = 50;
-                else if (plan === 'Day Plan') rate = 150;
-                else if (plan.includes('Mini Batch')) rate = 25;
-                else if (plan === 'Weekend Spl') rate = 41.66666666666667;
+                if (plan === 'Full Day') return 94;
+                if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) return 54;
+                if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) return 74;
+                if (plan === 'Day Plan') return 250;
+                if (plan.includes('Mini Batch')) return 40;
+                if (plan === 'Weekend Spl') return 66.67;
+            } else if (['SZ03', 'SZ01'].includes(center)) {
+                if (plan === 'Full Day') return 60;
+                if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) return 40;
+                if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) return 50;
+                if (plan === 'Day Plan') return 150;
+                if (plan.includes('Mini Batch')) return 25;
+                if (plan === 'Weekend Spl') return 41.67;
             }
-            return rate;
+            return 0;
+        }
+
+        function updateDisplay() {
+            const selectedDate = new Date(dateInput.value);
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+            let found = false;
+
+            csvData.forEach(row => {
+                const createdDate = parseCustomDate(row["Created (DD-MM-YY)"]);
+                const joiningDate = parseCustomDate(row["Joining Date (DD-MM-YY)"]);
+                const expiryDate = parseCustomDate(row["Access Expiry (DD-MM-YY)"]);
+
+                const matchCreated = createdDate && createdDate.getTime() === selectedDate.getTime();
+                const matchJoining = joiningDate && joiningDate.getTime() === selectedDate.getTime();
+
+                if (matchCreated || matchJoining) {
+                    found = true;
+                    let days = 0;
+                    if (joiningDate && expiryDate) {
+                        days = Math.floor((expiryDate - joiningDate) / (1000 * 60 * 60 * 24)) + 1;
+                    }
+                    if (days < 0) days = 0;
+
+                    const rate = calculateRate(row["Center"], row["Plan"]);
+                    let regFee = matchCreated ? 175 : 0;
+                    let total = (rate * days) + regFee;
+                    grandTotal += total;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${row["Full Name"] || 'N/A'}</td>
+                            <td>${row["Phone"] || 'N/A'}</td>
+                            <td>${row["Created (DD-MM-YY)"] || 'N/A'}</td>
+                            <td>${row["Joining Date (DD-MM-YY)"] || 'N/A'}</td>
+                            <td>${row["Access Expiry (DD-MM-YY)"] || 'N/A'}</td>
+                            <td>${row["Center"] || 'N/A'}</td>
+                            <td>${row["Plan"] || 'N/A'}</td>
+                            <td>${days}</td>
+                            <td>Rs ${rate.toFixed(2)}</td>
+                            <td>Rs ${regFee}</td>
+                            <td class="highlight">Rs ${Math.round(total)}</td>
+                        </tr>`;
+                }
+            });
+
+            document.getElementById('totalRevenue').innerText = `Rs ${Math.round(grandTotal)}`;
+            if (!found) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No records for this date.</td></tr>';
         }
 
         Papa.parse(CSV_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
+            download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
-                const data = results.data;
-                const tbody = document.getElementById('tableBody');
-                let foundRecords = false;
-
-                data.forEach(row => {
-                    // Aligned to your requested headings
-                    const fullName = row["Full Name"]; 
-                    const phone = row["Phone"];
-                    
-                    const createdStr = row["Created (DD-MM-YY)"];
-                    const joiningStr = row["Joining Date (DD-MM-YY)"];
-                    const expiryStr = row["Access Expiry (DD-MM-YY)"];
-                    const center = row["Center"];
-                    const plan = row["Plan"];
-
-                    const createdDate = parseCustomDate(createdStr);
-                    const joiningDate = parseCustomDate(joiningStr);
-                    const expiryDate = parseCustomDate(expiryStr);
-
-                    if (isSameDay(createdDate, today) || isSameDay(joiningDate, today)) {
-                        foundRecords = true;
-                        let days = 0;
-                        if (joiningDate && expiryDate) {
-                            const msPerDay = 1000 * 60 * 60 * 24;
-                            days = Math.floor((expiryDate - joiningDate) / msPerDay) + 1;
-                        }
-                        if (days < 0) days = 0;
-
-                        const dailyRate = calculateRate(center, plan);
-                        let totalAmount = dailyRate * days;
-                        let regFee = 0;
-                        if (isSameDay(createdDate, today)) {
-                            regFee = 175;
-                            totalAmount += regFee;
-                        }
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${fullName || 'N/A'}</td>
-                            <td>${phone || 'N/A'}</td>
-                            <td>${createdStr || 'N/A'}</td>
-                            <td>${joiningStr || 'N/A'}</td>
-                            <td>${expiryStr || 'N/A'}</td>
-                            <td>${center || 'N/A'}</td>
-                            <td>${plan || 'N/A'}</td>
-                            <td>${days}</td>
-                            <td>Rs ${dailyRate.toFixed(2)}</td>
-                            <td>Rs ${regFee}</td>
-                            <td class="highlight">Rs ${Math.round(totalAmount)}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    }
-                });
-
+                csvData = results.data;
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dataTable').style.display = 'table';
-
-                if (!foundRecords) {
-                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;">No records match today's date criteria.</td></tr>`;
-                }
-            },
-            error: function(err) {
-                document.getElementById('loading').innerText = "Error loading data.";
-                console.error(err);
+                updateDisplay();
             }
         });
+
+        dateInput.addEventListener('change', updateDisplay);
     </script>
 </body>
 </html>
