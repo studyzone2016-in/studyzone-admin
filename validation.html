@@ -13,7 +13,7 @@
         input[type="date"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
         table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #2c3e50; color: #fff; }
+        th { background-color: #2c3e50; color: #fff; white-space: nowrap; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         .highlight { font-weight: bold; color: #27ae60; }
         .summary-row { background-color: #ecf0f1 !important; font-weight: bold; font-size: 1.1em; }
@@ -30,8 +30,8 @@
         </div>
     </div>
 
-    <h2 id="viewTitle">Admissions for Selected Date</h2>
-    <p id="loading">Loading data...</p>
+    <h2 id="viewTitle">Admissions Revenue Analysis</h2>
+    <p id="loading">Loading data from Google Sheets...</p>
 
     <table id="dataTable" style="display: none;">
         <thead>
@@ -40,11 +40,10 @@
                 <th>Phone</th>
                 <th>Created</th>
                 <th>Joining</th>
-                <th>Expiry</th>
                 <th>Center</th>
                 <th>Plan</th>
                 <th>Days</th>
-                <th>Daily Rate</th>
+                <th>Invoice Fee</th>
                 <th>Reg. Fee</th>
                 <th>Total (Rs)</th>
             </tr>
@@ -52,7 +51,7 @@
         <tbody id="tableBody"></tbody>
         <tfoot>
             <tr class="summary-row">
-                <td colspan="10" style="text-align: right;">Grand Total:</td>
+                <td colspan="9" style="text-align: right;">Grand Total:</td>
                 <td id="totalRevenue" class="highlight">Rs 0</td>
             </tr>
         </tfoot>
@@ -62,7 +61,6 @@
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQosG1886lb-AuGEol8xxZDg86byv_mYktRIpTU9F9iCQPH4GSkY_xwX5WAYZBLiBDZuUO67pidUvEr/pub?gid=0&single=true&output=csv";
         let csvData = [];
 
-        // Set default date to today in Input
         const dateInput = document.getElementById('dateSelect');
         const now = new Date();
         dateInput.value = now.toISOString().split('T')[0];
@@ -78,23 +76,27 @@
             return parsed;
         }
 
-        function calculateRate(center, plan) {
+        function getDailyRate(center, plan) {
             plan = (plan || "").trim();
             center = (center || "").trim();
-            if (center === 'SZ04') {
+            
+            // Revised logic for SZ_04 (using underscore)
+            if (center === 'SZ_04') {
                 if (plan === 'Full Day') return 94;
                 if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) return 54;
                 if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) return 74;
                 if (plan === 'Day Plan') return 250;
-                if (plan.includes('Mini Batch')) return 40;
-                if (plan === 'Weekend Spl') return 66.67;
-            } else if (['SZ03', 'SZ01'].includes(center)) {
+                if (plan.toLowerCase().includes('mini batch')) return 40;
+                if (plan === 'Weekend Spl') return 66.66666666666667;
+            } 
+            // Revised logic for SZ_03 or SZ_01 (using underscore)
+            else if (['SZ_03', 'SZ_01'].includes(center)) {
                 if (plan === 'Full Day') return 60;
                 if (['Evening Batch', 'Afternoon Batch', 'Morning Batch'].includes(plan)) return 40;
                 if (['Morning + Evening Batch', 'Morning + Afternoon Batch', 'Afternoon + Evening Batch'].includes(plan)) return 50;
                 if (plan === 'Day Plan') return 150;
-                if (plan.includes('Mini Batch')) return 25;
-                if (plan === 'Weekend Spl') return 41.67;
+                if (plan.toLowerCase().includes('mini batch')) return 25;
+                if (plan === 'Weekend Spl') return 41.66666666666667;
             }
             return 0;
         }
@@ -113,21 +115,24 @@
                 const joiningDate = parseCustomDate(row["Joining Date (DD-MM-YY)"]);
                 const expiryDate = parseCustomDate(row["Access Expiry (DD-MM-YY)"]);
 
-                const matchCreated = createdDate && createdDate.getTime() === selectedDate.getTime();
-                const matchJoining = joiningDate && joiningDate.getTime() === selectedDate.getTime();
+                const isCreatedSelected = createdDate && createdDate.getTime() === selectedDate.getTime();
+                const isJoiningSelected = joiningDate && joiningDate.getTime() === selectedDate.getTime();
 
-                if (matchCreated || matchJoining) {
+                if (isJoiningSelected || isCreatedSelected) {
                     found = true;
+                    
                     let days = 0;
                     if (joiningDate && expiryDate) {
                         days = Math.floor((expiryDate - joiningDate) / (1000 * 60 * 60 * 24)) + 1;
                     }
                     if (days < 0) days = 0;
 
-                    const rate = calculateRate(row["Center"], row["Plan"]);
-                    let regFee = matchCreated ? 175 : 0;
-                    let total = (rate * days) + regFee;
-                    grandTotal += total;
+                    const unitRate = getDailyRate(row["Center"], row["Plan"]);
+                    const invoiceFee = unitRate * days;
+                    const regFee = isCreatedSelected ? 175 : 0;
+                    const rowTotal = invoiceFee + regFee;
+                    
+                    grandTotal += rowTotal;
 
                     tbody.innerHTML += `
                         <tr>
@@ -135,19 +140,18 @@
                             <td>${row["Phone"] || 'N/A'}</td>
                             <td>${row["Created (DD-MM-YY)"] || 'N/A'}</td>
                             <td>${row["Joining Date (DD-MM-YY)"] || 'N/A'}</td>
-                            <td>${row["Access Expiry (DD-MM-YY)"] || 'N/A'}</td>
                             <td>${row["Center"] || 'N/A'}</td>
                             <td>${row["Plan"] || 'N/A'}</td>
                             <td>${days}</td>
-                            <td>Rs ${rate.toFixed(2)}</td>
+                            <td>Rs ${invoiceFee.toFixed(2)}</td>
                             <td>Rs ${regFee}</td>
-                            <td class="highlight">Rs ${Math.round(total)}</td>
+                            <td class="highlight">Rs ${Math.round(rowTotal)}</td>
                         </tr>`;
                 }
             });
 
             document.getElementById('totalRevenue').innerText = `Rs ${Math.round(grandTotal)}`;
-            if (!found) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No records for this date.</td></tr>';
+            if (!found) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">No records found for the selected date.</td></tr>';
         }
 
         Papa.parse(CSV_URL, {
@@ -157,6 +161,9 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dataTable').style.display = 'table';
                 updateDisplay();
+            },
+            error: function(err) {
+                document.getElementById('loading').innerText = "Error loading data. Check spreadsheet publication.";
             }
         });
 
