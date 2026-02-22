@@ -83,10 +83,9 @@
 </div>
 
 <script>
-    // --- PASTE YOUR GOOGLE SHEET CSV LINK BELOW ---
-    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pubhtml'; 
+    // URL changed from /pubhtml to /pub?output=csv so PapaParse can read it
+    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pub?output=csv'; 
 
-    // The specific categories you want to track from the Remark column
     const targetRemarks = ['Income', 'Expence', 'Lending', 'Saving'];
 
     Papa.parse(sheetCsvUrl, {
@@ -97,6 +96,10 @@
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('tableContainer').style.display = 'block';
             document.getElementById('categoryChart').style.display = 'block';
+            
+            // Log the first row to the console to ensure headers match exactly if there are issues
+            console.log("Data loaded successfully. First row headers:", Object.keys(results.data[0]));
+            
             processDashboardData(results.data);
         },
         error: function(error) {
@@ -114,23 +117,25 @@
         };
         const monthsOrder = [];
 
-        // 1. Process and aggregate the data
         data.forEach(row => {
+            // Trim to ensure spaces don't break the matching
             const month = row['Tran Month'] ? row['Tran Month'].trim() : '';
             const remark = row['Remark'] ? row['Remark'].trim() : '';
             
             if (!month || month === '-') return;
 
-            // Track unique months to use as columns
             if (!monthsOrder.includes(month)) {
                 monthsOrder.push(month);
             }
 
-            // If the transaction's remark is one of our target categories
             if (targetRemarks.includes(remark)) {
-                const debit = parseFloat(row['DR']) || 0;
-                const credit = parseFloat(row['CR']) || 0;
-                const amount = debit + credit; // Combine DR and CR to get the total amount
+                // Convert to string, strip commas, then parse to float to prevent NaN errors
+                const debitStr = row['DR'] ? String(row['DR']).replace(/,/g, '') : '0';
+                const creditStr = row['CR'] ? String(row['CR']).replace(/,/g, '') : '0';
+                
+                const debit = parseFloat(debitStr) || 0;
+                const credit = parseFloat(creditStr) || 0;
+                const amount = debit + credit; 
 
                 if (!pivotData[remark][month]) {
                     pivotData[remark][month] = 0;
@@ -143,18 +148,15 @@
         drawChart(pivotData, monthsOrder);
     }
 
-    // Helper function to format currency
     function formatCurrency(value) {
         if (!value) return '₹0';
         return '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     }
 
-    // 2. Generate the HTML Pivot Table
     function drawPivotTable(pivotData, months) {
         const thead = document.getElementById('pivotHead');
         const tbody = document.getElementById('pivotBody');
 
-        // Build Header Row
         let headHtml = '<tr><th>Remark \\ Month</th>';
         months.forEach(month => {
             headHtml += `<th>${month}</th>`;
@@ -162,7 +164,6 @@
         headHtml += '<th>Grand Total</th></tr>';
         thead.innerHTML = headHtml;
 
-        // Build Body Rows
         let bodyHtml = '';
         targetRemarks.forEach(remark => {
             let rowHtml = `<tr><td>${remark}</td>`;
@@ -181,16 +182,14 @@
         tbody.innerHTML = bodyHtml;
     }
 
-    // 3. Generate the Chart.js Visualization
     function drawChart(pivotData, months) {
         const ctx = document.getElementById('categoryChart').getContext('2d');
         
-        // Setup colors for each category
         const colors = {
-            'Income': 'rgba(75, 192, 192, 0.7)',   // Green
-            'Expence': 'rgba(255, 99, 132, 0.7)',  // Red
-            'Lending': 'rgba(255, 159, 64, 0.7)',  // Orange
-            'Saving': 'rgba(54, 162, 235, 0.7)'    // Blue
+            'Income': 'rgba(75, 192, 192, 0.7)',
+            'Expence': 'rgba(255, 99, 132, 0.7)',
+            'Lending': 'rgba(255, 159, 64, 0.7)',
+            'Saving': 'rgba(54, 162, 235, 0.7)'
         };
 
         const borderColors = {
@@ -200,7 +199,6 @@
             'Saving': 'rgba(54, 162, 235, 1)'
         };
 
-        // Prepare datasets
         const datasets = targetRemarks.map(remark => {
             const dataArray = months.map(month => pivotData[remark][month] || 0);
             return {
@@ -229,7 +227,7 @@
                 },
                 scales: {
                     x: {
-                        stacked: false // Set to true if you want them stacked on top of each other
+                        stacked: false
                     },
                     y: { 
                         beginAtZero: true,
