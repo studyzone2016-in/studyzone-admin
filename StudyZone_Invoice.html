@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Book Dashboard</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <style>
@@ -16,7 +15,7 @@
             color: #333;
         }
         .dashboard-container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: auto;
             background: white;
             padding: 20px;
@@ -33,19 +32,15 @@
             color: #666;
             padding: 20px;
         }
-        canvas {
-            margin-top: 20px;
-            margin-bottom: 40px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 0.9em;
+            font-size: 0.95em;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 12px;
             text-align: right;
         }
         th {
@@ -61,32 +56,32 @@
         .grand-total {
             font-weight: bold;
             background-color: #e8f4f8;
+            color: #2c3e50;
         }
     </style>
 </head>
 <body>
 
 <div class="dashboard-container">
-    <h2>Financial Pivot Dashboard</h2>
-    <p>Tracking Income, Expence, Lending, and Saving by Month.</p>
+    <h2>Financial Summary Table</h2>
+    <p>Monthly breakdown of Income, Expence, and Saving.</p>
     
     <div id="loadingMessage" class="loading">Loading data from Google Sheets...</div>
     
-    <div id="tableContainer" style="overflow-x: auto; display: none;">
+    <div id="tableContainer" style="display: none;">
         <table id="pivotTable">
             <thead id="pivotHead"></thead>
             <tbody id="pivotBody"></tbody>
         </table>
     </div>
-
-    <canvas id="categoryChart" style="display: none;"></canvas>
 </div>
 
 <script>
-    // URL changed from /pubhtml to /pub?output=csv so PapaParse can read it
+    // CSV Link
     const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pub?output=csv'; 
 
-    const targetRemarks = ['Income', 'Expence', 'Lending', 'Saving'];
+    // Removed 'Lending' from the tracking list
+    const targetRemarks = ['Income', 'Expence', 'Saving'];
 
     Papa.parse(sheetCsvUrl, {
         download: true,
@@ -95,11 +90,6 @@
         complete: function(results) {
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('tableContainer').style.display = 'block';
-            document.getElementById('categoryChart').style.display = 'block';
-            
-            // Log the first row to the console to ensure headers match exactly if there are issues
-            console.log("Data loaded successfully. First row headers:", Object.keys(results.data[0]));
-            
             processDashboardData(results.data);
         },
         error: function(error) {
@@ -112,24 +102,25 @@
         const pivotData = {
             'Income': {},
             'Expence': {},
-            'Lending': {},
             'Saving': {}
         };
         const monthsOrder = [];
 
+        // 1. Process and aggregate the data
         data.forEach(row => {
-            // Trim to ensure spaces don't break the matching
             const month = row['Tran Month'] ? row['Tran Month'].trim() : '';
             const remark = row['Remark'] ? row['Remark'].trim() : '';
             
             if (!month || month === '-') return;
 
+            // Track unique months to use as rows chronologically as they appear
             if (!monthsOrder.includes(month)) {
                 monthsOrder.push(month);
             }
 
+            // If the transaction's remark is one of our target categories
             if (targetRemarks.includes(remark)) {
-                // Convert to string, strip commas, then parse to float to prevent NaN errors
+                // Strip commas and convert to float
                 const debitStr = row['DR'] ? String(row['DR']).replace(/,/g, '') : '0';
                 const creditStr = row['CR'] ? String(row['CR']).replace(/,/g, '') : '0';
                 
@@ -145,101 +136,54 @@
         });
 
         drawPivotTable(pivotData, monthsOrder);
-        drawChart(pivotData, monthsOrder);
     }
 
+    // Helper function to format currency
     function formatCurrency(value) {
         if (!value) return '₹0';
         return '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     }
 
+    // 2. Generate the HTML Pivot Table (Swapped Axes)
     function drawPivotTable(pivotData, months) {
         const thead = document.getElementById('pivotHead');
         const tbody = document.getElementById('pivotBody');
 
-        let headHtml = '<tr><th>Remark \\ Month</th>';
-        months.forEach(month => {
-            headHtml += `<th>${month}</th>`;
+        // Build Header Row (Categories as Columns)
+        let headHtml = '<tr><th>Month \\ Category</th>';
+        targetRemarks.forEach(remark => {
+            headHtml += `<th>${remark}</th>`;
         });
-        headHtml += '<th>Grand Total</th></tr>';
+        headHtml += '</tr>';
         thead.innerHTML = headHtml;
 
+        // Build Body Rows (Months as Rows)
         let bodyHtml = '';
-        targetRemarks.forEach(remark => {
-            let rowHtml = `<tr><td>${remark}</td>`;
-            let rowTotal = 0;
+        
+        // Track grand totals for each column
+        let columnTotals = { 'Income': 0, 'Expence': 0, 'Saving': 0 };
 
-            months.forEach(month => {
+        months.forEach(month => {
+            let rowHtml = `<tr><td>${month}</td>`;
+            
+            targetRemarks.forEach(remark => {
                 const val = pivotData[remark][month] || 0;
-                rowTotal += val;
+                columnTotals[remark] += val; // Add to column grand total
                 rowHtml += `<td>${formatCurrency(val)}</td>`;
             });
 
-            rowHtml += `<td class="grand-total">${formatCurrency(rowTotal)}</td></tr>`;
+            rowHtml += `</tr>`;
             bodyHtml += rowHtml;
         });
 
-        tbody.innerHTML = bodyHtml;
-    }
-
-    function drawChart(pivotData, months) {
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        
-        const colors = {
-            'Income': 'rgba(75, 192, 192, 0.7)',
-            'Expence': 'rgba(255, 99, 132, 0.7)',
-            'Lending': 'rgba(255, 159, 64, 0.7)',
-            'Saving': 'rgba(54, 162, 235, 0.7)'
-        };
-
-        const borderColors = {
-            'Income': 'rgba(75, 192, 192, 1)',
-            'Expence': 'rgba(255, 99, 132, 1)',
-            'Lending': 'rgba(255, 159, 64, 1)',
-            'Saving': 'rgba(54, 162, 235, 1)'
-        };
-
-        const datasets = targetRemarks.map(remark => {
-            const dataArray = months.map(month => pivotData[remark][month] || 0);
-            return {
-                label: remark,
-                backgroundColor: colors[remark],
-                borderColor: borderColors[remark],
-                borderWidth: 1,
-                data: dataArray
-            };
+        // Add the Grand Total row at the bottom
+        let footerHtml = `<tr class="grand-total"><td>Grand Total</td>`;
+        targetRemarks.forEach(remark => {
+            footerHtml += `<td>${formatCurrency(columnTotals[remark])}</td>`;
         });
+        footerHtml += `</tr>`;
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: months,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: { 
-                        display: true, 
-                        text: 'Monthly Breakdown by Remark' 
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false
-                    },
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₹' + value.toLocaleString('en-IN');
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        tbody.innerHTML = bodyHtml + footerHtml;
     }
 </script>
 
