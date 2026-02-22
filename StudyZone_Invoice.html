@@ -34,7 +34,6 @@
             margin-bottom: 20px;
         }
         
-        /* Dashboard Controls (Mobile Friendly) */
         .controls {
             background: #f8f9fa;
             padding: 15px;
@@ -50,6 +49,11 @@
             flex-direction: column;
             gap: 8px;
         }
+        .control-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
         .control-group label {
             font-weight: 600;
             font-size: 0.9em;
@@ -61,9 +65,10 @@
             border: 1px solid #ccc;
             font-size: 1em;
             background-color: white;
+            flex: 1;
+            min-width: 140px;
         }
         
-        /* Checkbox Buttons */
         .checkbox-group {
             display: flex;
             gap: 10px;
@@ -98,9 +103,8 @@
             padding: 20px;
         }
         
-        /* Table Styles */
         .table-wrapper {
-            overflow-x: auto; /* Allows horizontal scroll on very small screens */
+            overflow-x: auto; 
             -webkit-overflow-scrolling: touch;
         }
         table {
@@ -113,7 +117,7 @@
             border: 1px solid #e0e0e0;
             padding: 12px 10px;
             text-align: right;
-            white-space: nowrap; /* Prevents text from wrapping awkwardly */
+            white-space: nowrap; 
         }
         th {
             background-color: #2c3e50;
@@ -131,7 +135,6 @@
             color: #2c3e50;
         }
 
-        /* Mobile specific adjustments */
         @media (max-width: 500px) {
             .dashboard-container { padding: 15px; }
             th, td { padding: 10px 8px; font-size: 0.85em; }
@@ -145,12 +148,22 @@
     <p class="subtitle">Filter your data by time range and category.</p>
     
     <div class="controls" id="controlsSection" style="display: none;">
-        <div class="control-group">
-            <label for="viewSelect">Time View:</label>
-            <select id="viewSelect">
-                <option value="monthly">Monthly View</option>
-                <option value="daily">Daily View</option>
-            </select>
+        
+        <div class="control-row">
+            <div class="control-group" style="flex: 1;">
+                <label for="viewSelect">Time View:</label>
+                <select id="viewSelect">
+                    <option value="monthly">Monthly View</option>
+                    <option value="daily">Daily View</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="monthFilterGroup" style="display: none; flex: 1;">
+                <label for="monthSelect">Select Month:</label>
+                <select id="monthSelect">
+                    <option value="all">All Months</option>
+                    </select>
+            </div>
         </div>
         
         <div class="control-group">
@@ -180,12 +193,10 @@
 </div>
 
 <script>
-    // CSV Link
     const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pub?output=csv'; 
 
-    let rawData = []; // Store data globally to allow filtering without re-downloading
+    let rawData = [];
 
-    // Initialize PapaParse
     Papa.parse(sheetCsvUrl, {
         download: true,
         header: true,
@@ -193,12 +204,13 @@
         complete: function(results) {
             rawData = results.data;
             
-            // Hide loading, show controls and table
+            // 1. Extract unique months to populate the dropdown
+            populateMonthDropdown();
+
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('controlsSection').style.display = 'flex';
             document.getElementById('tableContainer').style.display = 'block';
             
-            // Render the table initially
             renderDashboard();
         },
         error: function(error) {
@@ -207,48 +219,77 @@
         }
     });
 
-    // Attach event listeners to the dropdown and checkboxes so it updates automatically
-    document.getElementById('viewSelect').addEventListener('change', renderDashboard);
+    // Populate the month dropdown automatically based on data in the sheet
+    function populateMonthDropdown() {
+        const uniqueMonths = [];
+        rawData.forEach(row => {
+            const m = row['Tran Month'] ? row['Tran Month'].trim() : '';
+            if (m && m !== '-' && !uniqueMonths.includes(m)) {
+                uniqueMonths.push(m);
+            }
+        });
+
+        const monthSelect = document.getElementById('monthSelect');
+        uniqueMonths.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.innerText = m;
+            monthSelect.appendChild(opt);
+        });
+    }
+
+    // Toggle the Month Dropdown visibility based on Monthly/Daily selection
+    document.getElementById('viewSelect').addEventListener('change', function(e) {
+        const monthGroup = document.getElementById('monthFilterGroup');
+        if (e.target.value === 'daily') {
+            monthGroup.style.display = 'flex';
+        } else {
+            monthGroup.style.display = 'none';
+        }
+        renderDashboard();
+    });
+
+    // Event listeners for month selection and checkboxes
+    document.getElementById('monthSelect').addEventListener('change', renderDashboard);
     const checkboxes = document.querySelectorAll('.cat-checkbox');
     checkboxes.forEach(cb => cb.addEventListener('change', renderDashboard));
 
     function renderDashboard() {
-        // 1. Get user selections
         const viewMode = document.getElementById('viewSelect').value; 
+        const selectedMonth = document.getElementById('monthSelect').value;
         const selectedCategories = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
         
-        // Determine which column to read based on dropdown (Tran Month vs Tran Date)
         const timeColumn = viewMode === 'monthly' ? 'Tran Month' : 'Tran Date';
 
         const pivotData = {};
         const timeLabelsOrder = [];
 
-        // 2. Process Data
         rawData.forEach(row => {
             const timeValue = row[timeColumn] ? row[timeColumn].trim() : '';
+            const rowMonth = row['Tran Month'] ? row['Tran Month'].trim() : '';
             const remark = row['Remark'] ? row['Remark'].trim() : '';
             
             if (!timeValue || timeValue === '-') return;
 
-            // Only process if the transaction's remark is currently checked by the user
+            // If in Daily View and a specific month is selected, ignore rows not in that month
+            if (viewMode === 'daily' && selectedMonth !== 'all' && rowMonth !== selectedMonth) {
+                return;
+            }
+
             if (selectedCategories.includes(remark)) {
                 
-                // Track unique time periods to use as rows chronologically
                 if (!timeLabelsOrder.includes(timeValue)) {
                     timeLabelsOrder.push(timeValue);
                 }
 
-                // Strip commas and convert to float
                 const debitStr = row['DR'] ? String(row['DR']).replace(/,/g, '') : '0';
                 const creditStr = row['CR'] ? String(row['CR']).replace(/,/g, '') : '0';
                 
                 const amount = (parseFloat(debitStr) || 0) + (parseFloat(creditStr) || 0); 
 
-                // Initialize nested object if it doesn't exist
                 if (!pivotData[timeValue]) pivotData[timeValue] = {};
                 if (!pivotData[timeValue][remark]) pivotData[timeValue][remark] = 0;
                 
-                // Add amount
                 pivotData[timeValue][remark] += amount;
             }
         });
@@ -256,25 +297,21 @@
         drawPivotTable(pivotData, timeLabelsOrder, selectedCategories, viewMode);
     }
 
-    // Helper function to format currency
     function formatCurrency(value) {
-        if (!value) return '-'; // Display hyphen for zero/empty to keep table clean
+        if (!value) return '-'; 
         return '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     }
 
-    // 3. Generate HTML Table
     function drawPivotTable(pivotData, timeLabels, categories, viewMode) {
         const thead = document.getElementById('pivotHead');
         const tbody = document.getElementById('pivotBody');
 
-        // Check if no categories are selected
         if (categories.length === 0) {
             thead.innerHTML = '<tr><th>Please select at least one category above.</th></tr>';
             tbody.innerHTML = '';
             return;
         }
 
-        // Build Header Row
         let headHtml = `<tr><th>${viewMode === 'monthly' ? 'Month' : 'Date'}</th>`;
         categories.forEach(cat => {
             headHtml += `<th>${cat}</th>`;
@@ -282,7 +319,6 @@
         headHtml += '</tr>';
         thead.innerHTML = headHtml;
 
-        // Build Body Rows
         let bodyHtml = '';
         let columnTotals = {};
         categories.forEach(cat => columnTotals[cat] = 0);
@@ -300,7 +336,6 @@
             bodyHtml += rowHtml;
         });
 
-        // Add the Grand Total row at the bottom
         let footerHtml = `<tr class="grand-total"><td>Grand Total</td>`;
         categories.forEach(cat => {
             footerHtml += `<td>${formatCurrency(columnTotals[cat])}</td>`;
