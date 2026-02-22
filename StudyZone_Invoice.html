@@ -16,46 +16,88 @@
             color: #333;
         }
         .dashboard-container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
         .loading {
             text-align: center;
             font-style: italic;
             color: #666;
+            padding: 20px;
         }
         canvas {
             margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: right;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+        }
+        td:first-child {
+            text-align: left;
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .grand-total {
+            font-weight: bold;
+            background-color: #e8f4f8;
         }
     </style>
 </head>
 <body>
 
 <div class="dashboard-container">
-    <h2>Monthly Financial Overview</h2>
-    <p>Live data sync: Total Income (CR) vs. Total Expenses (DR) by month.</p>
+    <h2>Financial Pivot Dashboard</h2>
+    <p>Tracking Income, Expence, Lending, and Saving by Month.</p>
     
     <div id="loadingMessage" class="loading">Loading data from Google Sheets...</div>
     
-    <canvas id="monthlyCashflowChart"></canvas>
+    <div id="tableContainer" style="overflow-x: auto; display: none;">
+        <table id="pivotTable">
+            <thead id="pivotHead"></thead>
+            <tbody id="pivotBody"></tbody>
+        </table>
+    </div>
+
+    <canvas id="categoryChart" style="display: none;"></canvas>
 </div>
 
 <script>
     // --- PASTE YOUR GOOGLE SHEET CSV LINK BELOW ---
-    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pub?output=csv'; 
+    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR_OKB7N1oJwbwVXP8CPl3mhpmDwJPxgwPZ7OUZFU0Rkzepc23jN9wk1-bNpfRE9Mxx5YrxJsW3Fgd9/pubhtml'; 
 
-    // Fetch and parse the CSV data
+    // The specific categories you want to track from the Remark column
+    const targetRemarks = ['Income', 'Expence', 'Lending', 'Saving'];
+
     Papa.parse(sheetCsvUrl, {
         download: true,
-        header: true, // Uses your first row (Tran Month, DR, CR, etc.) as keys
+        header: true,
         skipEmptyLines: true,
         complete: function(results) {
             document.getElementById('loadingMessage').style.display = 'none';
-            processDataAndDrawChart(results.data);
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('categoryChart').style.display = 'block';
+            processDashboardData(results.data);
         },
         error: function(error) {
             document.getElementById('loadingMessage').innerText = 'Error loading data. Please check the CSV link.';
@@ -63,77 +105,132 @@
         }
     });
 
-    function processDataAndDrawChart(data) {
-        const monthlyData = {};
+    function processDashboardData(data) {
+        const pivotData = {
+            'Income': {},
+            'Expence': {},
+            'Lending': {},
+            'Saving': {}
+        };
         const monthsOrder = [];
 
-        // Loop through every row in your account book
+        // 1. Process and aggregate the data
         data.forEach(row => {
-            const month = row['Tran Month'];
+            const month = row['Tran Month'] ? row['Tran Month'].trim() : '';
+            const remark = row['Remark'] ? row['Remark'].trim() : '';
             
-            // Skip rows that don't have a valid month
-            if (!month || month === '-' || month.trim() === '') return; 
+            if (!month || month === '-') return;
 
-            // Initialize the month object if it doesn't exist yet
-            if (!monthlyData[month]) {
-                monthlyData[month] = { income: 0, expense: 0 };
-                monthsOrder.push(month); // Keep track of the order the months appear
+            // Track unique months to use as columns
+            if (!monthsOrder.includes(month)) {
+                monthsOrder.push(month);
             }
 
-            // Extract DR and CR amounts safely (treating empty cells as 0)
-            const debit = parseFloat(row['DR']) || 0;
-            const credit = parseFloat(row['CR']) || 0;
+            // If the transaction's remark is one of our target categories
+            if (targetRemarks.includes(remark)) {
+                const debit = parseFloat(row['DR']) || 0;
+                const credit = parseFloat(row['CR']) || 0;
+                const amount = debit + credit; // Combine DR and CR to get the total amount
 
-            // Add to the monthly totals
-            monthlyData[month].expense += debit;
-            monthlyData[month].income += credit;
+                if (!pivotData[remark][month]) {
+                    pivotData[remark][month] = 0;
+                }
+                pivotData[remark][month] += amount;
+            }
         });
 
-        // Prepare the arrays for Chart.js
-        const labels = [];
-        const incomeData = [];
-        const expenseData = [];
-
-        monthsOrder.forEach(m => {
-            labels.push(m);
-            incomeData.push(monthlyData[m].income);
-            expenseData.push(monthlyData[m].expense);
-        });
-
-        // Draw the Chart
-        renderChart(labels, incomeData, expenseData);
+        drawPivotTable(pivotData, monthsOrder);
+        drawChart(pivotData, monthsOrder);
     }
 
-    function renderChart(labels, incomeData, expenseData) {
-        const ctx = document.getElementById('monthlyCashflowChart').getContext('2d');
+    // Helper function to format currency
+    function formatCurrency(value) {
+        if (!value) return '₹0';
+        return '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+
+    // 2. Generate the HTML Pivot Table
+    function drawPivotTable(pivotData, months) {
+        const thead = document.getElementById('pivotHead');
+        const tbody = document.getElementById('pivotBody');
+
+        // Build Header Row
+        let headHtml = '<tr><th>Remark \\ Month</th>';
+        months.forEach(month => {
+            headHtml += `<th>${month}</th>`;
+        });
+        headHtml += '<th>Grand Total</th></tr>';
+        thead.innerHTML = headHtml;
+
+        // Build Body Rows
+        let bodyHtml = '';
+        targetRemarks.forEach(remark => {
+            let rowHtml = `<tr><td>${remark}</td>`;
+            let rowTotal = 0;
+
+            months.forEach(month => {
+                const val = pivotData[remark][month] || 0;
+                rowTotal += val;
+                rowHtml += `<td>${formatCurrency(val)}</td>`;
+            });
+
+            rowHtml += `<td class="grand-total">${formatCurrency(rowTotal)}</td></tr>`;
+            bodyHtml += rowHtml;
+        });
+
+        tbody.innerHTML = bodyHtml;
+    }
+
+    // 3. Generate the Chart.js Visualization
+    function drawChart(pivotData, months) {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
         
+        // Setup colors for each category
+        const colors = {
+            'Income': 'rgba(75, 192, 192, 0.7)',   // Green
+            'Expence': 'rgba(255, 99, 132, 0.7)',  // Red
+            'Lending': 'rgba(255, 159, 64, 0.7)',  // Orange
+            'Saving': 'rgba(54, 162, 235, 0.7)'    // Blue
+        };
+
+        const borderColors = {
+            'Income': 'rgba(75, 192, 192, 1)',
+            'Expence': 'rgba(255, 99, 132, 1)',
+            'Lending': 'rgba(255, 159, 64, 1)',
+            'Saving': 'rgba(54, 162, 235, 1)'
+        };
+
+        // Prepare datasets
+        const datasets = targetRemarks.map(remark => {
+            const dataArray = months.map(month => pivotData[remark][month] || 0);
+            return {
+                label: remark,
+                backgroundColor: colors[remark],
+                borderColor: borderColors[remark],
+                borderWidth: 1,
+                data: dataArray
+            };
+        });
+
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Income (CR)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        data: incomeData 
-                    },
-                    {
-                        label: 'Expenses (DR)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        data: expenseData
-                    }
-                ]
+                labels: months,
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: { position: 'top' },
+                    title: { 
+                        display: true, 
+                        text: 'Monthly Breakdown by Remark' 
+                    }
                 },
                 scales: {
+                    x: {
+                        stacked: false // Set to true if you want them stacked on top of each other
+                    },
                     y: { 
                         beginAtZero: true,
                         ticks: {
